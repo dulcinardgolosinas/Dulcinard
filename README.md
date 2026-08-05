@@ -1,6 +1,6 @@
-# Dulci-Nard Tucumán — E-commerce mayorista
+# Dulcinard Tucumán — E-commerce mayorista
 
-Sistema web para Dulci-Nard: tienda mayorista de golosinas con catálogo, carrito,
+Sistema web para Dulcinard: tienda mayorista de golosinas con catálogo, carrito,
 checkout con Mercado Pago y panel de administración. Stack MERN (React + Vite,
 Node/Express, MongoDB/Mongoose) con imágenes gestionadas en Cloudinary.
 
