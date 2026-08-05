@@ -1,13 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Input, Select, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { FileInput } from "../../components/ui/FileInput";
 import { Spinner, PageLoader } from "../../components/ui/Spinner";
 import { UNIT_LABELS } from "../../lib/format";
+import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
+import { alphanumericField, optionalAlphanumericField, skuField, numberField, intField } from "../../lib/validators";
 
 const UNITS = Object.keys(UNIT_LABELS);
+
+const schema = z.object({
+  name: alphanumericField("El nombre del producto", { min: 2, max: 150 }),
+  description: z.string().trim().max(2000, "La descripción no puede superar los 2000 caracteres").optional(),
+  brand: optionalAlphanumericField("La marca", { max: 80 }),
+  category: z.string().min(1, "Elegí una categoría"),
+  sku: skuField,
+  price: numberField("El precio", { min: 0, max: 100000000 }),
+  unit: z.enum(UNITS),
+  unitsPerPack: intField("Las unidades por pack", { min: 1, max: 100000 }),
+  stock: intField("El stock", { min: 0, max: 10000000 }),
+  minOrderQty: intField("El pedido mínimo", { min: 1, max: 100000 }),
+  featured: z.boolean().optional(),
+  active: z.boolean().optional()
+});
 
 export default function ProductoForm() {
   const { id } = useParams();
@@ -27,6 +47,7 @@ export default function ProductoForm() {
     reset,
     formState: { errors, isSubmitting }
   } = useForm({
+    resolver: zodResolver(schema),
     defaultValues: {
       name: "",
       description: "",
@@ -74,6 +95,16 @@ export default function ProductoForm() {
   }
 
   async function onSubmit(values) {
+    if (isEdit) {
+      const confirmed = await confirmAction({
+        title: "¿Guardar cambios?",
+        text: "Vas a actualizar este producto.",
+        confirmText: "Sí, guardar",
+        icon: "question"
+      });
+      if (!confirmed) return;
+    }
+
     setError("");
     const formData = new FormData();
     Object.entries(values).forEach(([key, value]) => formData.append(key, value));
@@ -86,10 +117,17 @@ export default function ProductoForm() {
       } else {
         await api.post("/products", formData, { headers: { "Content-Type": "multipart/form-data" } });
       }
+      toastSuccess(isEdit ? "Producto actualizado" : "Producto creado");
       navigate("/admin/productos");
     } catch (err) {
-      setError(apiErrorMessage(err, "No pudimos guardar el producto"));
+      const message = apiErrorMessage(err, "No pudimos guardar el producto");
+      setError(message);
+      toastError(message);
     }
+  }
+
+  function onInvalid() {
+    toastError("Completá los campos obligatorios antes de guardar");
   }
 
   if (loading) return <PageLoader />;
@@ -98,16 +136,16 @@ export default function ProductoForm() {
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-bold text-ink-900">{isEdit ? "Editar producto" : "Nuevo producto"}</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-6">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-6 space-y-6">
         <div className="grid gap-4 rounded-2xl border border-ink-100 bg-white p-5 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <Input label="Nombre del producto" {...register("name", { required: "El nombre es obligatorio" })} error={errors.name?.message} />
+            <Input label="Nombre del producto" {...register("name")} error={errors.name?.message} />
           </div>
           <div className="sm:col-span-2">
-            <Textarea label="Descripción" rows={3} {...register("description")} />
+            <Textarea label="Descripción" rows={3} {...register("description")} error={errors.description?.message} />
           </div>
-          <Input label="Marca" {...register("brand")} />
-          <Select label="Categoría" {...register("category", { required: "Elegí una categoría" })} error={errors.category?.message}>
+          <Input label="Marca" {...register("brand")} error={errors.brand?.message} />
+          <Select label="Categoría" {...register("category")} error={errors.category?.message}>
             <option value="">Seleccionar...</option>
             {categories.map((c) => (
               <option key={c._id} value={c._id}>
@@ -115,7 +153,7 @@ export default function ProductoForm() {
               </option>
             ))}
           </Select>
-          <Input label="SKU (opcional)" {...register("sku")} />
+          <Input label="SKU (opcional)" {...register("sku")} error={errors.sku?.message} />
         </div>
 
         <div className="grid gap-4 rounded-2xl border border-ink-100 bg-white p-5 sm:grid-cols-3">
@@ -123,19 +161,19 @@ export default function ProductoForm() {
             label="Precio mayorista ($)"
             type="number"
             step="0.01"
-            {...register("price", { required: "Ingresá un precio", min: 0 })}
+            {...register("price")}
             error={errors.price?.message}
           />
-          <Select label="Unidad de venta" {...register("unit")}>
+          <Select label="Unidad de venta" {...register("unit")} error={errors.unit?.message}>
             {UNITS.map((u) => (
               <option key={u} value={u}>
                 {UNIT_LABELS[u]}
               </option>
             ))}
           </Select>
-          <Input label="Unidades por pack" type="number" {...register("unitsPerPack", { min: 1 })} />
-          <Input label="Stock disponible" type="number" {...register("stock", { required: true, min: 0 })} />
-          <Input label="Pedido mínimo" type="number" {...register("minOrderQty", { min: 1 })} />
+          <Input label="Unidades por pack" type="number" {...register("unitsPerPack")} error={errors.unitsPerPack?.message} />
+          <Input label="Stock disponible" type="number" {...register("stock")} error={errors.stock?.message} />
+          <Input label="Pedido mínimo" type="number" {...register("minOrderQty")} error={errors.minOrderQty?.message} />
           <div className="flex items-center gap-6 pt-6">
             <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
               <input type="checkbox" {...register("featured")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
@@ -149,7 +187,7 @@ export default function ProductoForm() {
         </div>
 
         <div className="rounded-2xl border border-ink-100 bg-white p-5">
-          <p className="mb-3 text-sm font-semibold text-ink-900">Imágenes (Cloudinary)</p>
+          <p className="mb-3 text-sm font-semibold text-ink-900">Imágenes</p>
 
           {existingImages.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-3">
@@ -172,13 +210,7 @@ export default function ProductoForm() {
             </div>
           )}
 
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={(e) => setNewFiles(Array.from(e.target.files || []))}
-            className="block w-full text-sm text-ink-600 file:mr-4 file:rounded-full file:border-0 file:bg-brand-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
-          />
+          <FileInput multiple onChange={(e) => setNewFiles(Array.from(e.target.files || []))} />
           {newFiles.length > 0 && <p className="mt-2 text-xs text-ink-400">{newFiles.length} imagen(es) nueva(s) para subir</p>}
         </div>
 
