@@ -1,0 +1,147 @@
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { api, apiErrorMessage } from "../../lib/api";
+import { Input } from "../../components/ui/Input";
+import { Button } from "../../components/ui/Button";
+import { PageLoader, Spinner } from "../../components/ui/Spinner";
+import { Badge } from "../../components/ui/Badge";
+import { formatCurrency } from "../../lib/format";
+
+function ZoneForm({ editing, onSaved, onCancel }) {
+  const [error, setError] = useState("");
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm({
+    defaultValues: {
+      name: editing?.name || "",
+      cost: editing?.cost ?? 80,
+      minPurchaseAmount: editing?.minPurchaseAmount ?? 500,
+      freeShippingFrom: editing?.freeShippingFrom ?? 0,
+      active: editing?.active ?? true
+    }
+  });
+
+  useEffect(() => {
+    reset({
+      name: editing?.name || "",
+      cost: editing?.cost ?? 80,
+      minPurchaseAmount: editing?.minPurchaseAmount ?? 500,
+      freeShippingFrom: editing?.freeShippingFrom ?? 0,
+      active: editing?.active ?? true
+    });
+  }, [editing, reset]);
+
+  async function onSubmit(values) {
+    setError("");
+    try {
+      if (editing) await api.put(`/shipping-zones/${editing._id}`, values);
+      else await api.post("/shipping-zones", values);
+      onSaved();
+    } catch (err) {
+      setError(apiErrorMessage(err, "No pudimos guardar la zona"));
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
+      <p className="font-semibold text-ink-900">{editing ? `Editando: ${editing.name}` : "Nueva zona de envío"}</p>
+      <Input label="Nombre de la zona" placeholder="Ej: Yerba Buena" {...register("name", { required: true })} />
+      <Input label="Costo de envío ($)" type="number" {...register("cost", { required: true, min: 0 })} />
+      <Input label="Monto mínimo de compra ($)" type="number" {...register("minPurchaseAmount", { required: true, min: 0 })} />
+      <Input label="Envío gratis desde ($, 0 = deshabilitado)" type="number" {...register("freeShippingFrom", { min: 0 })} />
+      <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
+        <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
+        Zona activa
+      </label>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      <div className="flex gap-2">
+        <Button type="submit" size="sm" disabled={isSubmitting}>
+          {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear zona"}
+        </Button>
+        {editing && (
+          <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+            Cancelar
+          </Button>
+        )}
+      </div>
+    </form>
+  );
+}
+
+export default function ZonasEnvioAdmin() {
+  const [zones, setZones] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+
+  async function load() {
+    setLoading(true);
+    const { data } = await api.get("/shipping-zones", { params: { all: "true" } });
+    setZones(data);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function handleDelete(zone) {
+    if (!confirm(`¿Eliminar la zona "${zone.name}"?`)) return;
+    await api.delete(`/shipping-zones/${zone._id}`);
+    load();
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-ink-900">Zonas de envío</h1>
+
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div>
+          {loading ? (
+            <PageLoader />
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-ink-100 bg-white">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-ink-50 text-xs uppercase tracking-wide text-ink-400">
+                  <tr>
+                    <th className="px-4 py-3">Zona</th>
+                    <th className="px-4 py-3">Mínimo</th>
+                    <th className="px-4 py-3">Envío</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {zones.map((z) => (
+                    <tr key={z._id} className="border-t border-ink-50">
+                      <td className="px-4 py-3 font-medium text-ink-900">{z.name}</td>
+                      <td className="px-4 py-3 text-ink-600">{formatCurrency(z.minPurchaseAmount)}</td>
+                      <td className="px-4 py-3 text-ink-600">{formatCurrency(z.cost)}</td>
+                      <td className="px-4 py-3">
+                        <Badge tone={z.active ? "success" : "neutral"}>{z.active ? "Activa" : "Inactiva"}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => setEditing(z)} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">
+                          Editar
+                        </button>
+                        <button onClick={() => handleDelete(z)} className="text-sm font-semibold text-red-600 hover:underline">
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {zones.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-10 text-center text-ink-400">
+                        Todavía no cargaste zonas de envío.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        <ZoneForm editing={editing} onSaved={() => { setEditing(null); load(); }} onCancel={() => setEditing(null)} />
+      </div>
+    </div>
+  );
+}

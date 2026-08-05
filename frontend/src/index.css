@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import "tailwindcss";
+
+@theme {
+  /* Marca — heredado del logo (rojo carmín) + acento amarillo de piezas de Instagram */
+  --color-brand-50: #fdf2f3;
+  --color-brand-100: #fce3e5;
+  --color-brand-200: #f9c6cb;
+  --color-brand-300: #f29aa3;
+  --color-brand-400: #e75d6c;
+  --color-brand-500: #d42a3d;
+  --color-brand-600: #b81830;
+  --color-brand-700: #98122a;
+  --color-brand-800: #7c1227;
+  --color-brand-900: #691225;
+  --color-brand-950: #3a0710;
+
+  --color-accent-50: #fffbeb;
+  --color-accent-100: #fff2c6;
+  --color-accent-200: #ffe388;
+  --color-accent-300: #ffcd4a;
+  --color-accent-400: #ffb81f;
+  --color-accent-500: #f99a07;
+  --color-accent-600: #dd7502;
+  --color-accent-700: #b75406;
+  --color-accent-800: #94420c;
+  --color-accent-900: #7a380d;
+
+  --color-ink-50: #f6f5f5;
+  --color-ink-100: #e7e5e4;
+  --color-ink-200: #d1cdcb;
+  --color-ink-300: #b0a9a6;
+  --color-ink-400: #887e7a;
+  --color-ink-500: #6b615d;
+  --color-ink-600: #574f4c;
+  --color-ink-700: #47413e;
+  --color-ink-800: #302b29;
+  --color-ink-900: #201c1b;
+  --color-ink-950: #130f0f;
+
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgba(32, 28, 27, 0.06), 0 8px 24px -12px rgba(32, 28, 27, 0.18);
+  --shadow-pop: 0 20px 45px -15px rgba(184, 24, 48, 0.35);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-ink-50 text-ink-900;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-ink-200 rounded-full;
+  }
+}
