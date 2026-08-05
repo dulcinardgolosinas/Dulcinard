@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
+import { AuthLayout } from "./components/layout/AuthLayout";
 import { ProtectedRoute, AdminRoute } from "./routes/ProtectedRoute";
 
 import Home from "./pages/Home";
@@ -40,8 +41,10 @@ function App() {
           <Route path="/envios" element={<ZonasEnvio />} />
           <Route path="/catalogo" element={<Catalogo />} />
           <Route path="/producto/:slug" element={<ProductoDetalle />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/registro" element={<Registro />} />
+          </Route>
 
           <Route element={<ProtectedRoute />}>
             <Route path="/checkout" element={<Checkout />} />
