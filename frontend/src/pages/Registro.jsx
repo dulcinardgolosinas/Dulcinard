@@ -5,15 +5,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api, apiErrorMessage } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
-import { Input } from "../components/ui/Input";
+import { Input, PasswordInput } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
+import { toastSuccess, toastError } from "../lib/alerts";
+import { nameField, optionalAlphanumericField, emailField, phoneField, passwordField } from "../lib/validators";
 
 const schema = z.object({
-  name: z.string().min(2, "Ingresá tu nombre completo"),
-  businessName: z.string().optional(),
-  email: z.string().email("Ingresá un email válido"),
-  phone: z.string().optional(),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres")
+  name: nameField("El nombre"),
+  businessName: optionalAlphanumericField("El nombre del negocio", { max: 100 }),
+  email: emailField,
+  phone: phoneField(),
+  password: passwordField()
 });
 
 export default function Registro() {
@@ -32,10 +34,17 @@ export default function Registro() {
     try {
       const { data } = await api.post("/auth/register", values);
       setSession(data.user, data.token);
+      toastSuccess(`¡Cuenta creada! Bienvenido/a, ${data.user.name.split(" ")[0]}`);
       navigate("/", { replace: true });
     } catch (err) {
-      setServerError(apiErrorMessage(err, "No pudimos crear tu cuenta"));
+      const message = apiErrorMessage(err, "No pudimos crear tu cuenta");
+      setServerError(message);
+      toastError(message);
     }
+  }
+
+  function onInvalid() {
+    toastError("Completá todos los campos obligatorios");
   }
 
   return (
@@ -43,12 +52,12 @@ export default function Registro() {
       <h1 className="font-display text-3xl font-bold text-ink-900">Creá tu cuenta mayorista</h1>
       <p className="mt-2 text-sm text-ink-500">Registrate para hacer pedidos y ver tu historial de compras.</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-4">
         <Input label="Nombre y apellido" {...register("name")} error={errors.name?.message} />
         <Input label="Nombre del negocio (opcional)" {...register("businessName")} error={errors.businessName?.message} />
         <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
         <Input label="Teléfono (opcional)" {...register("phone")} error={errors.phone?.message} />
-        <Input label="Contraseña" type="password" {...register("password")} error={errors.password?.message} />
+        <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
 
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
