@@ -1,14 +1,39 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Input, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
+import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { futureDateField, numberField } from "../../lib/validators";
 
 function toInputDate(d) {
   return d ? new Date(d).toISOString().slice(0, 10) : "";
 }
+
+const schema = z
+  .object({
+    title: z
+      .string()
+      .trim()
+      .min(1, "El título es obligatorio")
+      .min(2, "El título debe tener al menos 2 caracteres")
+      .max(120, "El título no puede superar los 120 caracteres"),
+    description: z.string().trim().max(500, "La descripción no puede superar los 500 caracteres").optional(),
+    discountPercent: numberField("El descuento", { min: 0, max: 100 }),
+    categories: z.array(z.string()).optional(),
+    startDate: futureDateField("La fecha de inicio"),
+    endDate: futureDateField("La fecha de fin"),
+    active: z.boolean().optional()
+  })
+  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
+    message: "La fecha de fin debe ser posterior o igual a la fecha de inicio",
+    path: ["endDate"]
+  });
 
 function PromotionForm({ editing, categories, onSaved, onCancel }) {
   const [file, setFile] = useState(null);
@@ -18,8 +43,9 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
     handleSubmit,
     control,
     reset,
-    formState: { isSubmitting }
+    formState: { errors, isSubmitting }
   } = useForm({
+    resolver: zodResolver(schema),
     defaultValues: {
       title: editing?.title || "",
       description: editing?.description || "",
@@ -45,6 +71,16 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
   }, [editing, reset]);
 
   async function onSubmit(values) {
+    if (editing) {
+      const confirmed = await confirmAction({
+        title: "¿Guardar cambios?",
+        text: "Vas a actualizar esta promoción.",
+        confirmText: "Sí, guardar",
+        icon: "question"
+      });
+      if (!confirmed) return;
+    }
+
     setError("");
     const formData = new FormData();
     formData.append("title", values.title);
@@ -63,22 +99,41 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
       } else {
         await api.post("/promotions", formData, { headers: { "Content-Type": "multipart/form-data" } });
       }
+      toastSuccess(editing ? "Promoción actualizada" : "Promoción creada");
       onSaved();
     } catch (err) {
-      setError(apiErrorMessage(err, "No pudimos guardar la promoción"));
+      const message = apiErrorMessage(err, "No pudimos guardar la promoción");
+      setError(message);
+      toastError(message);
     }
   }
 
+  function onInvalid() {
+    toastError("Completá los campos obligatorios antes de guardar");
+  }
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
       <p className="font-semibold text-ink-900">{editing ? `Editando: ${editing.title}` : "Nueva promoción"}</p>
-      <Input label="Título" {...register("title", { required: true })} />
-      <Textarea label="Descripción" rows={2} {...register("description")} />
-      <Input label="Descuento (%)" type="number" min="0" max="100" {...register("discountPercent")} />
+      <Input label="Título" {...register("title")} error={errors.title?.message} />
+      <Textarea label="Descripción" rows={2} {...register("description")} error={errors.description?.message} />
+      <Input label="Descuento (%)" type="number" min="0" max="100" {...register("discountPercent")} error={errors.discountPercent?.message} />
 
       <div className="grid grid-cols-2 gap-3">
-        <Input label="Desde" type="date" {...register("startDate", { required: true })} />
-        <Input label="Hasta" type="date" {...register("endDate", { required: true })} />
+        <Input
+          label="Desde"
+          type="date"
+          min={toInputDate(new Date())}
+          {...register("startDate")}
+          error={errors.startDate?.message}
+        />
+        <Input
+          label="Hasta"
+          type="date"
+          min={toInputDate(new Date())}
+          {...register("endDate")}
+          error={errors.endDate?.message}
+        />
       </div>
 
       <div>
@@ -116,9 +171,8 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
       </label>
 
       <div>
-        <p className="mb-1.5 text-sm font-medium text-ink-700">Banner</p>
         {editing?.banner?.url && !file && <img src={editing.banner.url} alt="" className="mb-2 h-20 w-full rounded-lg object-cover" />}
-        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} className="text-sm" />
+        <FileInput label="Banner" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -155,9 +209,15 @@ export default function PromocionesAdmin() {
   }, []);
 
   async function handleDelete(promo) {
-    if (!confirm(`¿Eliminar la promoción "${promo.title}"?`)) return;
-    await api.delete(`/promotions/${promo._id}`);
-    load();
+    const confirmed = await confirmDelete(`la promoción "${promo.title}"`);
+    if (!confirmed) return;
+    try {
+      await api.delete(`/promotions/${promo._id}`);
+      toastSuccess("Promoción eliminada");
+      load();
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos eliminar la promoción"));
+    }
   }
 
   return (
@@ -165,25 +225,25 @@ export default function PromocionesAdmin() {
       <h1 className="text-2xl font-bold text-ink-900">Promociones</h1>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div>
+        <div className="min-w-0">
           {loading ? (
             <PageLoader />
           ) : (
             <div className="space-y-3">
               {promotions.map((p) => (
-                <div key={p._id} className="flex items-center justify-between rounded-2xl border border-ink-100 bg-white p-4">
-                  <div className="flex items-center gap-3">
+                <div key={p._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-ink-50">
                       {p.banner?.url && <img src={p.banner.url} alt="" className="h-full w-full object-cover" />}
                     </div>
-                    <div>
-                      <p className="font-semibold text-ink-900">{p.title}</p>
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink-900">{p.title}</p>
                       <p className="text-xs text-ink-400">
                         {new Date(p.startDate).toLocaleDateString("es-AR")} - {new Date(p.endDate).toLocaleDateString("es-AR")}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex shrink-0 items-center gap-3">
                     <Badge tone={p.isCurrentlyActive ? "success" : "neutral"}>{p.isCurrentlyActive ? "Vigente" : "Inactiva"}</Badge>
                     <button onClick={() => setEditing(p)} className="text-sm font-semibold text-brand-600 hover:underline">
                       Editar
