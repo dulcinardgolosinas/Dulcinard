@@ -7,6 +7,7 @@ export const PHONE_REGEX = /^[0-9+()\s-]+$/;
 export const ALPHANUMERIC_TEXT_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'".,°/\-\s]+$/;
 export const SKU_REGEX = /^[A-Za-z0-9_-]+$/;
 export const DIGITS_ONLY_REGEX = /^[0-9]+$/;
+export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
 
 // --- Builders reutilizables ---
 
@@ -59,12 +60,13 @@ export const phoneField = ({ min = 6, max = 20, required = false, label = "El te
   return base.or(z.literal("")).optional();
 };
 
-export const passwordField = ({ min = 6, max = 72, label = "La contraseña" } = {}) =>
+export const passwordField = ({ min = 8, max = 72, label = "La contraseña" } = {}) =>
   z
     .string()
     .min(1, `${label} es obligatoria`)
     .min(min, `${label} debe tener al menos ${min} caracteres`)
-    .max(max, `${label} no puede superar los ${max} caracteres`);
+    .max(max, `${label} no puede superar los ${max} caracteres`)
+    .regex(STRONG_PASSWORD_REGEX, `${label} debe incluir mayúscula, minúscula, número y símbolo`);
 
 export const urlField = ({ required = false, label = "El link" } = {}) => {
   const base = z.string().trim().url(`${label} no es una URL válida`);

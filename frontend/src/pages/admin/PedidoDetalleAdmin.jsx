@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
 import { PageLoader } from "../../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../../components/ui/Badge";
@@ -36,8 +37,9 @@ export default function PedidoDetalleAdmin() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <Link to="/admin/pedidos" className="text-sm font-semibold text-ink-500 hover:text-brand-600">
-        ← Pedidos
+      <Link to="/admin/pedidos" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-brand-600">
+        <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+        Pedidos
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

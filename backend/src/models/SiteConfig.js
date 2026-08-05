@@ -27,7 +27,7 @@ const branchSchema = new mongoose.Schema(
 const siteConfigSchema = new mongoose.Schema(
   {
     // Singleton: siempre habrá un único documento de configuración
-    brandName: { type: String, default: "Dulci-Nard Tucumán" },
+    brandName: { type: String, default: "Dulcinard Tucumán" },
     logo: {
       url: { type: String, default: "" },
       publicId: { type: String, default: "" }
@@ -40,7 +40,7 @@ const siteConfigSchema = new mongoose.Schema(
     whatsappNumber: { type: String, default: "3814091213" },
     whatsappMessage: {
       type: String,
-      default: "¡Hola! Quiero hacer un pedido a Dulci-Nard."
+      default: "¡Hola! Quiero hacer un pedido a Dulcinard."
     },
     pedidosYaUrl: { type: String, default: "" },
 

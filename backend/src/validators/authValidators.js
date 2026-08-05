@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
-import { NAME_REGEX, ALPHANUMERIC_TEXT_REGEX, PHONE_REGEX } from "../utils/validationPatterns.js";
+import { NAME_REGEX, ALPHANUMERIC_TEXT_REGEX, PHONE_REGEX, STRONG_PASSWORD_REGEX } from "../utils/validationPatterns.js";
 
 export const registerValidator = [
   body("name")
@@ -12,16 +12,18 @@ export const registerValidator = [
     .matches(NAME_REGEX)
     .withMessage("El nombre solo puede contener letras"),
   body("businessName")
-    .optional({ checkFalsy: true })
     .trim()
-    .isLength({ max: 100 })
-    .withMessage("El nombre del negocio no puede superar los 100 caracteres")
+    .notEmpty()
+    .withMessage("El nombre del negocio es obligatorio")
+    .isLength({ min: 2, max: 100 })
+    .withMessage("El nombre del negocio debe tener entre 2 y 100 caracteres")
     .matches(ALPHANUMERIC_TEXT_REGEX)
     .withMessage("El nombre del negocio tiene caracteres inválidos"),
   body("email").trim().notEmpty().withMessage("El email es obligatorio").isEmail().withMessage("Ingresá un email válido").isLength({ max: 254 }),
   body("phone")
-    .optional({ checkFalsy: true })
     .trim()
+    .notEmpty()
+    .withMessage("El teléfono es obligatorio")
     .matches(PHONE_REGEX)
     .withMessage("El teléfono solo puede contener números")
     .isLength({ min: 6, max: 20 })
@@ -29,8 +31,10 @@ export const registerValidator = [
   body("password")
     .notEmpty()
     .withMessage("La contraseña es obligatoria")
-    .isLength({ min: 6, max: 72 })
-    .withMessage("La contraseña debe tener entre 6 y 72 caracteres"),
+    .isLength({ min: 8, max: 72 })
+    .withMessage("La contraseña debe tener entre 8 y 72 caracteres")
+    .matches(STRONG_PASSWORD_REGEX)
+    .withMessage("La contraseña debe incluir mayúscula, minúscula, número y símbolo"),
   validate
 ];
 
@@ -70,7 +74,9 @@ export const changePasswordValidator = [
   body("newPassword")
     .notEmpty()
     .withMessage("Ingresá la nueva contraseña")
-    .isLength({ min: 6, max: 72 })
-    .withMessage("La nueva contraseña debe tener entre 6 y 72 caracteres"),
+    .isLength({ min: 8, max: 72 })
+    .withMessage("La nueva contraseña debe tener entre 8 y 72 caracteres")
+    .matches(STRONG_PASSWORD_REGEX)
+    .withMessage("La nueva contraseña debe incluir mayúscula, minúscula, número y símbolo"),
   validate
 ];

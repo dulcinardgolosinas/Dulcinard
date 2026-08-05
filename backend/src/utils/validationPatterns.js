@@ -15,3 +15,6 @@ export const SKU_REGEX = /^[A-Za-z0-9_-]+$/;
 
 // Número de WhatsApp / teléfono de Argentina sin 0 ni 15: solo dígitos.
 export const DIGITS_ONLY_REGEX = /^[0-9]+$/;
+
+// Contraseña fuerte: al menos una minúscula, una mayúscula, un número y un símbolo.
+export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;

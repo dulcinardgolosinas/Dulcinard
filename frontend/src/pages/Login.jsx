@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -46,27 +46,15 @@ export default function Login() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-14">
-      <h1 className="font-display text-3xl font-bold text-ink-900">Ingresá a tu cuenta</h1>
-      <p className="mt-2 text-sm text-ink-500">Accedé para ver tu historial de pedidos y finalizar tu compra.</p>
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+      <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
+      <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
 
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-4">
-        <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
-        <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
+      {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
-        {serverError && <p className="text-sm text-red-600">{serverError}</p>}
-
-        <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Ingresando..." : "Ingresar"}
-        </Button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-ink-500">
-        ¿Todavía no tenés cuenta?{" "}
-        <Link to="/registro" className="font-semibold text-brand-600 hover:underline">
-          Registrate
-        </Link>
-      </p>
-    </div>
+      <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+        {isSubmitting ? "Ingresando..." : "Ingresar"}
+      </Button>
+    </form>
   );
 }

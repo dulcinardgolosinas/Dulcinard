@@ -1,13 +1,14 @@
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
+import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 
 function Hero({ waHref }) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-brand-900 to-brand-700 text-white">
-      <div className="absolute -right-20 top-0 h-96 w-96 rounded-full bg-accent-400/20 blur-[100px]" />
-      <div className="absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-brand-400/20 blur-[100px]" />
+    <section className="relative overflow-hidden text-white">
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -39,7 +40,10 @@ function Hero({ waHref }) {
               </span>
               <span>
                 <span className="block text-sm text-white/70">Escribinos ahora</span>
-                <span className="block font-display text-xl font-bold group-hover:underline">Iniciar conversación →</span>
+                <span className="flex items-center gap-1.5 font-display text-xl font-bold group-hover:underline">
+                  Iniciar conversación
+                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
+                </span>
               </span>
             </a>
           </motion.div>

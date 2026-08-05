@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { Store, Users, Truck, MessageCircle, UserRound, ArrowRight } from "lucide-react";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { useCartStore } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
 
 const navLinks = [
-  { to: "/catalogo", label: "Catálogo" },
-  { to: "/quienes-somos", label: "Quiénes somos" },
-  { to: "/envios", label: "Envíos y zonas" },
-  { to: "/contacto", label: "Contacto" }
+  { to: "/catalogo", label: "Catálogo", icon: Store },
+  { to: "/quienes-somos", label: "Quiénes somos", icon: Users },
+  { to: "/envios", label: "Envíos y zonas", icon: Truck },
+  { to: "/contacto", label: "Contacto", icon: MessageCircle }
 ];
 
 function BranchPicker({ transparent }) {
@@ -34,7 +36,10 @@ function BranchPicker({ transparent }) {
       {open && (
         <div className="absolute right-0 top-7 z-40 w-80 rounded-2xl border border-ink-100 bg-white p-3 shadow-card">
           {branches.map((b) => (
-            <div key={b._id} className="border-b border-ink-50 px-2 py-2.5 last:border-none">
+            <div
+              key={b._id}
+              className="rounded-xl border-b border-ink-50 px-2 py-2.5 transition-colors last:border-none hover:bg-brand-50"
+            >
               <p className="text-sm font-semibold text-ink-900">{b.name}</p>
               <p className="text-xs text-ink-500">{b.address}</p>
               <p className="mt-1 text-xs text-ink-400">
@@ -87,12 +92,12 @@ export function Header() {
             <img
               src={config.logo.url}
               alt={config.brandName}
-              className="h-24 w-auto transition-all"
+              className="h-12 w-auto transition-all sm:h-14 md:h-24"
             />
           ) : (
             <div className="flex flex-col leading-none">
               <span className={`font-display text-2xl font-bold tracking-tight ${transparent ? "text-white" : "text-brand-600"}`}>
-                DULCI-NARD
+                DULCINARD
               </span>
               <span className={`text-[11px] font-semibold tracking-[0.25em] ${transparent ? "text-white/70" : "text-ink-400"}`}>
                 TUCUMÁN
@@ -170,27 +175,72 @@ export function Header() {
         </div>
       </div>
 
-      {mobileOpen && (
-        <nav className="border-t border-ink-100 bg-white px-4 pb-4 md:hidden">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              onClick={() => setMobileOpen(false)}
-              className="block border-b border-ink-50 py-3 text-sm font-semibold text-ink-700 last:border-none"
-            >
-              {link.label}
-            </NavLink>
-          ))}
-          <Link
-            to={isAuthenticated ? "/perfil" : "/login"}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-ink-950/60 backdrop-blur-sm md:hidden"
             onClick={() => setMobileOpen(false)}
-            className="block py-3 text-sm font-semibold text-brand-600"
+            aria-label="Cerrar menú"
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.nav
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="relative z-50 overflow-hidden rounded-b-3xl border-t border-white/10 bg-gradient-to-b from-ink-950 via-brand-900 to-brand-800 px-4 pb-5 pt-3 shadow-2xl md:hidden"
           >
-            {isAuthenticated ? "Mi cuenta" : "Ingresar / Registrarme"}
-          </Link>
-        </nav>
-      )}
+            <div className="space-y-1">
+              {navLinks.map((link, i) => (
+                <motion.div
+                  key={link.to}
+                  initial={{ opacity: 0, x: -14 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <NavLink
+                    to={link.to}
+                    onClick={() => setMobileOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold transition-colors ${
+                        isActive ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10 hover:text-white"
+                      }`
+                    }
+                  >
+                    <link.icon className="h-5 w-5 shrink-0 text-accent-400" strokeWidth={1.8} />
+                    {link.label}
+                  </NavLink>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -14 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: navLinks.length * 0.05 }}
+            >
+              <Link
+                to={isAuthenticated ? "/perfil" : "/login"}
+                onClick={() => setMobileOpen(false)}
+                className="mt-3 flex items-center justify-between rounded-2xl bg-gradient-to-r from-accent-400 to-accent-500 px-4 py-3.5 text-sm font-bold text-ink-950 shadow-lg shadow-accent-500/20"
+              >
+                <span className="flex items-center gap-2">
+                  <UserRound className="h-5 w-5" strokeWidth={2} />
+                  {isAuthenticated ? "Mi cuenta" : "Ingresar / Registrarme"}
+                </span>
+                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              </Link>
+            </motion.div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

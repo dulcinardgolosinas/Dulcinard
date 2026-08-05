@@ -3,6 +3,7 @@ import {
   createOrder,
   createPaymentPreference,
   mercadoPagoWebhook,
+  syncOrderPayment,
   listMyOrders,
   getMyOrder,
   listAllOrders,
@@ -21,6 +22,7 @@ router.post("/", requireAuth, createOrderValidator, createOrder);
 router.get("/mine", requireAuth, listMyOrders);
 router.get("/mine/:id", requireAuth, getMyOrder);
 router.post("/:id/pay", requireAuth, createPaymentPreference);
+router.post("/:id/sync-payment", requireAuth, syncOrderPayment);
 
 router.get("/", requireAuth, requireAdmin, listAllOrders);
 router.get("/:id", requireAuth, requireAdmin, getOrderAdmin);

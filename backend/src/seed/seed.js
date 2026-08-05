@@ -71,10 +71,10 @@ async function run() {
   console.log("[seed] Configurando SiteConfig...");
   await SiteConfig.deleteMany({});
   await SiteConfig.create({
-    brandName: "Dulci-Nard Tucumán",
+    brandName: "Dulcinard Tucumán",
     instagram: "https://instagram.com/dulcinard_golosinas",
     whatsappNumber: "3814091213",
-    whatsappMessage: "¡Hola! Quiero hacer un pedido a Dulci-Nard.",
+    whatsappMessage: "¡Hola! Quiero hacer un pedido a Dulcinard.",
     minPurchaseAmount: 500,
     defaultShippingCost: 80,
     freeShippingFrom: 0,
@@ -93,7 +93,7 @@ async function run() {
   console.log("[seed] Cargando usuario admin...");
   await User.deleteOne({ email: process.env.ADMIN_EMAIL });
   await User.create({
-    name: "Admin Dulci-Nard",
+    name: "Admin Dulcinard",
     email: process.env.ADMIN_EMAIL || "admin@dulcinard.com",
     password: process.env.ADMIN_PASSWORD || "cambiar-esta-password",
     role: "admin"
