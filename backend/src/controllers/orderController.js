@@ -125,8 +125,24 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
   order.mercadoPago.preferenceId = preference.id;
   await order.save();
 
-  res.json({ preferenceId: preference.id, initPoint: preference.init_point });
+  // Con credenciales de prueba (TEST-...) el checkout de producción rechaza a
+  // los usuarios de prueba con un error genérico; hay que redirigir a
+  // sandbox_init_point en ese caso.
+  const isTestCredential = (process.env.MP_ACCESS_TOKEN || "").startsWith("TEST-");
+  const initPoint = isTestCredential ? preference.sandbox_init_point : preference.init_point;
+
+  res.json({ preferenceId: preference.id, initPoint });
 });
+
+function applyPaymentToOrder(order, payment) {
+  order.mercadoPago.paymentId = String(payment.id);
+  if (payment.status === "approved") {
+    order.paymentStatus = "aprobado";
+    order.status = "confirmado";
+  } else if (payment.status === "rejected") {
+    order.paymentStatus = "rechazado";
+  }
+}
 
 export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
   const paymentId = req.query["data.id"] || req.body?.data?.id;
@@ -134,22 +150,35 @@ export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
 
   if (type === "payment" && paymentId) {
     const payment = await mpPayment.get({ id: paymentId });
-    const orderId = payment.external_reference;
-    const order = await Order.findById(orderId);
-
+    const order = await Order.findById(payment.external_reference);
     if (order) {
-      order.mercadoPago.paymentId = String(paymentId);
-      if (payment.status === "approved") {
-        order.paymentStatus = "aprobado";
-        order.status = "confirmado";
-      } else if (payment.status === "rejected") {
-        order.paymentStatus = "rechazado";
-      }
+      applyPaymentToOrder(order, payment);
       await order.save();
     }
   }
 
   res.sendStatus(200);
+});
+
+// El webhook de Mercado Pago no puede llegar a un SERVER_URL local (localhost);
+// como respaldo, cuando el usuario vuelve del checkout con éxito, el frontend
+// llama a este endpoint con el payment_id que Mercado Pago agrega a la URL de
+// retorno, para sincronizar el estado del pedido sin depender del webhook.
+export const syncOrderPayment = asyncHandler(async (req, res) => {
+  const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+  if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
+
+  const paymentId = req.query.paymentId;
+  if (!paymentId) return res.status(400).json({ message: "Falta el paymentId" });
+
+  const payment = await mpPayment.get({ id: paymentId });
+  if (payment.external_reference !== order._id.toString()) {
+    return res.status(400).json({ message: "El pago no corresponde a este pedido" });
+  }
+
+  applyPaymentToOrder(order, payment);
+  await order.save();
+  res.json(order);
 });
 
 export const listMyOrders = asyncHandler(async (req, res) => {
