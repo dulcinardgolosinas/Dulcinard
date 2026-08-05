@@ -5,6 +5,8 @@ import { PageLoader } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { formatCurrency, UNIT_LABELS } from "../../lib/format";
+import { confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { apiErrorMessage } from "../../lib/api";
 
 export default function ProductosAdmin() {
   const [products, setProducts] = useState([]);
@@ -28,9 +30,15 @@ export default function ProductosAdmin() {
   }, []);
 
   async function handleDelete(product) {
-    if (!confirm(`¿Eliminar "${product.name}"? Esta acción no se puede deshacer.`)) return;
-    await api.delete(`/products/${product._id}`);
-    load(page);
+    const confirmed = await confirmDelete(`el producto "${product.name}"`);
+    if (!confirmed) return;
+    try {
+      await api.delete(`/products/${product._id}`);
+      toastSuccess("Producto eliminado");
+      load(page);
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos eliminar el producto"));
+    }
   }
 
   return (
