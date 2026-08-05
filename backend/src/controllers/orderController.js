@@ -81,10 +81,23 @@ export const createOrder = asyncHandler(async (req, res) => {
   res.status(201).json(order);
 });
 
+// Mercado Pago rechaza auto_return si las back_urls no son públicamente
+// accesibles (devuelve "auto_return invalid. back_url.success must be
+// defined" incluso cuando la URL está definida) — típico en desarrollo local.
+function isPublicUrl(url) {
+  try {
+    const { hostname } = new URL(url);
+    return hostname !== "localhost" && hostname !== "127.0.0.1";
+  } catch {
+    return false;
+  }
+}
+
 export const createPaymentPreference = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
 
+  const clientUrl = process.env.CLIENT_URL || "";
   const preference = await mpPreference.create({
     body: {
       items: [
@@ -100,11 +113,11 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
       ],
       external_reference: order._id.toString(),
       back_urls: {
-        success: `${process.env.CLIENT_URL}/pedidos/${order._id}?pago=exito`,
-        failure: `${process.env.CLIENT_URL}/pedidos/${order._id}?pago=error`,
-        pending: `${process.env.CLIENT_URL}/pedidos/${order._id}?pago=pendiente`
+        success: `${clientUrl}/pedidos/${order._id}?pago=exito`,
+        failure: `${clientUrl}/pedidos/${order._id}?pago=error`,
+        pending: `${clientUrl}/pedidos/${order._id}?pago=pendiente`
       },
-      auto_return: "approved",
+      ...(isPublicUrl(clientUrl) ? { auto_return: "approved" } : {}),
       notification_url: `${process.env.SERVER_URL || ""}/api/orders/mercadopago/webhook`
     }
   });
