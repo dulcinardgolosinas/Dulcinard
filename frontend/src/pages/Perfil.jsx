@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ArrowRight, LogOut } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -120,17 +121,20 @@ export default function Perfil() {
           <h1 className="font-display text-3xl font-bold text-ink-900">Mi cuenta</h1>
           <p className="mt-1 text-sm text-ink-500">{user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="text-sm font-semibold text-ink-500 hover:text-red-600">
+        <button onClick={handleLogout} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-red-600">
+          <LogOut className="h-4 w-4" strokeWidth={2} />
           Cerrar sesión
         </button>
       </div>
 
-      <Link to="/pedidos" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:underline">
-        Ver historial de pedidos →
+      <Link to="/pedidos" className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline">
+        Ver historial de pedidos
+        <ArrowRight className="h-4 w-4" strokeWidth={2} />
       </Link>
       {user?.role === "admin" && (
-        <Link to="/admin" className="mt-2 ml-6 inline-flex items-center gap-2 text-sm font-semibold text-brand-600 hover:underline">
-          Ir al panel admin →
+        <Link to="/admin" className="mt-2 ml-6 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:underline">
+          Ir al panel admin
+          <ArrowRight className="h-4 w-4" strokeWidth={2} />
         </Link>
       )}
 

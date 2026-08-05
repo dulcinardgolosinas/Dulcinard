@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { api } from "../lib/api";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { ProductCard } from "../components/product/ProductCard";
@@ -172,8 +173,9 @@ function SectionHeader({ eyebrow, title, subtitle, viewAllHref }) {
         {subtitle && <p className="mt-1 text-sm text-ink-500">{subtitle}</p>}
       </div>
       {viewAllHref && (
-        <Link to={viewAllHref} className="shrink-0 text-sm font-semibold text-brand-600 hover:text-brand-700">
-          Ver todo →
+        <Link to={viewAllHref} className="group flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-600 hover:text-brand-700">
+          Ver todo
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
         </Link>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { X, RotateCcw } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +11,7 @@ import { FileInput } from "../../components/ui/FileInput";
 import { Spinner, PageLoader } from "../../components/ui/Spinner";
 import { UNIT_LABELS } from "../../lib/format";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
-import { alphanumericField, optionalAlphanumericField, skuField, numberField, intField } from "../../lib/validators";
+import { alphanumericField, optionalAlphanumericField, numberField, intField } from "../../lib/validators";
 
 const UNITS = Object.keys(UNIT_LABELS);
 
@@ -19,7 +20,6 @@ const schema = z.object({
   description: z.string().trim().max(2000, "La descripción no puede superar los 2000 caracteres").optional(),
   brand: optionalAlphanumericField("La marca", { max: 80 }),
   category: z.string().min(1, "Elegí una categoría"),
-  sku: skuField,
   price: numberField("El precio", { min: 0, max: 100000000 }),
   unit: z.enum(UNITS),
   unitsPerPack: intField("Las unidades por pack", { min: 1, max: 100000 }),
@@ -53,7 +53,6 @@ export default function ProductoForm() {
       description: "",
       brand: "",
       category: "",
-      sku: "",
       price: "",
       unit: "unidad",
       unitsPerPack: 1,
@@ -76,7 +75,6 @@ export default function ProductoForm() {
         description: data.description,
         brand: data.brand,
         category: data.category?._id || data.category,
-        sku: data.sku || "",
         price: data.price,
         unit: data.unit,
         unitsPerPack: data.unitsPerPack,
@@ -153,7 +151,6 @@ export default function ProductoForm() {
               </option>
             ))}
           </Select>
-          <Input label="SKU (opcional)" {...register("sku")} error={errors.sku?.message} />
         </div>
 
         <div className="grid gap-4 rounded-2xl border border-ink-100 bg-white p-5 sm:grid-cols-3">
@@ -201,9 +198,9 @@ export default function ProductoForm() {
                   <button
                     type="button"
                     onClick={() => toggleRemoveImage(img.publicId)}
-                    className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-xs font-bold text-red-600 shadow"
+                    className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-red-600 shadow"
                   >
-                    {imagesToRemove.includes(img.publicId) ? "↺" : "✕"}
+                    {imagesToRemove.includes(img.publicId) ? <RotateCcw className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
                   </button>
                 </div>
               ))}

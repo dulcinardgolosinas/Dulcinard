@@ -110,7 +110,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
     "active"
   ];
   for (const field of fields) {
-    if (req.body[field] !== undefined) product[field] = req.body[field];
+    if (req.body[field] === undefined) continue;
+    product[field] = field === "sku" ? req.body[field] || undefined : req.body[field];
   }
 
   // removeImages: array de publicIds a borrar, enviado como JSON string desde el form

@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 4000;
 async function start() {
   try {
     await connectDB();
-    app.listen(PORT, () => console.log(`[server] Dulci-Nard API escuchando en puerto ${PORT}`));
+    app.listen(PORT, () => console.log(`[server] Dulcinard API escuchando en puerto ${PORT}`));
   } catch (err) {
     console.error("[server] Error al iniciar:", err.message);
     process.exit(1);

@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { MapPin, Truck, Bike, Package } from "lucide-react";
 import { api } from "../lib/api";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { formatCurrency } from "../lib/format";
 import { PageLoader } from "../components/ui/Spinner";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
+import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 
 function Hero() {
   const config = useSiteConfigStore((s) => s.config);
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-brand-900 to-brand-700 text-white">
-      <div className="absolute -right-20 top-0 h-96 w-96 rounded-full bg-accent-400/20 blur-[100px]" />
-      <div className="absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-brand-400/20 blur-[100px]" />
+    <section className="relative overflow-hidden text-white">
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -81,9 +82,6 @@ function ProcessSteps() {
             transition={{ duration: 0.5, delay: i * 0.12 }}
             className="relative flex gap-4"
           >
-            {i < steps.length - 1 && (
-              <span className="absolute left-7 top-16 hidden h-px w-full bg-gradient-to-r from-ink-100 to-transparent md:block" />
-            )}
             <div className="relative flex shrink-0 flex-col items-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -103,7 +101,7 @@ function ProcessSteps() {
   );
 }
 
-const zoneIcons = ["📍", "🚚", "🏍️", "📦"];
+const zoneIcons = [MapPin, Truck, Bike, Package];
 
 function ZonesGrid({ zones, loading }) {
   if (loading) return <PageLoader />;
@@ -123,7 +121,9 @@ function ZonesGrid({ zones, loading }) {
         </p>
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {zones.map((z, i) => (
+          {zones.map((z, i) => {
+            const ZoneIcon = zoneIcons[i % zoneIcons.length];
+            return (
             <motion.div
               key={z._id}
               initial={{ opacity: 0, y: 24 }}
@@ -133,7 +133,9 @@ function ZonesGrid({ zones, loading }) {
               whileHover={{ y: -6 }}
               className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
             >
-              <span className="text-3xl">{zoneIcons[i % zoneIcons.length]}</span>
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+                <ZoneIcon className="h-5 w-5" strokeWidth={1.8} />
+              </div>
               <p className="mt-4 font-display text-lg font-bold text-ink-900">{z.name}</p>
 
               <div className="mt-4 space-y-2 border-t border-ink-50 pt-4 text-sm">
@@ -152,7 +154,8 @@ function ZonesGrid({ zones, loading }) {
                 )}
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
