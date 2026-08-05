@@ -1,68 +1,146 @@
+import { motion } from "framer-motion";
 import { useSiteConfigStore } from "../store/siteConfigStore";
-import { Button } from "../components/ui/Button";
+import { LogoWatermark } from "../components/ui/LogoWatermark";
+import { fadeUp } from "../lib/motion";
 
-export default function Contacto() {
-  const config = useSiteConfigStore((s) => s.config);
-  const branches = config?.branches || [];
-  const waNumber = config?.whatsappNumber || "3814091213";
-  const waHref = `https://wa.me/549381${waNumber.replace(/\D/g, "").slice(-7)}`;
-
+function Hero({ waHref }) {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-14 md:px-6">
-      <span className="text-xs font-semibold uppercase tracking-widest text-brand-600">Contacto</span>
-      <h1 className="mt-2 font-display text-3xl font-bold text-ink-900 md:text-4xl">Nuestras sucursales</h1>
-      <p className="mt-3 max-w-2xl text-ink-500">
-        Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras sucursales en San Miguel de Tucumán y
-        Concepción.
-      </p>
+    <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-brand-900 to-brand-700 text-white">
+      <div className="absolute -right-20 top-0 h-96 w-96 rounded-full bg-accent-400/20 blur-[100px]" />
+      <div className="absolute -left-24 bottom-0 h-80 w-80 rounded-full bg-brand-400/20 blur-[100px]" />
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <a
+      <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
+        <motion.div initial="hidden" animate="show" className="max-w-2xl">
+          <motion.span
+            custom={0}
+            variants={fadeUp}
+            className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-sm"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
+            Contacto
+          </motion.span>
+
+          <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
+            Hablemos
+          </motion.h1>
+
+          <motion.p custom={2} variants={fadeUp} className="mt-5 max-w-md text-base text-white/80 md:text-lg">
+            Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras 4 sucursales en San Miguel de Tucumán y
+            Concepción.
+          </motion.p>
+
+          <motion.div custom={3} variants={fadeUp} className="mt-8">
+            <a href={waHref} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3">
+              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#25D366] shadow-[0_8px_30px_-8px_rgba(37,211,102,0.7)] transition-transform group-hover:scale-110">
+                <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-60" />
+                <svg className="relative h-7 w-7 text-white" viewBox="0 0 32 32" fill="currentColor">
+                  <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
+                </svg>
+              </span>
+              <span>
+                <span className="block text-sm text-white/70">Escribinos ahora</span>
+                <span className="block font-display text-xl font-bold group-hover:underline">Iniciar conversación →</span>
+              </span>
+            </a>
+          </motion.div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function ChannelCards({ waHref, waNumber, pedidosYaUrl }) {
+  return (
+    <section className="relative -mt-10 z-10 mx-auto max-w-7xl px-4 md:px-6">
+      <div className="grid gap-5 md:grid-cols-2">
+        <motion.a
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.5 }}
+          whileHover={{ y: -6 }}
           href={waHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-between rounded-2xl bg-[#25D366] p-6 text-white transition-transform hover:scale-[1.01]"
+          className="group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#25D366] to-[#128C4A] p-7 text-white shadow-[0_20px_50px_-20px_rgba(18,140,74,0.6)] transition-shadow hover:shadow-[0_25px_60px_-15px_rgba(18,140,74,0.7)]"
         >
-          <div>
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+          <div className="relative">
             <p className="text-sm font-semibold uppercase tracking-wide opacity-80">WhatsApp</p>
             <p className="mt-1 font-display text-2xl font-bold">{waNumber}</p>
             <p className="mt-1 text-sm opacity-90">Pedidos, consultas y coordinación de envíos</p>
           </div>
-          <svg className="h-10 w-10 shrink-0" viewBox="0 0 32 32" fill="currentColor">
+          <svg className="relative h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" viewBox="0 0 32 32" fill="currentColor">
             <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
           </svg>
-        </a>
+        </motion.a>
 
-        {config?.pedidosYaUrl ? (
-          <a
-            href={config.pedidosYaUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-between rounded-2xl bg-ink-900 p-6 text-white transition-transform hover:scale-[1.01]"
-          >
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide opacity-70">PedidosYa</p>
-              <p className="mt-1 font-display text-2xl font-bold">Sin monto mínimo</p>
-              <p className="mt-1 text-sm opacity-80">Elegí la sucursal más cercana a tu domicilio</p>
-            </div>
-          </a>
-        ) : (
-          <div className="flex items-center justify-between rounded-2xl bg-ink-900 p-6 text-white">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wide opacity-70">También en PedidosYa</p>
-              <p className="mt-1 font-display text-2xl font-bold">Sin monto mínimo</p>
-              <p className="mt-1 text-sm opacity-80">Buscanos como Dulci-Nard con nuestras 4 sucursales</p>
-            </div>
+        <motion.a
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          whileHover={{ y: -6 }}
+          href={pedidosYaUrl || undefined}
+          target={pedidosYaUrl ? "_blank" : undefined}
+          rel="noopener noreferrer"
+          className="group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-ink-900 to-ink-950 p-7 text-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] transition-shadow hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]"
+        >
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent-400/20 blur-2xl transition-transform duration-500 group-hover:scale-125" />
+          <div className="relative">
+            <p className="text-sm font-semibold uppercase tracking-wide text-accent-400">PedidosYa</p>
+            <p className="mt-1 font-display text-2xl font-bold">Sin monto mínimo</p>
+            <p className="mt-1 text-sm opacity-80">Elegí la sucursal más cercana a tu domicilio</p>
           </div>
-        )}
+          <svg className="relative h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 8.5 12 3.5 3 8.5l9 5 9-5ZM3 8.5v7l9 5 9-5v-7M12 13.5v7" />
+          </svg>
+        </motion.a>
+      </div>
+    </section>
+  );
+}
+
+const branchIcons = ["01", "02", "03", "04"];
+
+function Branches({ branches }) {
+  return (
+    <section className="relative overflow-hidden mx-auto max-w-7xl px-4 py-16 md:px-6">
+      <LogoWatermark side="right" />
+      <div className="relative mb-8">
+        <span className="mb-1 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-600">
+          <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-500 to-accent-400" />
+          Encontranos
+        </span>
+        <h2 className="font-display text-2xl font-bold text-ink-900 md:text-3xl">Nuestras sucursales</h2>
       </div>
 
-      <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {branches.map((b) => (
-          <div key={b._id} className="rounded-2xl border border-ink-100 bg-white p-5">
-            <p className="font-display text-lg font-bold text-ink-900">{b.name}</p>
-            <p className="mt-1 text-sm text-ink-500">{b.address}</p>
-            <div className="mt-4 space-y-1 text-xs text-ink-500">
+      <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {branches.map((b, i) => (
+          <motion.div
+            key={b._id}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5, delay: i * 0.08 }}
+            whileHover={{ y: -6 }}
+            className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
+          >
+            <span className="pointer-events-none absolute -right-3 -top-3 font-display text-6xl font-bold text-ink-50 transition-colors duration-300 group-hover:text-brand-50">
+              {branchIcons[i % branchIcons.length]}
+            </span>
+
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
+                <circle cx="12" cy="9.5" r="2.5" />
+              </svg>
+            </div>
+
+            <p className="relative mt-4 font-display text-lg font-bold text-ink-900">{b.name}</p>
+            <p className="relative mt-1 text-sm text-ink-500">{b.address}</p>
+
+            <div className="relative mt-4 space-y-1.5 border-t border-ink-50 pt-4 text-xs text-ink-500">
               <p>
                 <span className="font-semibold text-ink-700">{b.schedule?.weekdays?.label}:</span>{" "}
                 {b.schedule?.weekdays?.hours}
@@ -72,16 +150,38 @@ export default function Contacto() {
                 {b.schedule?.saturday?.hours}
               </p>
             </div>
+
             {b.mapUrl && (
-              <a href={b.mapUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-block">
-                <Button size="sm" variant="outline">
-                  Cómo llegar
-                </Button>
+              <a
+                href={b.mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
+              >
+                Cómo llegar
+                <svg className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
               </a>
             )}
-          </div>
+          </motion.div>
         ))}
       </div>
+    </section>
+  );
+}
+
+export default function Contacto() {
+  const config = useSiteConfigStore((s) => s.config);
+  const branches = config?.branches || [];
+  const waNumber = config?.whatsappNumber || "3814091213";
+  const waHref = `https://wa.me/549381${waNumber.replace(/\D/g, "").slice(-7)}`;
+
+  return (
+    <div>
+      <Hero waHref={waHref} />
+      <ChannelCards waHref={waHref} waNumber={waNumber} pedidosYaUrl={config?.pedidosYaUrl} />
+      <Branches branches={branches} />
     </div>
   );
 }

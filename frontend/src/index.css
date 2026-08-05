@@ -49,10 +49,16 @@
   html {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    /* Red de seguridad: con tantos elementos decorativos (blobs, marcas de
+       agua) posicionados con offsets negativos, si a alguno se le olvida el
+       overflow-hidden en su contenedor esto evita que aparezca scroll
+       lateral en toda la página. */
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-ink-50 text-ink-900;
+    overflow-x: hidden;
   }
 
   h1, h2, h3, h4 {
@@ -72,4 +78,10 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-ink-200 rounded-full;
   }
+}
+
+/* SweetAlert2 pone texto blanco por defecto en el botón de cancelar; con
+   nuestro fondo gris claro de marca queda ilegible. Se fuerza texto oscuro. */
+.swal2-cancel {
+  color: var(--color-ink-800) !important;
 }

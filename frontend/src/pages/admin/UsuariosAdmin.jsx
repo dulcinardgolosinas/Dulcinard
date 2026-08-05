@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
-import { api } from "../../lib/api";
+import { api, apiErrorMessage } from "../../lib/api";
 import { PageLoader } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
+import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 
 export default function UsuariosAdmin() {
   const [users, setUsers] = useState([]);
@@ -22,14 +23,39 @@ export default function UsuariosAdmin() {
 
   async function toggleRole(user) {
     const role = user.role === "admin" ? "cliente" : "admin";
-    if (!confirm(`¿Cambiar el rol de ${user.name} a "${role}"?`)) return;
-    await api.put(`/users/${user._id}`, { role });
-    load();
+    const confirmed = await confirmAction({
+      title: "¿Cambiar rol?",
+      text: `Vas a cambiar el rol de ${user.name} a "${role}".`,
+      confirmText: "Sí, cambiar",
+      icon: "question"
+    });
+    if (!confirmed) return;
+    try {
+      await api.put(`/users/${user._id}`, { role });
+      toastSuccess("Rol actualizado");
+      load();
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos cambiar el rol"));
+    }
   }
 
   async function toggleActive(user) {
-    await api.put(`/users/${user._id}`, { active: !user.active });
-    load();
+    const confirmed = await confirmAction({
+      title: user.active ? "¿Bloquear usuario?" : "¿Reactivar usuario?",
+      text: user.active
+        ? `${user.name} no va a poder iniciar sesión hasta que lo reactives.`
+        : `${user.name} va a poder volver a iniciar sesión.`,
+      confirmText: user.active ? "Sí, bloquear" : "Sí, reactivar",
+      icon: "warning"
+    });
+    if (!confirmed) return;
+    try {
+      await api.put(`/users/${user._id}`, { active: !user.active });
+      toastSuccess(user.active ? "Usuario bloqueado" : "Usuario reactivado");
+      load();
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos actualizar el usuario"));
+    }
   }
 
   return (

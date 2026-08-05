@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCartStore } from "../../store/cartStore";
 import { formatCurrency, UNIT_LABELS } from "../../lib/format";
-import { Button } from "../ui/Button";
 import { Badge } from "../ui/Badge";
 
 export function ProductCard({ product }) {
@@ -10,14 +9,14 @@ export function ProductCard({ product }) {
   const outOfStock = product.stock <= 0;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-shadow hover:shadow-card">
+    <div className="group flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(184,24,48,0.25)]">
       <Link to={`/producto/${product.slug}`} className="relative block aspect-square overflow-hidden bg-ink-50">
         {image ? (
           <img
             src={image}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-ink-200">
@@ -53,18 +52,16 @@ export function ProductCard({ product }) {
               {product.minOrderQty > 1 ? ` · mín. ${product.minOrderQty}` : ""}
             </p>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
+          <button
             disabled={outOfStock}
             onClick={() => addItem(product, product.minOrderQty || 1)}
             aria-label="Agregar al carrito"
-            className="!px-2.5"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-900 text-white transition-all hover:scale-110 hover:bg-brand-600 disabled:pointer-events-none disabled:opacity-40"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M12 5v14M5 12h14" />
             </svg>
-          </Button>
+          </button>
         </div>
       </div>
     </div>
