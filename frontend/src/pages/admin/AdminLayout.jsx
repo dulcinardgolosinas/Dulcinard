@@ -18,10 +18,10 @@ const links = [
 
 function BrandMark({ config }) {
   return config?.logo?.url ? (
-    <img src={config.logo.url} alt={config.brandName || "Dulci-Nard"} className="h-20 w-auto" />
+    <img src={config.logo.url} alt={config.brandName || "Dulcinard"} className="h-20 w-auto" />
   ) : (
     <div className="flex flex-col leading-none">
-      <span className="font-display text-xl font-bold text-brand-600">DULCI-NARD</span>
+      <span className="font-display text-xl font-bold text-brand-600">DULCINARD</span>
       <span className="text-[10px] font-semibold tracking-[0.2em] text-ink-400">PANEL ADMIN</span>
     </div>
   );
