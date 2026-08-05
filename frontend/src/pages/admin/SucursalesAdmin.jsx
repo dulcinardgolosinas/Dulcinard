@@ -1,8 +1,36 @@
-import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { useEffect } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { api, apiErrorMessage } from "../../lib/api";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
+import { confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { nameField, alphanumericField, phoneField, urlField } from "../../lib/validators";
+
+const branchSchema = z.object({
+  _id: z.string().optional(),
+  name: nameField("El nombre de la sucursal", { min: 2, max: 80 }),
+  address: alphanumericField("La dirección", { min: 3, max: 150 }),
+  phone: phoneField({ label: "El teléfono" }),
+  mapUrl: urlField({ label: "El link de Google Maps" }),
+  active: z.boolean().optional(),
+  schedule: z.object({
+    weekdays: z.object({
+      label: z.string().min(1),
+      hours: z.string().trim().min(1, "Ingresá el horario de lunes a viernes").max(80, "El horario no puede superar los 80 caracteres")
+    }),
+    saturday: z.object({
+      label: z.string().min(1),
+      hours: z.string().trim().min(1, "Ingresá el horario de sábado").max(80, "El horario no puede superar los 80 caracteres")
+    })
+  })
+});
+
+const schema = z.object({
+  branches: z.array(branchSchema)
+});
 
 const emptyBranch = () => ({
   name: "",
@@ -10,7 +38,6 @@ const emptyBranch = () => ({
   phone: "",
   mapUrl: "",
   active: true,
-  order: 0,
   schedule: {
     weekdays: { label: "Lunes a Viernes", hours: "" },
     saturday: { label: "Sábado", hours: "" }
@@ -18,102 +45,103 @@ const emptyBranch = () => ({
 });
 
 export default function SucursalesAdmin() {
-  const [branches, setBranches] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const {
+    control,
+    register,
+    handleSubmit,
+    reset,
+    getValues,
+    formState: { errors, isSubmitting }
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: { branches: [] }
+  });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "branches" });
 
   useEffect(() => {
     api.get("/site-config").then(({ data }) => {
-      setBranches(data.branches?.length ? data.branches : []);
-      setLoading(false);
+      reset({ branches: data.branches?.length ? data.branches : [] });
     });
-  }, []);
+  }, [reset]);
 
-  function update(index, path, value) {
-    setBranches((prev) => {
-      const next = structuredClone(prev);
-      const keys = path.split(".");
-      let target = next[index];
-      for (let i = 0; i < keys.length - 1; i++) target = target[keys[i]];
-      target[keys.at(-1)] = value;
-      return next;
-    });
+  async function removeBranch(index) {
+    const branch = getValues(`branches.${index}`);
+    const confirmed = await confirmDelete(`la sucursal "${branch.name || "sin nombre"}"`);
+    if (!confirmed) return;
+    remove(index);
   }
 
-  function addBranch() {
-    setBranches((prev) => [...prev, emptyBranch()]);
+  async function onSubmit(values) {
+    try {
+      await api.put("/site-config", { branches: JSON.stringify(values.branches) });
+      toastSuccess("Sucursales actualizadas");
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos guardar las sucursales"));
+    }
   }
 
-  function removeBranch(index) {
-    if (!confirm("¿Eliminar esta sucursal?")) return;
-    setBranches((prev) => prev.filter((_, i) => i !== index));
+  function onInvalid() {
+    toastError("Revisá los campos marcados en rojo antes de guardar");
   }
-
-  async function save() {
-    setSaving(true);
-    setMessage("");
-    await api.put("/site-config", { branches: JSON.stringify(branches) });
-    setSaving(false);
-    setMessage("Sucursales actualizadas correctamente.");
-  }
-
-  if (loading) return <PageLoader />;
 
   return (
-    <div>
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-ink-900">Sucursales</h1>
-        <Button variant="outline" onClick={addBranch}>
+        <Button type="button" variant="outline" onClick={() => append(emptyBranch())}>
           + Agregar sucursal
         </Button>
       </div>
 
       <div className="mt-6 space-y-5">
-        {branches.map((b, i) => (
-          <div key={i} className="rounded-2xl border border-ink-100 bg-white p-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Nombre" value={b.name} onChange={(e) => update(i, "name", e.target.value)} />
-              <Input label="Dirección" value={b.address} onChange={(e) => update(i, "address", e.target.value)} />
-              <Input label="Teléfono (opcional)" value={b.phone} onChange={(e) => update(i, "phone", e.target.value)} />
-              <Input label="Link de Google Maps (opcional)" value={b.mapUrl} onChange={(e) => update(i, "mapUrl", e.target.value)} />
-              <Input
-                label="Horario Lunes a Viernes"
-                placeholder="8:30 a 21 hs"
-                value={b.schedule.weekdays.hours}
-                onChange={(e) => update(i, "schedule.weekdays.hours", e.target.value)}
-              />
-              <Input
-                label="Horario Sábado"
-                placeholder="9 a 13 y 17 a 20 hs"
-                value={b.schedule.saturday.hours}
-                onChange={(e) => update(i, "schedule.saturday.hours", e.target.value)}
-              />
-            </div>
-            <div className="mt-3 flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
-                <input
-                  type="checkbox"
-                  checked={b.active}
-                  onChange={(e) => update(i, "active", e.target.checked)}
-                  className="h-4 w-4 rounded border-ink-300 text-brand-600"
+        {fields.map((field, i) => {
+          const branchErrors = errors.branches?.[i];
+          return (
+            <div key={field.id} className="rounded-2xl border border-ink-100 bg-white p-5">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Input label="Nombre" {...register(`branches.${i}.name`)} error={branchErrors?.name?.message} />
+                <Input label="Dirección" {...register(`branches.${i}.address`)} error={branchErrors?.address?.message} />
+                <Input label="Teléfono (opcional)" {...register(`branches.${i}.phone`)} error={branchErrors?.phone?.message} />
+                <Input label="Link de Google Maps (opcional)" {...register(`branches.${i}.mapUrl`)} error={branchErrors?.mapUrl?.message} />
+                <Input
+                  label="Horario Lunes a Viernes"
+                  placeholder="8:30 a 21 hs"
+                  {...register(`branches.${i}.schedule.weekdays.hours`)}
+                  error={branchErrors?.schedule?.weekdays?.hours?.message}
                 />
-                Sucursal activa
-              </label>
-              <button onClick={() => removeBranch(i)} className="text-sm font-semibold text-red-600 hover:underline">
-                Eliminar sucursal
-              </button>
+                <Input
+                  label="Horario Sábado"
+                  placeholder="9 a 13 y 17 a 20 hs"
+                  {...register(`branches.${i}.schedule.saturday.hours`)}
+                  error={branchErrors?.schedule?.saturday?.hours?.message}
+                />
+              </div>
+              <div className="mt-3 flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
+                  <input
+                    type="checkbox"
+                    {...register(`branches.${i}.active`)}
+                    className="h-4 w-4 rounded border-ink-300 text-brand-600"
+                  />
+                  Sucursal activa
+                </label>
+                <button type="button" onClick={() => removeBranch(i)} className="text-sm font-semibold text-red-600 hover:underline">
+                  Eliminar sucursal
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+
+        {fields.length === 0 && <PageLoader />}
       </div>
 
-      {message && <p className="mt-4 text-sm text-emerald-600">{message}</p>}
       <div className="mt-6">
-        <Button onClick={save} disabled={saving}>
-          {saving ? <Spinner className="h-4 w-4" /> : "Guardar sucursales"}
+        <Button type="submit" disabled={isSubmitting || fields.length === 0}>
+          {isSubmitting ? <Spinner className="h-4 w-4" /> : "Guardar sucursales"}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
