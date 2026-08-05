@@ -1,11 +1,17 @@
 import { motion } from "framer-motion";
+import { useLocation } from "react-router-dom";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
+
+const HIDDEN_ROUTES = ["/login", "/registro"];
 
 export function WhatsappButton() {
   const config = useSiteConfigStore((s) => s.config);
+  const location = useLocation();
   const number = config?.whatsappNumber || "3814091213";
   const message = config?.whatsappMessage || "¡Hola! Quiero hacer un pedido a Dulcinard.";
   const href = `https://wa.me/549381${number.replace(/\D/g, "").slice(-7)}?text=${encodeURIComponent(message)}`;
+
+  if (HIDDEN_ROUTES.includes(location.pathname)) return null;
 
   return (
     <motion.div

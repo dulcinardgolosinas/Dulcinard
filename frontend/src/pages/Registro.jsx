@@ -71,7 +71,7 @@ export default function Registro() {
         <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
         <Input label="Teléfono" {...register("phone")} error={errors.phone?.message} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
         <PasswordInput label="Confirmar contraseña" {...register("confirmPassword")} error={errors.confirmPassword?.message} />
       </div>
