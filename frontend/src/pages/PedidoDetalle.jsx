@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { api, apiErrorMessage } from "../lib/api";
 import { PageLoader, Spinner } from "../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../components/ui/Badge";
@@ -19,8 +20,25 @@ export default function PedidoDetalle() {
   useEffect(() => {
     api
       .get(`/orders/mine/${id}`)
-      .then(({ data }) => setOrder(data))
+      .then(async ({ data }) => {
+        // El webhook de Mercado Pago no llega a un servidor en localhost; como
+        // respaldo, si volvemos del checkout con éxito y el pedido todavía no
+        // figura pagado, sincronizamos el estado usando el payment_id que MP
+        // agrega a la URL de retorno.
+        const paymentId = searchParams.get("payment_id") || searchParams.get("collection_id");
+        if (searchParams.get("pago") === "exito" && paymentId && data.paymentStatus !== "aprobado") {
+          try {
+            const { data: synced } = await api.post(`/orders/${id}/sync-payment?paymentId=${paymentId}`);
+            setOrder(synced);
+            return;
+          } catch {
+            // si falla la sincronización, mostramos igual el pedido tal como está
+          }
+        }
+        setOrder(data);
+      })
       .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function handlePay() {
@@ -52,8 +70,9 @@ export default function PedidoDetalle() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 md:px-6">
-      <Link to="/pedidos" className="text-sm font-semibold text-ink-500 hover:text-brand-600">
-        ← Mis pedidos
+      <Link to="/pedidos" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-brand-600">
+        <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+        Mis pedidos
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -70,22 +89,22 @@ export default function PedidoDetalle() {
       )}
 
       {order.status !== "cancelado" && (
-        <div className="mt-8 flex items-center justify-between">
-          {STEPS.map((step, i) => (
-            <div key={step} className="flex flex-1 flex-col items-center text-center">
-              <div
-                className={`h-3 w-3 rounded-full ${
-                  i <= stepIndex ? "bg-brand-600" : "bg-ink-200"
-                }`}
-              />
-              <p className={`mt-2 text-[11px] font-medium ${i <= stepIndex ? "text-ink-800" : "text-ink-300"}`}>
-                {ORDER_STATUS_LABELS[step]}
-              </p>
-              {i < STEPS.length - 1 && (
-                <div className={`absolute mt-1.5 h-0.5 w-full translate-x-1/2 ${i < stepIndex ? "bg-brand-600" : "bg-ink-200"}`} />
-              )}
-            </div>
-          ))}
+        <div className="relative mt-10">
+          <div className="absolute left-0 right-0 top-[7px] h-0.5 bg-ink-200" />
+          <div
+            className="absolute left-0 top-[7px] h-0.5 bg-brand-600 transition-all duration-500"
+            style={{ width: `${(stepIndex / (STEPS.length - 1)) * 100}%` }}
+          />
+          <div className="relative flex justify-between">
+            {STEPS.map((step, i) => (
+              <div key={step} className="flex flex-col items-center text-center">
+                <div className={`h-3.5 w-3.5 rounded-full ring-4 ring-white ${i <= stepIndex ? "bg-brand-600" : "bg-ink-200"}`} />
+                <p className={`mt-2 max-w-[4.5rem] text-[11px] font-medium ${i <= stepIndex ? "text-ink-800" : "text-ink-300"}`}>
+                  {ORDER_STATUS_LABELS[step]}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
