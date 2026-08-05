@@ -5,11 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { api, apiErrorMessage } from "../lib/api";
 import { useAuthStore } from "../store/authStore";
-import { Input } from "../components/ui/Input";
+import { Input, PasswordInput } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
+import { toastSuccess, toastError } from "../lib/alerts";
+import { emailField } from "../lib/validators";
 
 const schema = z.object({
-  email: z.string().email("Ingresá un email válido"),
+  email: emailField,
   password: z.string().min(1, "Ingresá tu contraseña")
 });
 
@@ -30,10 +32,17 @@ export default function Login() {
     try {
       const { data } = await api.post("/auth/login", values);
       setSession(data.user, data.token);
+      toastSuccess(`¡Bienvenido/a, ${data.user.name.split(" ")[0]}!`);
       navigate(location.state?.from?.pathname || "/", { replace: true });
     } catch (err) {
-      setServerError(apiErrorMessage(err, "No pudimos iniciar sesión"));
+      const message = apiErrorMessage(err, "No pudimos iniciar sesión");
+      setServerError(message);
+      toastError(message);
     }
+  }
+
+  function onInvalid() {
+    toastError("Completá tu email y contraseña");
   }
 
   return (
@@ -41,9 +50,9 @@ export default function Login() {
       <h1 className="font-display text-3xl font-bold text-ink-900">Ingresá a tu cuenta</h1>
       <p className="mt-2 text-sm text-ink-500">Accedé para ver tu historial de pedidos y finalizar tu compra.</p>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-8 space-y-4">
         <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
-        <Input label="Contraseña" type="password" {...register("password")} error={errors.password?.message} />
+        <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
 
         {serverError && <p className="text-sm text-red-600">{serverError}</p>}
 
