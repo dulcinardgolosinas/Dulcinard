@@ -1,7 +1,7 @@
 {
   "name": "dulcinard-backend",
   "version": "1.0.0",
-  "description": "API backend de Dulci-Nard Tucumán — e-commerce mayorista de golosinas",
+  "description": "API backend de Dulcinard Tucumán — e-commerce mayorista de golosinas",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
