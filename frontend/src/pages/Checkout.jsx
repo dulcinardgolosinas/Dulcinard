@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { api, apiErrorMessage } from "../lib/api";
 import { useCartStore } from "../store/cartStore";
 import { useSiteConfigStore } from "../store/siteConfigStore";
@@ -8,6 +10,15 @@ import { Input, Select, Textarea } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 import { formatCurrency, UNIT_LABELS } from "../lib/format";
+import { alphanumericField, nameField } from "../lib/validators";
+import { toastError } from "../lib/alerts";
+
+const schema = z.object({
+  zone: z.string().min(1, "Elegí tu zona de envío"),
+  street: alphanumericField("La dirección", { min: 3, max: 150 }),
+  city: nameField("La localidad", { max: 80 }),
+  notes: z.string().trim().max(500, "Las notas no pueden superar los 500 caracteres").optional()
+});
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -15,7 +26,8 @@ export default function Checkout() {
   const config = useSiteConfigStore((s) => s.config);
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
-  const { register, handleSubmit, watch, formState: { isSubmitting } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
+    resolver: zodResolver(schema),
     defaultValues: { street: "", city: "", zone: "", notes: "" }
   });
 
@@ -42,8 +54,14 @@ export default function Checkout() {
       clear();
       window.location.href = pref.initPoint;
     } catch (err) {
-      setError(apiErrorMessage(err, "No pudimos generar tu pedido"));
+      const message = apiErrorMessage(err, "No pudimos generar tu pedido");
+      setError(message);
+      toastError(message);
     }
+  }
+
+  function onInvalid() {
+    toastError("Completá todos los campos obligatorios");
   }
 
   if (items.length === 0) {
@@ -62,9 +80,9 @@ export default function Checkout() {
       <h1 className="font-display text-3xl font-bold text-ink-900">Finalizar pedido</h1>
 
       <div className="mt-8 grid gap-10 md:grid-cols-[1.2fr_1fr]">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
           <h2 className="font-semibold text-ink-900">Datos de entrega</h2>
-          <Select label="Zona de envío" {...register("zone", { required: true })}>
+          <Select label="Zona de envío" {...register("zone")} error={errors.zone?.message}>
             <option value="">Seleccioná tu zona</option>
             {zones.map((z) => (
               <option key={z._id} value={z._id}>
@@ -72,9 +90,9 @@ export default function Checkout() {
               </option>
             ))}
           </Select>
-          <Input label="Dirección" placeholder="Calle y número" {...register("street", { required: true })} />
-          <Input label="Localidad" {...register("city", { required: true })} />
-          <Textarea label="Notas para la entrega (opcional)" rows={3} {...register("notes")} />
+          <Input label="Dirección" placeholder="Calle y número" {...register("street")} error={errors.street?.message} />
+          <Input label="Localidad" {...register("city")} error={errors.city?.message} />
+          <Textarea label="Notas para la entrega (opcional)" rows={3} {...register("notes")} error={errors.notes?.message} />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

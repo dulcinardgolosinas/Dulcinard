@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { api } from "../../lib/api";
+import { api, apiErrorMessage } from "../../lib/api";
 import { PageLoader } from "../../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../../components/ui/Badge";
 import { formatCurrency, UNIT_LABELS } from "../../lib/format";
+import { toastSuccess, toastError } from "../../lib/alerts";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
 
@@ -19,9 +20,15 @@ export default function PedidoDetalleAdmin() {
 
   async function updateStatus(status) {
     setSaving(true);
-    const { data } = await api.put(`/orders/${id}/status`, { status });
-    setOrder(data);
-    setSaving(false);
+    try {
+      const { data } = await api.put(`/orders/${id}/status`, { status });
+      setOrder(data);
+      toastSuccess(`Pedido marcado como "${ORDER_STATUS_LABELS[status]}"`);
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos actualizar el estado del pedido"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) return <PageLoader />;
