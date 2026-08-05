@@ -10,10 +10,16 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid gap-10 md:grid-cols-[1.1fr_2fr]">
           <div>
-            <div className="flex flex-col leading-none">
-              <span className="font-display text-2xl font-bold text-white">DULCI-NARD</span>
-              <span className="text-[11px] font-semibold tracking-[0.25em] text-ink-400">TUCUMÁN</span>
-            </div>
+            <Link to="/" className="inline-flex items-center gap-2">
+              {config?.logo?.url ? (
+                <img src={config.logo.url} alt={config.brandName || "Dulci-Nard"} className="h-28 w-auto" />
+              ) : (
+                <div className="flex flex-col leading-none">
+                  <span className="font-display text-2xl font-bold text-white">DULCI-NARD</span>
+                  <span className="text-[11px] font-semibold tracking-[0.25em] text-ink-400">TUCUMÁN</span>
+                </div>
+              )}
+            </Link>
             <p className="mt-4 max-w-xs text-sm text-ink-400">
               Distribuidora mayorista de golosinas y productos alimenticios. Pedidos por WhatsApp con entrega en 24 hs.
             </p>
