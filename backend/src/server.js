@@ -1,5 +1,9 @@
-import dotenv from "dotenv";
-dotenv.config();
+// Debe ser el primer import: en ESM los imports se evalúan antes que cualquier
+// otra sentencia, así que un dotenv.config() colocado "primero" en el texto
+// igual corre después de que módulos como config/cloudinary.js ya leyeron
+// process.env. "dotenv/config" carga las variables como efecto secundario
+// de su propia evaluación, que sí respeta el orden de los imports.
+import "dotenv/config";
 
 import app from "./app.js";
 import { connectDB } from "./config/db.js";
