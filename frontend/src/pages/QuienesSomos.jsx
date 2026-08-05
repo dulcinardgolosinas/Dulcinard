@@ -1,15 +1,16 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { Sparkles, Handshake, Zap } from "lucide-react";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
+import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { Button } from "../components/ui/Button";
 import { fadeUp } from "../lib/motion";
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-ink-950 via-brand-900 to-brand-700 text-white">
-      <div className="absolute -left-20 top-0 h-96 w-96 rounded-full bg-accent-400/20 blur-[100px]" />
-      <div className="absolute -right-24 bottom-0 h-80 w-80 rounded-full bg-brand-400/20 blur-[100px]" />
+    <section className="relative overflow-hidden text-white">
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -31,7 +32,7 @@ function Hero() {
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
-            Somos Dulci-Nard: distribuidora mayorista de golosinas y productos alimenticios con sede en San Miguel de
+            Somos Dulcinard: distribuidora mayorista de golosinas y productos alimenticios con sede en San Miguel de
             Tucumán, y la confianza de cientos de kioscos y comercios de la provincia.
           </motion.p>
         </motion.div>
@@ -91,9 +92,9 @@ function StatsFloat({ branchCount }) {
 }
 
 const values = [
-  { title: "Calidad", desc: "Trabajamos con las marcas líderes del rubro golosinas y alimentos.", emoji: "✨" },
-  { title: "Cercanía", desc: "4 sucursales pensadas para que siempre tengas una a mano.", emoji: "🤝" },
-  { title: "Rapidez", desc: "Pedís hoy, lo tenés en tu local mañana. Sin vueltas.", emoji: "⚡" }
+  { title: "Calidad", desc: "Trabajamos con las marcas líderes del rubro golosinas y alimentos.", icon: Sparkles },
+  { title: "Cercanía", desc: "4 sucursales pensadas para que siempre tengas una a mano.", icon: Handshake },
+  { title: "Rapidez", desc: "Pedís hoy, lo tenés en tu local mañana. Sin vueltas.", icon: Zap }
 ];
 
 function Story() {
@@ -171,9 +172,11 @@ function Values() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.1 }}
             whileHover={{ y: -6 }}
-            className="rounded-3xl border border-ink-100 bg-white p-7 text-center transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
+            className="group rounded-3xl border border-ink-100 bg-white p-7 text-center transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
           >
-            <span className="text-4xl">{v.emoji}</span>
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+              <v.icon className="h-6 w-6" strokeWidth={1.8} />
+            </div>
             <p className="mt-4 font-display text-lg font-bold text-ink-900">{v.title}</p>
             <p className="mt-1.5 text-sm text-ink-500">{v.desc}</p>
           </motion.div>
