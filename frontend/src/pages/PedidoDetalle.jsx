@@ -82,7 +82,7 @@ export default function PedidoDetalle() {
       <p className="text-sm text-ink-400">{new Date(order.createdAt).toLocaleString("es-AR")}</p>
 
       {pagoQuery === "exito" && (
-        <p className="mt-4 rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">¡Pago recibido! Estamos procesando tu pedido.</p>
+        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-700">¡Pago recibido! Estamos procesando tu pedido.</p>
       )}
       {pagoQuery === "error" && (
         <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">Hubo un problema con el pago. Podés reintentarlo.</p>
