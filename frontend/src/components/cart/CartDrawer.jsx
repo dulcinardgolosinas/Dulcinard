@@ -7,7 +7,7 @@ import { formatCurrency, UNIT_LABELS } from "../../lib/format";
 export function CartDrawer() {
   const { items, isOpen, closeCart, setQuantity, removeItem, total } = useCartStore();
   const config = useSiteConfigStore((s) => s.config);
-  const minPurchase = config?.minPurchaseAmount ?? 500;
+  const minPurchase = config?.minPurchaseAmount ?? 100000;
   const cartTotal = total();
   const missingForMin = Math.max(0, minPurchase - cartTotal);
 
@@ -82,7 +82,7 @@ export function CartDrawer() {
                 Te faltan {formatCurrency(missingForMin)} para alcanzar el mínimo de compra ({formatCurrency(minPurchase)}).
               </p>
             ) : (
-              <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+              <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
                 ¡Superaste el monto mínimo de compra!
               </p>
             )}

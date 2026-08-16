@@ -10,7 +10,7 @@ import { fadeUp } from "../lib/motion";
 function Hero() {
   return (
     <section className="relative overflow-hidden text-white">
-      <HeroBackdrop />
+      <HeroBackdrop page="quienes-somos" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -26,14 +26,12 @@ function Hero() {
           <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
             Una comunidad que
             <br />
-            <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-brand-300 bg-clip-text text-transparent">
-              crece de a mayor
-            </span>
+            <span className="text-accent-600">crece de a mayor</span>
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
-            Somos Dulcinard: distribuidora mayorista de golosinas y productos alimenticios con sede en San Miguel de
-            Tucumán, y la confianza de cientos de kioscos y comercios de la provincia.
+            Somos DULCI NARD: venta mayorista y minorista de golosinas y comestibles en Tucumán. Trabajamos con las
+            marcas líderes del mercado para que tu kiosco o comercio nunca le falte variedad.
           </motion.p>
         </motion.div>
       </div>
@@ -48,7 +46,7 @@ const stats = [
     icon: <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21ZM12 12a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
   },
   {
-    value: "24 hs",
+    value: "24-48 hs",
     label: "Entrega tras confirmar el pedido",
     icon: <path d="M12 7v5l3 3M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
   },
@@ -93,8 +91,8 @@ function StatsFloat({ branchCount }) {
 
 const values = [
   { title: "Calidad", desc: "Trabajamos con las marcas líderes del rubro golosinas y alimentos.", icon: Sparkles },
-  { title: "Cercanía", desc: "4 sucursales pensadas para que siempre tengas una a mano.", icon: Handshake },
-  { title: "Rapidez", desc: "Pedís hoy, lo tenés en tu local mañana. Sin vueltas.", icon: Zap }
+  { title: "Cercanía", desc: "5 sucursales pensadas para que siempre tengas una a mano.", icon: Handshake },
+  { title: "Rapidez", desc: "Pedís hoy, lo tenés en tu local en 24 a 48 hs. Sin vueltas.", icon: Zap }
 ];
 
 function Story() {
@@ -113,16 +111,23 @@ function Story() {
             Nuestra historia
           </span>
           <h2 className="mt-2 font-display text-2xl font-bold text-ink-900 md:text-3xl">
-            De un mostrador en Tucumán a la distribuidora de confianza de cientos de kioscos
+            Trayectoria y compromiso de <span className="whitespace-nowrap">DULCI NARD</span>
           </h2>
           <p className="mt-5 text-ink-600 leading-relaxed">
-            Con años de trayectoria en la región, acompañamos a kioscos, almacenes y comercios de todo Tucumán
-            ofreciendo un catálogo amplio, precios mayoristas y una logística pensada para que nunca te falte
-            mercadería.
+            DULCI NARD nació para estar cerca de los kiosqueros y comerciantes de Tucumán. Empezamos como
+            distribuidores mayoristas de golosinas y comestibles, y con el tiempo fuimos creciendo hasta convertirnos
+            en un proveedor de confianza para cientos de comercios de la provincia.
           </p>
           <p className="mt-4 text-ink-600 leading-relaxed">
-            Hoy contamos con 4 sucursales en San Miguel de Tucumán y Concepción, y una comunidad de casi 27 mil
-            seguidores en Instagram que siguen de cerca nuestras novedades y promociones.
+            Hoy contamos con <strong className="font-semibold text-ink-900">5 sucursales</strong> distribuidas
+            estratégicamente para que siempre tengas un depósito cerca, y trabajamos con las marcas más importantes
+            del país —Arcor, Georgalos, Mondelez, Bonafide, y muchas más— para ofrecerte la variedad que tu negocio
+            necesita, al mejor precio y con la mejor atención.
+          </p>
+          <p className="mt-4 text-ink-600 leading-relaxed">
+            Creamos esta página para achicar la distancia con nuestros clientes: para que puedas ver nuestro catálogo
+            completo, hacer tu pedido cuando quieras y resolver tus dudas sin vueltas. Como siempre,{" "}
+            <strong className="font-semibold text-ink-900">DULCI NARD está cerca tuyo.</strong>
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/catalogo">

@@ -34,7 +34,8 @@ const orderSchema = new mongoose.Schema(
       street: String,
       city: String,
       zone: { type: mongoose.Schema.Types.ObjectId, ref: "ShippingZone" },
-      notes: String
+      notes: String,
+      phone: String // teléfono de contacto para este pedido puntual (puede diferir del perfil)
     },
 
     status: { type: String, enum: ORDER_STATUSES, default: "pendiente", index: true },

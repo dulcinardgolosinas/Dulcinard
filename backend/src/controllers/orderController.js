@@ -4,6 +4,7 @@ import SiteConfig from "../models/SiteConfig.js";
 import ShippingZone from "../models/ShippingZone.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { mpPreference, mpPayment } from "../config/mercadoPago.js";
+import { sendOrderNotification } from "../utils/sendOrderNotification.js";
 
 // Recalcula el pedido en el servidor a partir de precios reales de la DB:
 // nunca confiamos en el precio que venga del carrito del cliente.
@@ -77,6 +78,9 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   // Descontar stock reservado
   await Promise.all(items.map((i) => Product.findByIdAndUpdate(i.product, { $inc: { stock: -i.quantity } })));
+
+  // No bloquea la respuesta ni la confirmación del pedido si el mail falla.
+  sendOrderNotification(order, req.user);
 
   res.status(201).json(order);
 });

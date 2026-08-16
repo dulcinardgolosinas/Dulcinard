@@ -10,6 +10,9 @@ import orderRoutes from "./routes/orderRoutes.js";
 import siteConfigRoutes from "./routes/siteConfigRoutes.js";
 import shippingZoneRoutes from "./routes/shippingZoneRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import providerRoutes from "./routes/providerRoutes.js";
+import pageHeroRoutes from "./routes/pageHeroRoutes.js";
+import homeHeroRoutes from "./routes/homeHeroRoutes.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -29,6 +32,9 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/site-config", siteConfigRoutes);
 app.use("/api/shipping-zones", shippingZoneRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/providers", providerRoutes);
+app.use("/api/page-heroes", pageHeroRoutes);
+app.use("/api/home-hero-images", homeHeroRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

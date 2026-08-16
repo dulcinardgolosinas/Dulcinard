@@ -23,11 +23,11 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
     "instagram",
     "whatsappNumber",
     "whatsappMessage",
-    "pedidosYaUrl",
     "minPurchaseAmount",
     "defaultShippingCost",
     "freeShippingFrom",
-    "deliveryEtaHours"
+    "deliveryEtaHours",
+    "deliveryEtaMaxHours"
   ];
   for (const field of fields) {
     if (req.body[field] !== undefined) config[field] = req.body[field];
@@ -57,6 +57,20 @@ export const updateFavicon = asyncHandler(async (req, res) => {
 
   if (config.favicon?.publicId) await deleteImage(config.favicon.publicId);
   config.favicon = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.branding);
+
+  await config.save();
+  res.json(config);
+});
+
+export const uploadBranchImage = asyncHandler(async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Falta el archivo de imagen" });
+  const config = await getOrCreateConfig();
+
+  const branch = config.branches.id(req.params.branchId);
+  if (!branch) return res.status(404).json({ message: "Sucursal no encontrada" });
+
+  if (branch.image?.publicId) await deleteImage(branch.image.publicId);
+  branch.image = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.branding);
 
   await config.save();
   res.json(config);

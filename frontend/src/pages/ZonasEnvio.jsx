@@ -13,7 +13,7 @@ function Hero() {
   const config = useSiteConfigStore((s) => s.config);
   return (
     <section className="relative overflow-hidden text-white">
-      <HeroBackdrop />
+      <HeroBackdrop page="envios" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -29,9 +29,7 @@ function Hero() {
           <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
             Lo llevamos
             <br />
-            <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-brand-300 bg-clip-text text-transparent">
-              hasta tu local
-            </span>
+            <span className="text-accent-600">hasta tu local</span>
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
@@ -39,11 +37,9 @@ function Hero() {
           </motion.p>
 
           <motion.div custom={3} variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
-            <span>Entrega en {config?.deliveryEtaHours ?? 24} hs</span>
+            <span>Entrega en {config?.deliveryEtaHours ?? 24}–{config?.deliveryEtaMaxHours ?? 48} hs</span>
             <span className="h-1 w-1 rounded-full bg-white/40" />
-            <span>Envíos desde {formatCurrency(config?.minPurchaseAmount ?? 500)}</span>
-            <span className="h-1 w-1 rounded-full bg-white/40" />
-            <span>También en PedidosYa sin mínimo</span>
+            <span>Compra mínima {formatCurrency(config?.minPurchaseAmount ?? 100000)}</span>
           </motion.div>
         </motion.div>
       </div>
@@ -64,7 +60,7 @@ const steps = [
   },
   {
     title: "Lo recibís en tu local",
-    desc: "Dentro de las 24 hs, en la puerta de tu comercio.",
+    desc: "Dentro de las 24 a 48 hs, en la puerta de tu comercio.",
     icon: <path d="M3 7h11v8H3zM14 10h4l3 3v2h-7zM7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
   }
 ];

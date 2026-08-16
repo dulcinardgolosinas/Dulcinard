@@ -1,10 +1,9 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
+import { LogoWatermark } from "../ui/LogoWatermark";
 
 const FALLBACK_LOGO = "https://res.cloudinary.com/dabikk5ei/image/upload/v1785899452/dulcinard/branding/rfwcpj2aorrjjlbtyzvz.png";
-
-const BG_IMAGE_URL = "https://res.cloudinary.com/dabikk5ei/image/upload/v1785932036/fondo-login_tj29qv.jpg";
 
 const TABS = [
   {
@@ -28,18 +27,17 @@ export function AuthLayout() {
   const active = TABS.find((t) => t.to === location.pathname) || TABS[0];
 
   return (
-    <div className="relative -mb-16 flex min-h-[calc(100vh-1px)] items-start justify-center overflow-hidden px-4 pb-14 pt-16 sm:pt-24">
-      <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `url(${BG_IMAGE_URL})` }} />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-ink-950/92 via-ink-950/75 to-ink-950/95" />
-      <div className="absolute inset-0 -z-10 bg-brand-950/20 mix-blend-multiply" />
+    <div className="relative flex min-h-[calc(100vh-1px)] items-start justify-center overflow-hidden bg-white px-4 pb-14 pt-16 sm:pt-24">
+      <LogoWatermark side="left" />
+      <LogoWatermark side="right" />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-md"
+        className="relative w-full max-w-md"
       >
-        <div className="rounded-3xl border border-white/10 bg-white/97 p-7 shadow-2xl backdrop-blur-xl sm:p-9">
+        <div className="rounded-3xl border border-ink-100 bg-white p-7 shadow-[0_20px_60px_-20px_rgba(32,28,27,0.25)] sm:p-9">
           <Link to="/" className="mb-6 flex justify-center">
             <img src={logoUrl} alt="Dulcinard" className="h-24 w-auto" />
           </Link>

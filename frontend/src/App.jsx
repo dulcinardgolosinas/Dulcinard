@@ -28,6 +28,8 @@ import PedidosAdmin from "./pages/admin/PedidosAdmin";
 import PedidoDetalleAdmin from "./pages/admin/PedidoDetalleAdmin";
 import SucursalesAdmin from "./pages/admin/SucursalesAdmin";
 import ZonasEnvioAdmin from "./pages/admin/ZonasEnvioAdmin";
+import ProveedoresAdmin from "./pages/admin/ProveedoresAdmin";
+import ImagenesHeroAdmin from "./pages/admin/ImagenesHeroAdmin";
 import ConfiguracionAdmin from "./pages/admin/ConfiguracionAdmin";
 
 function App() {
@@ -69,6 +71,8 @@ function App() {
             <Route path="pedidos/:id" element={<PedidoDetalleAdmin />} />
             <Route path="sucursales" element={<SucursalesAdmin />} />
             <Route path="zonas-envio" element={<ZonasEnvioAdmin />} />
+            <Route path="proveedores" element={<ProveedoresAdmin />} />
+            <Route path="imagenes-hero" element={<ImagenesHeroAdmin />} />
             <Route path="configuracion" element={<ConfiguracionAdmin />} />
           </Route>
         </Route>

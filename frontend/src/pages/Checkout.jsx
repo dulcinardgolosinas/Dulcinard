@@ -6,17 +6,20 @@ import { z } from "zod";
 import { api, apiErrorMessage } from "../lib/api";
 import { useCartStore } from "../store/cartStore";
 import { useSiteConfigStore } from "../store/siteConfigStore";
+import { useAuthStore } from "../store/authStore";
 import { Input, Select, Textarea } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Spinner } from "../components/ui/Spinner";
 import { formatCurrency, UNIT_LABELS } from "../lib/format";
-import { alphanumericField, nameField } from "../lib/validators";
-import { toastError } from "../lib/alerts";
+import { alphanumericField, nameField, phoneField } from "../lib/validators";
+import { toastError, toastSuccess } from "../lib/alerts";
 
 const schema = z.object({
   zone: z.string().min(1, "Elegí tu zona de envío"),
   street: alphanumericField("La dirección", { min: 3, max: 150 }),
   city: nameField("La localidad", { max: 80 }),
+  phone: phoneField({ required: true }),
+  savePhone: z.boolean().optional(),
   notes: z.string().trim().max(500, "Las notas no pueden superar los 500 caracteres").optional()
 });
 
@@ -24,11 +27,12 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { items, total, clear } = useCartStore();
   const config = useSiteConfigStore((s) => s.config);
+  const { user, updateUser } = useAuthStore();
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { street: "", city: "", zone: "", notes: "" }
+    defaultValues: { street: "", city: "", zone: "", phone: user?.phone || "", savePhone: false, notes: "" }
   });
 
   useEffect(() => {
@@ -43,13 +47,24 @@ export default function Checkout() {
       : selectedZone.cost
     : config?.defaultShippingCost ?? 80;
 
-  async function onSubmit(values) {
+  async function onSubmit({ savePhone, ...values }) {
     setError("");
     try {
       const { data: order } = await api.post("/orders", {
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
         shippingAddress: values
       });
+
+      if (savePhone && values.phone !== user?.phone) {
+        try {
+          const { data } = await api.put("/auth/me", { phone: values.phone });
+          updateUser(data.user);
+          toastSuccess("Actualizamos tu teléfono de perfil");
+        } catch {
+          // no bloqueamos la confirmación del pedido si esto falla
+        }
+      }
+
       const { data: pref } = await api.post(`/orders/${order._id}/pay`);
       clear();
       window.location.href = pref.initPoint;
@@ -92,6 +107,17 @@ export default function Checkout() {
           </Select>
           <Input label="Dirección" placeholder="Calle y número" {...register("street")} error={errors.street?.message} />
           <Input label="Localidad" {...register("city")} error={errors.city?.message} />
+
+          <div>
+            <Input label="Teléfono de contacto" {...register("phone")} error={errors.phone?.message} />
+            {user?.phone && (
+              <label className="mt-2 flex items-center gap-2 text-xs text-ink-500">
+                <input type="checkbox" {...register("savePhone")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
+                Actualizar el teléfono guardado en mi perfil con este número
+              </label>
+            )}
+          </div>
+
           <Textarea label="Notas para la entrega (opcional)" rows={3} {...register("notes")} error={errors.notes?.message} />
 
           {error && <p className="text-sm text-red-600">{error}</p>}

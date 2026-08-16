@@ -56,7 +56,7 @@ export function ProductCard({ product }) {
             disabled={outOfStock}
             onClick={() => addItem(product, product.minOrderQty || 1)}
             aria-label="Agregar al carrito"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-900 text-white transition-all hover:scale-110 hover:bg-brand-600 disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition-all hover:scale-110 hover:bg-brand-700 disabled:pointer-events-none disabled:opacity-40"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M12 5v14M5 12h14" />

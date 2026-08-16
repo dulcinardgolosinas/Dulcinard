@@ -1,11 +1,20 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
 import { ORDER_STATUSES } from "../models/Order.js";
+import { PHONE_REGEX } from "../utils/validationPatterns.js";
 
 export const createOrderValidator = [
   body("items").isArray({ min: 1 }).withMessage("El carrito está vacío"),
   body("items.*.productId").isMongoId().withMessage("Producto inválido en el carrito"),
   body("items.*.quantity").isInt({ min: 1, max: 100000 }).withMessage("La cantidad debe ser un número entero mayor a 0"),
+  body("shippingAddress.phone")
+    .trim()
+    .notEmpty()
+    .withMessage("El teléfono de contacto es obligatorio")
+    .matches(PHONE_REGEX)
+    .withMessage("El teléfono solo puede contener números")
+    .isLength({ min: 6, max: 20 })
+    .withMessage("El teléfono debe tener entre 6 y 20 dígitos"),
   body("shippingAddress.street")
     .trim()
     .notEmpty()
