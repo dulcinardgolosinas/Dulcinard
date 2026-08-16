@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { api } from "../../lib/api";
+import { usePageHeroStore } from "../../store/pageHeroStore";
 
 const GRAIN =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
@@ -10,23 +9,11 @@ const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/dabikk5ei/image/upload/v178
 // Fondo compartido por los hero oscuros (Contacto, Quiénes somos, Envíos):
 // foto de fondo (cargada desde el admin, por página) con un velo oscuro suave
 // solo del lado del texto, para que la foto real se vea tal cual sin quedar
-// teñida de rojo.
+// teñida de rojo. Las imágenes se piden una sola vez al iniciar la app
+// (ver pageHeroStore) para que al navegar entre páginas no haya un flash
+// del fondo por defecto mientras se vuelve a pedir la imagen.
 export function HeroBackdrop({ page }) {
-  const [bgImage, setBgImage] = useState(DEFAULT_BG_IMAGE);
-
-  useEffect(() => {
-    if (!page) return;
-    let active = true;
-    api
-      .get(`/page-heroes/${page}`)
-      .then(({ data }) => {
-        if (active && data?.backgroundImage?.url) setBgImage(data.backgroundImage.url);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [page]);
+  const bgImage = usePageHeroStore((s) => s.images[page]) || DEFAULT_BG_IMAGE;
 
   return (
     <>
