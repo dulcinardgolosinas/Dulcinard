@@ -1,7 +1,10 @@
 import Product from "../models/Product.js";
+import Category from "../models/Category.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadMany, deleteMany } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
+
+const MISC_CATEGORY_NAME = "Artículos Varios";
 
 export const listProducts = asyncHandler(async (req, res) => {
   const {
@@ -21,7 +24,12 @@ export const listProducts = asyncHandler(async (req, res) => {
   const filter = all === "true" ? {} : { active: true };
 
   if (q) filter.$text = { $search: q };
-  if (category) filter.category = category;
+  if (category) {
+    // "Artículos Varios" es una vidriera: en vez de requerir que se etiqueten
+    // productos ahí a mano, muestra una mezcla del resto de las categorías.
+    const categoryDoc = await Category.findById(category).select("name");
+    filter.category = categoryDoc?.name === MISC_CATEGORY_NAME ? { $ne: category } : category;
+  }
   if (brand) filter.brand = brand;
   if (unit) filter.unit = unit;
   if (featured === "true") filter.featured = true;

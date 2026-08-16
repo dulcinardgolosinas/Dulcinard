@@ -8,7 +8,7 @@ import { fadeUp } from "../lib/motion";
 function Hero({ waHref }) {
   return (
     <section className="relative overflow-hidden text-white">
-      <HeroBackdrop />
+      <HeroBackdrop page="contacto" />
 
       <div className="relative mx-auto max-w-7xl px-4 py-20 md:px-6 md:py-28">
         <motion.div initial="hidden" animate="show" className="max-w-2xl">
@@ -26,14 +26,14 @@ function Hero({ waHref }) {
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-5 max-w-md text-base text-white/80 md:text-lg">
-            Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras 4 sucursales en San Miguel de Tucumán y
+            Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras 5 sucursales en San Miguel de Tucumán y
             Concepción.
           </motion.p>
 
           <motion.div custom={3} variants={fadeUp} className="mt-8">
             <a href={waHref} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3">
-              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#25D366] shadow-[0_8px_30px_-8px_rgba(37,211,102,0.7)] transition-transform group-hover:scale-110">
-                <span className="absolute inset-0 animate-ping rounded-full bg-[#25D366] opacity-60" />
+              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-600 shadow-[0_8px_30px_-8px_rgba(229,31,31,0.7)] transition-transform group-hover:scale-110">
+                <span className="absolute inset-0 animate-ping rounded-full bg-accent-600 opacity-60" />
                 <svg className="relative h-7 w-7 text-white" viewBox="0 0 32 32" fill="currentColor">
                   <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
                 </svg>
@@ -44,6 +44,7 @@ function Hero({ waHref }) {
                   Iniciar conversación
                   <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" strokeWidth={2} />
                 </span>
+                <span className="mt-1 block text-sm text-white/60">Pedidos, consultas y coordinación de envíos</span>
               </span>
             </a>
           </motion.div>
@@ -53,59 +54,7 @@ function Hero({ waHref }) {
   );
 }
 
-function ChannelCards({ waHref, waNumber, pedidosYaUrl }) {
-  return (
-    <section className="relative -mt-10 z-10 mx-auto max-w-7xl px-4 md:px-6">
-      <div className="grid gap-5 md:grid-cols-2">
-        <motion.a
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.5 }}
-          whileHover={{ y: -6 }}
-          href={waHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-[#25D366] to-[#128C4A] p-7 text-white shadow-[0_20px_50px_-20px_rgba(18,140,74,0.6)] transition-shadow hover:shadow-[0_25px_60px_-15px_rgba(18,140,74,0.7)]"
-        >
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl transition-transform duration-500 group-hover:scale-125" />
-          <div className="relative">
-            <p className="text-sm font-semibold uppercase tracking-wide opacity-80">WhatsApp</p>
-            <p className="mt-1 font-display text-2xl font-bold">{waNumber}</p>
-            <p className="mt-1 text-sm opacity-90">Pedidos, consultas y coordinación de envíos</p>
-          </div>
-          <svg className="relative h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6" viewBox="0 0 32 32" fill="currentColor">
-            <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
-          </svg>
-        </motion.a>
-
-        <motion.a
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-40px" }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          whileHover={{ y: -6 }}
-          href={pedidosYaUrl || undefined}
-          target={pedidosYaUrl ? "_blank" : undefined}
-          rel="noopener noreferrer"
-          className="group relative flex items-center justify-between overflow-hidden rounded-3xl bg-gradient-to-br from-ink-900 to-ink-950 p-7 text-white shadow-[0_20px_50px_-20px_rgba(0,0,0,0.6)] transition-shadow hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]"
-        >
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-accent-400/20 blur-2xl transition-transform duration-500 group-hover:scale-125" />
-          <div className="relative">
-            <p className="text-sm font-semibold uppercase tracking-wide text-accent-400">PedidosYa</p>
-            <p className="mt-1 font-display text-2xl font-bold">Sin monto mínimo</p>
-            <p className="mt-1 text-sm opacity-80">Elegí la sucursal más cercana a tu domicilio</p>
-          </div>
-          <svg className="relative h-12 w-12 shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 8.5 12 3.5 3 8.5l9 5 9-5ZM3 8.5v7l9 5 9-5v-7M12 13.5v7" />
-          </svg>
-        </motion.a>
-      </div>
-    </section>
-  );
-}
-
-const branchIcons = ["01", "02", "03", "04"];
+const branchIcons = ["01", "02", "03", "04", "05"];
 
 function Branches({ branches }) {
   return (
@@ -119,7 +68,7 @@ function Branches({ branches }) {
         <h2 className="font-display text-2xl font-bold text-ink-900 md:text-3xl">Nuestras sucursales</h2>
       </div>
 
-      <div className="relative grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="relative flex flex-wrap justify-center gap-5">
         {branches.map((b, i) => (
           <motion.div
             key={b._id}
@@ -128,7 +77,7 @@ function Branches({ branches }) {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
             whileHover={{ y: -6 }}
-            className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
+            className="group relative w-full overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)] sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
           >
             <span className="pointer-events-none absolute -right-3 -top-3 font-display text-6xl font-bold text-ink-50 transition-colors duration-300 group-hover:text-brand-50">
               {branchIcons[i % branchIcons.length]}
@@ -184,7 +133,6 @@ export default function Contacto() {
   return (
     <div>
       <Hero waHref={waHref} />
-      <ChannelCards waHref={waHref} waNumber={waNumber} pedidosYaUrl={config?.pedidosYaUrl} />
       <Branches branches={branches} />
     </div>
   );

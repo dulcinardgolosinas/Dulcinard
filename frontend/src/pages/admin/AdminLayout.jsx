@@ -1,8 +1,23 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { confirmLogout, toastSuccess } from "../../lib/alerts";
+
+function ViewSiteLink({ className = "" }) {
+  return (
+    <a
+      href="/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`flex w-fit items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline ${className}`}
+    >
+      <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} />
+      Ver sitio
+    </a>
+  );
+}
 
 const links = [
   { to: "/admin", label: "Dashboard", end: true },
@@ -13,6 +28,8 @@ const links = [
   { to: "/admin/usuarios", label: "Usuarios" },
   { to: "/admin/sucursales", label: "Sucursales" },
   { to: "/admin/zonas-envio", label: "Zonas de envío" },
+  { to: "/admin/proveedores", label: "Proveedores" },
+  { to: "/admin/imagenes-hero", label: "Imágenes de fondo" },
   { to: "/admin/configuracion", label: "Configuración" }
 ];
 
@@ -73,6 +90,7 @@ export default function AdminLayout() {
           <Link to="/">
             <BrandMark config={config} />
           </Link>
+          <ViewSiteLink className="mt-3" />
         </div>
         <NavLinks />
         <div className="border-t border-ink-100 px-5 py-4">
@@ -96,9 +114,7 @@ export default function AdminLayout() {
             </svg>
           </button>
           <span className="font-display text-lg font-bold text-brand-600">Panel Admin</span>
-          <Link to="/" className="text-xs font-semibold text-ink-500">
-            Ir al sitio
-          </Link>
+          <ViewSiteLink />
         </header>
 
         {mobileOpen && (
@@ -114,6 +130,9 @@ export default function AdminLayout() {
                     <path d="M6 6l12 12M18 6L6 18" />
                   </svg>
                 </button>
+              </div>
+              <div className="px-5 pt-4">
+                <ViewSiteLink />
               </div>
               <NavLinks onNavigate={() => setMobileOpen(false)} />
               <div className="border-t border-ink-100 px-5 py-4">

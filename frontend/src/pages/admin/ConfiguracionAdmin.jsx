@@ -22,11 +22,11 @@ const schema = z.object({
     .min(6, "El número de WhatsApp debe tener entre 6 y 15 dígitos")
     .max(15, "El número de WhatsApp debe tener entre 6 y 15 dígitos"),
   whatsappMessage: z.string().trim().max(300, "El mensaje no puede superar los 300 caracteres").optional(),
-  pedidosYaUrl: urlField({ label: "El link de PedidosYa" }),
   minPurchaseAmount: numberField("El monto mínimo de compra", { min: 0, max: 100000000 }),
   defaultShippingCost: numberField("El costo de envío por defecto", { min: 0, max: 1000000 }),
   freeShippingFrom: numberField("El monto de envío gratis", { min: 0, max: 100000000 }),
-  deliveryEtaHours: intField("El tiempo de entrega", { min: 1, max: 720 })
+  deliveryEtaHours: intField("El tiempo de entrega mínimo", { min: 1, max: 720 }),
+  deliveryEtaMaxHours: intField("El tiempo de entrega máximo", { min: 1, max: 720 })
 });
 
 export default function ConfiguracionAdmin() {
@@ -48,11 +48,11 @@ export default function ConfiguracionAdmin() {
         instagram: data.instagram,
         whatsappNumber: data.whatsappNumber,
         whatsappMessage: data.whatsappMessage,
-        pedidosYaUrl: data.pedidosYaUrl,
         minPurchaseAmount: data.minPurchaseAmount,
         defaultShippingCost: data.defaultShippingCost,
         freeShippingFrom: data.freeShippingFrom,
-        deliveryEtaHours: data.deliveryEtaHours
+        deliveryEtaHours: data.deliveryEtaHours,
+        deliveryEtaMaxHours: data.deliveryEtaMaxHours
       });
       setLoading(false);
     });
@@ -108,7 +108,13 @@ export default function ConfiguracionAdmin() {
           {config?.logo?.url && <img src={config.logo.url} alt="Logo" className="h-14 w-auto rounded-lg border border-ink-100 p-1" />}
           <FileInput onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
           <Button type="button" size="sm" variant="outline" onClick={uploadLogo} disabled={!logoFile || uploadingLogo}>
-            {uploadingLogo ? <Spinner className="h-4 w-4" /> : "Subir logo"}
+            {uploadingLogo ? (
+              <>
+                <Spinner className="h-4 w-4" /> Subiendo...
+              </>
+            ) : (
+              "Subir logo"
+            )}
           </Button>
         </div>
       </div>
@@ -118,16 +124,16 @@ export default function ConfiguracionAdmin() {
         <Input label="Instagram (URL)" {...register("instagram")} error={errors.instagram?.message} />
         <Input label="Número de WhatsApp (sin 0 ni 15, ej: 3814091213)" {...register("whatsappNumber")} error={errors.whatsappNumber?.message} />
         <Textarea label="Mensaje predefinido de WhatsApp" rows={2} {...register("whatsappMessage")} error={errors.whatsappMessage?.message} />
-        <Input label="Link de PedidosYa (opcional)" {...register("pedidosYaUrl")} error={errors.pedidosYaUrl?.message} />
 
         <div className="grid grid-cols-2 gap-4">
           <Input label="Monto mínimo de compra ($)" type="number" {...register("minPurchaseAmount")} error={errors.minPurchaseAmount?.message} />
           <Input label="Costo de envío por defecto ($)" type="number" {...register("defaultShippingCost")} error={errors.defaultShippingCost?.message} />
           <Input label="Envío gratis desde ($, 0 = deshabilitado)" type="number" {...register("freeShippingFrom")} error={errors.freeShippingFrom?.message} />
-          <Input label="Tiempo de entrega (horas)" type="number" {...register("deliveryEtaHours")} error={errors.deliveryEtaHours?.message} />
+          <Input label="Entrega desde (horas)" type="number" {...register("deliveryEtaHours")} error={errors.deliveryEtaHours?.message} />
+          <Input label="Entrega hasta (horas)" type="number" {...register("deliveryEtaMaxHours")} error={errors.deliveryEtaMaxHours?.message} />
         </div>
 
-        {message && <p className="text-sm text-emerald-600">{message}</p>}
+        {message && <p className="text-sm text-brand-600">{message}</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <Button type="submit" disabled={isSubmitting}>

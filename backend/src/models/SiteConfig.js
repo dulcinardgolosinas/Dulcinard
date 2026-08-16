@@ -14,6 +14,11 @@ const branchSchema = new mongoose.Schema(
     address: { type: String, required: true },
     phone: { type: String, default: "" },
     mapUrl: { type: String, default: "" },
+    image: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" }
+    },
+    primary: { type: Boolean, default: false }, // sucursal principal, se muestra primero en el slideshow del home
     schedule: {
       weekdays: { type: scheduleBlockSchema, required: true },
       saturday: { type: scheduleBlockSchema, required: true }
@@ -42,13 +47,13 @@ const siteConfigSchema = new mongoose.Schema(
       type: String,
       default: "¡Hola! Quiero hacer un pedido a Dulcinard."
     },
-    pedidosYaUrl: { type: String, default: "" },
 
     // Configurable desde el admin porque estos montos cambian seguido
-    minPurchaseAmount: { type: Number, default: 500 },
-    defaultShippingCost: { type: Number, default: 80 },
+    minPurchaseAmount: { type: Number, default: 100000 },
+    defaultShippingCost: { type: Number, default: 3500 },
     freeShippingFrom: { type: Number, default: 0 }, // 0 = deshabilitado
     deliveryEtaHours: { type: Number, default: 24 },
+    deliveryEtaMaxHours: { type: Number, default: 48 },
 
     branches: { type: [branchSchema], default: [] }
   },

@@ -7,6 +7,7 @@ import ShippingZone from "../models/ShippingZone.js";
 import Category from "../models/Category.js";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
+import Provider from "../models/Provider.js";
 
 const branches = [
   {
@@ -44,25 +45,52 @@ const branches = [
       saturday: { label: "Sábado", hours: "8 a 12:30 hs" }
     },
     order: 4
+  },
+  {
+    name: "Viamonte",
+    address: "Viamonte 470",
+    schedule: {
+      weekdays: { label: "Lunes a Viernes", hours: "8:30 a 21 hs" },
+      saturday: { label: "Sábado", hours: "9 a 13 y 17 a 20 hs" }
+    },
+    order: 5
   }
 ];
 
+const providerNames = [
+  "Arcor",
+  "Misky",
+  "Georgalos",
+  "Mondelez",
+  "Don Satur",
+  "Fantoche",
+  "Bonafide",
+  "Oblitas",
+  "Trío",
+  "Mauri",
+  "Nevares",
+  "Pipas",
+  "Mantecol",
+  "Gula",
+  "Ducrem"
+];
+
 const shippingZones = [
-  { name: "San Miguel de Tucumán", cost: 80, minPurchaseAmount: 500 },
-  { name: "Yerba Buena", cost: 80, minPurchaseAmount: 500 },
-  { name: "Tafí Viejo", cost: 80, minPurchaseAmount: 500 },
-  { name: "Concepción", cost: 80, minPurchaseAmount: 500 }
+  { name: "San Miguel de Tucumán", cost: 3500, minPurchaseAmount: 100000 },
+  { name: "Yerba Buena", cost: 3500, minPurchaseAmount: 100000 },
+  { name: "Tafí Viejo", cost: 3500, minPurchaseAmount: 100000 },
+  { name: "Concepción", cost: 3500, minPurchaseAmount: 100000 }
 ];
 
 const categories = [
-  { name: "Caramelos", description: "Caramelos duros, blandos y masticables por mayor" },
+  { name: "Golosinas", description: "Caramelos, chicles y golosinas surtidas por mayor" },
+  { name: "Galletas", description: "Galletitas dulces y saladas" },
   { name: "Chocolates", description: "Tabletas, bombones y chocolatines" },
-  { name: "Alfajores", description: "Alfajores individuales y en caja" },
-  { name: "Chicles", description: "Chicles y bubble gum" },
-  { name: "Snacks", description: "Papas fritas, palitos salados y snacks salados" },
-  { name: "Bebidas", description: "Gaseosas, jugos y aguas saborizadas" },
-  { name: "Galletitas", description: "Galletitas dulces y saladas" },
-  { name: "Turrones y Barritas", description: "Turrones, barritas de cereal y maní" }
+  { name: "Turrones y Barritas", description: "Turrones, barritas de cereal y maní" },
+  { name: "Comestibles", description: "Productos alimenticios en general" },
+  { name: "Artículos Varios", description: "Otros productos para tu comercio" },
+  { name: "Novedades", description: "Los últimos productos incorporados al catálogo" },
+  { name: "Temporadas", description: "Productos de temporada y fechas especiales" }
 ];
 
 async function run() {
@@ -75,10 +103,11 @@ async function run() {
     instagram: "https://instagram.com/dulcinard_golosinas",
     whatsappNumber: "3814091213",
     whatsappMessage: "¡Hola! Quiero hacer un pedido a Dulcinard.",
-    minPurchaseAmount: 500,
-    defaultShippingCost: 80,
+    minPurchaseAmount: 100000,
+    defaultShippingCost: 3500,
     freeShippingFrom: 0,
     deliveryEtaHours: 24,
+    deliveryEtaMaxHours: 48,
     branches
   });
 
@@ -104,17 +133,21 @@ async function run() {
   const byName = (name) => createdCategories.find((c) => c.name === name)._id;
 
   const sampleProducts = [
-    { name: "Caramelos Media Hora x150u", category: byName("Caramelos"), brand: "Arcor", price: 3200, unit: "display", stock: 40, featured: true },
+    { name: "Caramelos Media Hora x150u", category: byName("Golosinas"), brand: "Arcor", price: 3200, unit: "display", stock: 40, featured: true },
     { name: "Chocolate Águila x24u", category: byName("Chocolates"), brand: "Águila", price: 8500, unit: "display", stock: 25, featured: true },
-    { name: "Alfajor Jorgito Triple x24u", category: byName("Alfajores"), brand: "Jorgito", price: 9800, unit: "caja", stock: 30, featured: true },
-    { name: "Chicles Bazooka x50u", category: byName("Chicles"), brand: "Bazooka", price: 4100, unit: "display", stock: 50 },
-    { name: "Papas Lays x45g x18u", category: byName("Snacks"), brand: "Lays", price: 12500, unit: "caja", stock: 20, featured: true },
-    { name: "Gaseosa Cola x2.25L x6u", category: byName("Bebidas"), brand: "Manaos", price: 7600, unit: "pack", stock: 35 },
-    { name: "Galletitas Oreo x24u", category: byName("Galletitas"), brand: "Oreo", price: 11200, unit: "caja", stock: 22 },
+    { name: "Alfajor Jorgito Triple x24u", category: byName("Golosinas"), brand: "Jorgito", price: 9800, unit: "caja", stock: 30, featured: true },
+    { name: "Chicles Bazooka x50u", category: byName("Golosinas"), brand: "Bazooka", price: 4100, unit: "display", stock: 50 },
+    { name: "Papas Lays x45g x18u", category: byName("Comestibles"), brand: "Lays", price: 12500, unit: "caja", stock: 20, featured: true },
+    { name: "Gaseosa Cola x2.25L x6u", category: byName("Comestibles"), brand: "Manaos", price: 7600, unit: "pack", stock: 35 },
+    { name: "Galletitas Oreo x24u", category: byName("Galletas"), brand: "Oreo", price: 11200, unit: "caja", stock: 22 },
     { name: "Turrón Arcor Maní x24u", category: byName("Turrones y Barritas"), brand: "Arcor", price: 6300, unit: "display", stock: 45 }
   ];
 
   await Product.insertMany(sampleProducts.map((p) => ({ ...p, minOrderQty: 1, unitsPerPack: 1, active: true })));
+
+  console.log("[seed] Precargando proveedores (sin logo todavía)...");
+  await Provider.deleteMany({});
+  await Provider.insertMany(providerNames.map((name, i) => ({ name, order: i, active: true })));
 
   console.log("[seed] Listo ✅");
   await mongoose.disconnect();

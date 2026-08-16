@@ -56,7 +56,7 @@ function ProfileForm() {
       <Input label="Nombre y apellido" {...register("name")} error={errors.name?.message} />
       <Input label="Nombre del negocio" {...register("businessName")} error={errors.businessName?.message} />
       <Input label="Teléfono" {...register("phone")} error={errors.phone?.message} />
-      {message && <p className="text-sm text-emerald-600">{message}</p>}
+      {message && <p className="text-sm text-brand-600">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" disabled={isSubmitting}>
         Guardar cambios
@@ -95,7 +95,7 @@ function PasswordForm() {
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
       <PasswordInput label="Contraseña actual" {...register("currentPassword")} error={errors.currentPassword?.message} />
       <PasswordInput label="Nueva contraseña" {...register("newPassword")} error={errors.newPassword?.message} />
-      {message && <p className="text-sm text-emerald-600">{message}</p>}
+      {message && <p className="text-sm text-brand-600">{message}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       <Button type="submit" variant="outline" disabled={isSubmitting}>
         Cambiar contraseña

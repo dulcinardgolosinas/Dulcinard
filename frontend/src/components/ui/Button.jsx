@@ -1,6 +1,6 @@
 const variants = {
   primary: "bg-brand-600 text-white hover:bg-brand-700 shadow-sm",
-  accent: "bg-accent-400 text-ink-900 hover:bg-accent-500 shadow-sm",
+  accent: "bg-accent-600 text-white hover:bg-accent-700 shadow-sm",
   outline: "border border-ink-200 text-ink-800 hover:border-brand-400 hover:text-brand-600 bg-white",
   ghost: "text-ink-700 hover:bg-ink-100",
   danger: "bg-red-600 text-white hover:bg-red-700"
