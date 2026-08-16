@@ -1,16 +1,12 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
-
-const NO_BORDER_ROUTES = ["/login", "/registro"];
 
 export function Footer() {
   const config = useSiteConfigStore((s) => s.config);
   const branches = config?.branches || [];
-  const location = useLocation();
-  const showTopBorder = !NO_BORDER_ROUTES.includes(location.pathname);
 
   return (
-    <footer className={`mt-16 bg-ink-950 text-ink-200 ${showTopBorder ? "border-t border-ink-100" : ""}`}>
+    <footer className="mt-16 border-t border-ink-100 bg-brand-950 text-ink-200">
       <div className="mx-auto max-w-7xl px-4 py-12 md:px-6">
         <div className="grid gap-10 text-center md:grid-cols-[1.1fr_2fr] md:text-left">
           <div className="flex flex-col items-center md:items-start">
@@ -25,7 +21,7 @@ export function Footer() {
               )}
             </Link>
             <p className="mt-4 max-w-xs text-sm text-ink-400">
-              Distribuidora mayorista de golosinas y productos alimenticios. Pedidos por WhatsApp con entrega en 24 hs.
+              Distribuidora mayorista de golosinas y productos alimenticios. Pedidos por WhatsApp con entrega en 24 a 48 hs.
             </p>
             <div className="mt-5 flex items-center gap-3">
               {config?.instagram && (
@@ -57,9 +53,9 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
             {branches.map((b) => (
-              <div key={b._id} className="text-center md:text-left">
+              <div key={b._id} className="text-left">
                 <p className="text-sm font-semibold text-white">{b.name}</p>
                 <p className="mt-1 text-xs text-ink-400">{b.address}</p>
                 <p className="mt-2 text-xs text-ink-500">{b.schedule?.weekdays?.label}</p>
