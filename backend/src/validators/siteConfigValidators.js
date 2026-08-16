@@ -24,11 +24,11 @@ export const updateSiteConfigValidator = [
     .isLength({ min: 6, max: 15 })
     .withMessage("El número de WhatsApp debe tener entre 6 y 15 dígitos"),
   body("whatsappMessage").optional({ checkFalsy: true }).trim().isLength({ max: 300 }).withMessage("El mensaje no puede superar los 300 caracteres"),
-  body("pedidosYaUrl").optional({ checkFalsy: true }).trim().isURL().withMessage("El link de PedidosYa no es una URL válida"),
   optionalNumber("minPurchaseAmount", "El monto mínimo de compra"),
   optionalNumber("defaultShippingCost", "El costo de envío por defecto"),
   optionalNumber("freeShippingFrom", "El monto de envío gratis"),
   body("deliveryEtaHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega debe ser un número entero de horas entre 1 y 720"),
+  body("deliveryEtaMaxHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega máximo debe ser un número entero de horas entre 1 y 720"),
   body("branches")
     .optional({ checkFalsy: true })
     .custom((value) => {
