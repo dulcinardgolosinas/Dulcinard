@@ -2,7 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* Marca — heredado del logo (rojo carmín) + acento amarillo de piezas de Instagram */
+  /* Marca — ÚNICAMENTE blanco y rojo en todo el sitio. "brand" es el rojo
+     carmín principal (logo); "accent" es un rojo más vivo/saturado para dar
+     jerarquía visual (CTAs, badges, hover) sin salirse de la paleta. */
   --color-brand-50: #fdf2f3;
   --color-brand-100: #fce3e5;
   --color-brand-200: #f9c6cb;
@@ -15,16 +17,16 @@
   --color-brand-900: #691225;
   --color-brand-950: #3a0710;
 
-  --color-accent-50: #fffbeb;
-  --color-accent-100: #fff2c6;
-  --color-accent-200: #ffe388;
-  --color-accent-300: #ffcd4a;
-  --color-accent-400: #ffb81f;
-  --color-accent-500: #f99a07;
-  --color-accent-600: #dd7502;
-  --color-accent-700: #b75406;
-  --color-accent-800: #94420c;
-  --color-accent-900: #7a380d;
+  --color-accent-50: #fff1f1;
+  --color-accent-100: #ffe1e1;
+  --color-accent-200: #ffc7c7;
+  --color-accent-300: #ff9d9d;
+  --color-accent-400: #ff6b6b;
+  --color-accent-500: #f83b3b;
+  --color-accent-600: #e51f1f;
+  --color-accent-700: #c11414;
+  --color-accent-800: #9f1414;
+  --color-accent-900: #841818;
 
   --color-ink-50: #f6f5f5;
   --color-ink-100: #e7e5e4;
@@ -84,4 +86,32 @@
    nuestro fondo gris claro de marca queda ilegible. Se fuerza texto oscuro. */
 .swal2-cancel {
   color: var(--color-ink-800) !important;
+}
+
+/* Paleta de marca (solo blanco y rojo) también en los íconos de SweetAlert2,
+   que por defecto son verde/amarillo/celeste. */
+.swal2-icon.swal2-success {
+  border-color: var(--color-brand-600) !important;
+  color: var(--color-brand-600) !important;
+}
+.swal2-icon.swal2-success [class^="swal2-success-line"] {
+  background-color: var(--color-brand-600) !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: var(--color-brand-200) !important;
+}
+.swal2-icon.swal2-warning {
+  border-color: var(--color-accent-600) !important;
+  color: var(--color-accent-600) !important;
+}
+.swal2-icon.swal2-question {
+  border-color: var(--color-ink-500) !important;
+  color: var(--color-ink-500) !important;
+}
+.swal2-icon.swal2-error {
+  border-color: var(--color-brand-900) !important;
+  color: var(--color-brand-900) !important;
+}
+.swal2-icon.swal2-error [class^="swal2-x-mark-line"] {
+  background-color: var(--color-brand-900) !important;
 }
