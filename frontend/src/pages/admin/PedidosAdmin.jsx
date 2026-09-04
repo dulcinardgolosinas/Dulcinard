@@ -1,11 +1,59 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { api } from "../../lib/api";
+import { api, apiErrorMessage } from "../../lib/api";
 import { PageLoader } from "../../components/ui/Spinner";
-import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../../components/ui/Badge";
+import { ORDER_STATUS_LABELS } from "../../components/ui/Badge";
 import { formatCurrency } from "../../lib/format";
+import { buildAdminOrderWhatsappHref } from "../../lib/whatsapp";
+import { WhatsappIcon } from "../../components/ui/WhatsappIcon";
+import { toastSuccess, toastError } from "../../lib/alerts";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
+
+const STATUS_SELECT_TONES = {
+  pendiente: "border-ink-200 bg-white text-ink-600",
+  confirmado: "border-brand-200 bg-brand-50 text-brand-700",
+  en_preparacion: "border-brand-200 bg-brand-50 text-brand-700",
+  enviado: "border-brand-200 bg-brand-50 text-brand-700",
+  entregado: "border-brand-500 bg-brand-600 text-white",
+  cancelado: "border-ink-300 bg-ink-100 text-ink-500"
+};
+
+function StatusSelect({ order, onChanged }) {
+  const [saving, setSaving] = useState(false);
+
+  async function handleChange(e) {
+    const nextStatus = e.target.value;
+    if (nextStatus === order.status) return;
+    setSaving(true);
+    try {
+      const { data } = await api.put(`/orders/${order._id}/status`, { status: nextStatus });
+      onChanged(data);
+      toastSuccess(`Pedido marcado como "${ORDER_STATUS_LABELS[nextStatus]}"`);
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos actualizar el estado del pedido"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <select
+      value={order.status}
+      onChange={handleChange}
+      disabled={saving}
+      className={`rounded-full border px-3 py-1.5 text-xs font-semibold outline-none disabled:opacity-50 ${
+        STATUS_SELECT_TONES[order.status] || STATUS_SELECT_TONES.pendiente
+      }`}
+    >
+      {STATUSES.map((s) => (
+        <option key={s} value={s}>
+          {ORDER_STATUS_LABELS[s]}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export default function PedidosAdmin() {
   const [orders, setOrders] = useState([]);
@@ -23,6 +71,10 @@ export default function PedidosAdmin() {
     load("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleStatusChanged(updated) {
+    setOrders((prev) => prev.map((o) => (o._id === updated._id ? { ...o, status: updated.status } : o)));
+  }
 
   return (
     <div>
@@ -62,22 +114,38 @@ export default function PedidosAdmin() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((o) => (
-                <tr key={o._id} className="border-t border-ink-50">
-                  <td className="px-4 py-3 font-medium text-ink-900">#{o._id.slice(-6).toUpperCase()}</td>
-                  <td className="px-4 py-3 text-ink-600">{o.user?.name || o.user?.email}</td>
-                  <td className="px-4 py-3 text-ink-500">{new Date(o.createdAt).toLocaleDateString("es-AR")}</td>
-                  <td className="px-4 py-3 font-semibold text-ink-900">{formatCurrency(o.total)}</td>
-                  <td className="px-4 py-3">
-                    <Badge tone={ORDER_STATUS_TONES[o.status]}>{ORDER_STATUS_LABELS[o.status]}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/pedidos/${o._id}`} className="text-sm font-semibold text-brand-600 hover:underline">
-                      Ver detalle
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {orders.map((o) => {
+                const whatsappHref = buildAdminOrderWhatsappHref(o);
+                return (
+                  <tr key={o._id} className="border-t border-ink-50">
+                    <td className="px-4 py-3 font-medium text-ink-900">#{o._id.slice(-6).toUpperCase()}</td>
+                    <td className="px-4 py-3 text-ink-600">{o.user?.name || o.user?.email}</td>
+                    <td className="px-4 py-3 text-ink-500">{new Date(o.createdAt).toLocaleDateString("es-AR")}</td>
+                    <td className="px-4 py-3 font-semibold text-ink-900">{formatCurrency(o.total)}</td>
+                    <td className="px-4 py-3">
+                      <StatusSelect order={o} onChanged={handleStatusChanged} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        {whatsappHref && (
+                          <a
+                            href={whatsappHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Coordinar por WhatsApp"
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-600 text-white transition-colors hover:bg-accent-700"
+                          >
+                            <WhatsappIcon className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        <Link to={`/admin/pedidos/${o._id}`} className="text-sm font-semibold text-brand-600 hover:underline">
+                          Ver detalle
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {orders.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-4 py-10 text-center text-ink-400">

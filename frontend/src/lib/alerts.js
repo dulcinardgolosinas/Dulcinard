@@ -38,6 +38,38 @@ export function confirmDelete(itemLabel = "este elemento") {
   });
 }
 
+export function paymentSuccessAlert(whatsappHref) {
+  return Swal.fire({
+    title: "¡Pago recibido!",
+    text: "Tu pedido fue confirmado. Escribinos por WhatsApp para coordinar el envío.",
+    icon: "success",
+    confirmButtonText: "Contactar por WhatsApp",
+    confirmButtonColor: BRAND_CONFIRM_COLOR,
+    showCancelButton: true,
+    cancelButtonText: "Cerrar",
+    cancelButtonColor: BRAND_CANCEL_COLOR,
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) window.open(whatsappHref, "_blank", "noopener,noreferrer");
+  });
+}
+
+export function paymentFailureAlert(onRetry) {
+  return Swal.fire({
+    title: "No pudimos procesar el pago",
+    text: "Hubo un problema al pagar tu pedido. Podés intentarlo de nuevo.",
+    icon: "error",
+    confirmButtonText: "Reintentar pago",
+    confirmButtonColor: BRAND_CONFIRM_COLOR,
+    showCancelButton: true,
+    cancelButtonText: "Cerrar",
+    cancelButtonColor: BRAND_CANCEL_COLOR,
+    reverseButtons: true
+  }).then((result) => {
+    if (result.isConfirmed) onRetry?.();
+  });
+}
+
 export function confirmLogout() {
   return confirmAction({
     title: "¿Cerrar sesión?",

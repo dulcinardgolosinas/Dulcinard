@@ -6,6 +6,8 @@ import { PageLoader } from "../../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../../components/ui/Badge";
 import { formatCurrency, UNIT_LABELS } from "../../lib/format";
 import { toastSuccess, toastError } from "../../lib/alerts";
+import { buildAdminOrderWhatsappHref } from "../../lib/whatsapp";
+import { WhatsappIcon } from "../../components/ui/WhatsappIcon";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
 
@@ -35,6 +37,8 @@ export default function PedidoDetalleAdmin() {
   if (loading) return <PageLoader />;
   if (!order) return <p className="text-ink-400">Pedido no encontrado.</p>;
 
+  const whatsappHref = buildAdminOrderWhatsappHref(order);
+
   return (
     <div className="mx-auto max-w-3xl">
       <Link to="/admin/pedidos" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-brand-600">
@@ -46,6 +50,20 @@ export default function PedidoDetalleAdmin() {
         <h1 className="text-2xl font-bold text-ink-900">Pedido #{order._id.slice(-6).toUpperCase()}</h1>
         <Badge tone={ORDER_STATUS_TONES[order.status]}>{ORDER_STATUS_LABELS[order.status]}</Badge>
       </div>
+
+      {whatsappHref ? (
+        <a
+          href={whatsappHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
+        >
+          <WhatsappIcon className="h-4 w-4" />
+          Coordinar con el cliente por WhatsApp
+        </a>
+      ) : (
+        <p className="mt-4 text-xs text-ink-400">El cliente no tiene ningún teléfono cargado para coordinar por WhatsApp.</p>
+      )}
 
       <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <div className="rounded-2xl border border-ink-100 bg-white p-5">
