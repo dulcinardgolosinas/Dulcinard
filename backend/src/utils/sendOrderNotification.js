@@ -1,6 +1,6 @@
 import { transporter, mailerConfigured } from "../config/mailer.js";
 
-const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || "gerysfeir@gmail.com";
+const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || "marilamas02@gmail.com";
 
 function formatCurrency(value) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(value);
@@ -16,12 +16,20 @@ function buildEmailHtml(order, user) {
 
   return `
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-      <h2 style="color:#b81830">Nuevo pedido #${order._id.toString().slice(-6).toUpperCase()}</h2>
+      <h2 style="color:#b81830">Pedido confirmado #${order._id.toString().slice(-6).toUpperCase()}</h2>
       <p><strong>Fecha:</strong> ${new Date(order.createdAt).toLocaleString("es-AR")}</p>
-      <p><strong>Cliente:</strong> ${user.name} (${user.email})</p>
-      <p><strong>Teléfono de contacto:</strong> ${order.shippingAddress?.phone || user.phone || "-"}</p>
-      <p><strong>Entrega:</strong> ${order.shippingAddress?.street || "-"}, ${order.shippingAddress?.city || "-"}</p>
-      ${order.shippingAddress?.notes ? `<p><strong>Notas:</strong> ${order.shippingAddress.notes}</p>` : ""}
+
+      <h3 style="color:#b81830;margin-top:20px;margin-bottom:6px;font-size:15px">Datos del cliente</h3>
+      <p style="margin:2px 0"><strong>Nombre:</strong> ${user.name}</p>
+      ${user.businessName ? `<p style="margin:2px 0"><strong>Negocio:</strong> ${user.businessName}</p>` : ""}
+      <p style="margin:2px 0"><strong>Email:</strong> ${user.email}</p>
+      <p style="margin:2px 0"><strong>Teléfono de contacto:</strong> ${order.shippingAddress?.phone || user.phone || "-"}</p>
+
+      <h3 style="color:#b81830;margin-top:20px;margin-bottom:6px;font-size:15px">Entrega</h3>
+      <p style="margin:2px 0"><strong>Dirección:</strong> ${order.shippingAddress?.street || "-"}, ${order.shippingAddress?.city || "-"}</p>
+      ${order.shippingAddress?.zone?.name ? `<p style="margin:2px 0"><strong>Zona de envío:</strong> ${order.shippingAddress.zone.name}</p>` : ""}
+      ${order.shippingAddress?.notes ? `<p style="margin:2px 0"><strong>Notas del cliente:</strong> ${order.shippingAddress.notes}</p>` : ""}
+
       <table style="width:100%;border-collapse:collapse;margin-top:12px">
         <thead>
           <tr style="background:#f6f5f5">

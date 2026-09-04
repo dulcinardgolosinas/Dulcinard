@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { api, apiErrorMessage } from "../lib/api";
@@ -6,6 +6,10 @@ import { PageLoader, Spinner } from "../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { formatCurrency, UNIT_LABELS } from "../lib/format";
+import { paymentSuccessAlert, paymentFailureAlert } from "../lib/alerts";
+import { useSiteConfigStore } from "../store/siteConfigStore";
+import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
+import { WhatsappIcon } from "../components/ui/WhatsappIcon";
 
 const STEPS = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
 
@@ -16,6 +20,8 @@ export default function PedidoDetalle() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
+  const config = useSiteConfigStore((s) => s.config);
+  const alertShown = useRef(false);
 
   useEffect(() => {
     api
@@ -40,6 +46,32 @@ export default function PedidoDetalle() {
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (!order || alertShown.current) return;
+    if (searchParams.get("pago") !== "exito") return;
+    const storageKey = `payment-alert-${id}`;
+    if (sessionStorage.getItem(storageKey)) return;
+
+    alertShown.current = true;
+    sessionStorage.setItem(storageKey, "1");
+
+    paymentSuccessAlert(buildCustomerOrderWhatsappHref(order, config?.whatsappNumber));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
+
+  useEffect(() => {
+    if (!order || alertShown.current) return;
+    if (searchParams.get("pago") !== "error") return;
+    const storageKey = `payment-alert-${id}`;
+    if (sessionStorage.getItem(storageKey)) return;
+
+    alertShown.current = true;
+    sessionStorage.setItem(storageKey, "1");
+
+    paymentFailureAlert(handlePay);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order]);
 
   async function handlePay() {
     setPaying(true);
@@ -80,6 +112,16 @@ export default function PedidoDetalle() {
         <Badge tone={ORDER_STATUS_TONES[order.status]}>{ORDER_STATUS_LABELS[order.status]}</Badge>
       </div>
       <p className="text-sm text-ink-400">{new Date(order.createdAt).toLocaleString("es-AR")}</p>
+
+      <a
+        href={buildCustomerOrderWhatsappHref(order, config?.whatsappNumber)}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
+      >
+        <WhatsappIcon className="h-4 w-4" />
+        Coordinar por WhatsApp
+      </a>
 
       {pagoQuery === "exito" && (
         <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-700">¡Pago recibido! Estamos procesando tu pedido.</p>

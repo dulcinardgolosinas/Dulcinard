@@ -79,9 +79,6 @@ export const createOrder = asyncHandler(async (req, res) => {
   // Descontar stock reservado
   await Promise.all(items.map((i) => Product.findByIdAndUpdate(i.product, { $inc: { stock: -i.quantity } })));
 
-  // No bloquea la respuesta ni la confirmación del pedido si el mail falla.
-  sendOrderNotification(order, req.user);
-
   res.status(201).json(order);
 });
 
@@ -138,7 +135,10 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
   res.json({ preferenceId: preference.id, initPoint });
 });
 
+// Devuelve true si el pago recién pasó a "aprobado" en esta llamada, para
+// no reenviar la notificación por mail si el pedido ya estaba confirmado.
 function applyPaymentToOrder(order, payment) {
+  const wasApproved = order.paymentStatus === "aprobado";
   order.mercadoPago.paymentId = String(payment.id);
   if (payment.status === "approved") {
     order.paymentStatus = "aprobado";
@@ -146,6 +146,7 @@ function applyPaymentToOrder(order, payment) {
   } else if (payment.status === "rejected") {
     order.paymentStatus = "rechazado";
   }
+  return !wasApproved && order.paymentStatus === "aprobado";
 }
 
 export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
@@ -154,10 +155,12 @@ export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
 
   if (type === "payment" && paymentId) {
     const payment = await mpPayment.get({ id: paymentId });
-    const order = await Order.findById(payment.external_reference);
+    const order = await Order.findById(payment.external_reference).populate("user").populate("shippingAddress.zone");
     if (order) {
-      applyPaymentToOrder(order, payment);
+      const justApproved = applyPaymentToOrder(order, payment);
       await order.save();
+      // No bloquea la respuesta al webhook si el mail falla.
+      if (justApproved) sendOrderNotification(order, order.user);
     }
   }
 
@@ -169,7 +172,7 @@ export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
 // llama a este endpoint con el payment_id que Mercado Pago agrega a la URL de
 // retorno, para sincronizar el estado del pedido sin depender del webhook.
 export const syncOrderPayment = asyncHandler(async (req, res) => {
-  const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+  const order = await Order.findOne({ _id: req.params.id, user: req.user._id }).populate("shippingAddress.zone");
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
 
   const paymentId = req.query.paymentId;
@@ -180,8 +183,11 @@ export const syncOrderPayment = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "El pago no corresponde a este pedido" });
   }
 
-  applyPaymentToOrder(order, payment);
+  const justApproved = applyPaymentToOrder(order, payment);
   await order.save();
+  // No bloquea la respuesta al cliente si el mail falla.
+  if (justApproved) sendOrderNotification(order, req.user);
+
   res.json(order);
 });
 
@@ -206,7 +212,7 @@ export const listAllOrders = asyncHandler(async (req, res) => {
 
   const [items, total] = await Promise.all([
     Order.find(filter)
-      .populate("user", "name email businessName")
+      .populate("user", "name email businessName phone")
       .sort({ createdAt: -1 })
       .skip((pageNum - 1) * limitNum)
       .limit(limitNum),
