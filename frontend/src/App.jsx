@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { AuthLayout } from "./components/layout/AuthLayout";
 import { ProtectedRoute, AdminRoute } from "./routes/ProtectedRoute";
+import { ScrollToTop } from "./routes/ScrollToTop";
 
 import Home from "./pages/Home";
 import QuienesSomos from "./pages/QuienesSomos";
@@ -21,6 +22,8 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductosAdmin from "./pages/admin/ProductosAdmin";
 import ProductoForm from "./pages/admin/ProductoForm";
+import ProductosImportar from "./pages/admin/ProductosImportar";
+import ProductosFotos from "./pages/admin/ProductosFotos";
 import CategoriasAdmin from "./pages/admin/CategoriasAdmin";
 import PromocionesAdmin from "./pages/admin/PromocionesAdmin";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -35,6 +38,7 @@ import ConfiguracionAdmin from "./pages/admin/ConfiguracionAdmin";
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
@@ -63,6 +67,8 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="productos" element={<ProductosAdmin />} />
             <Route path="productos/nuevo" element={<ProductoForm />} />
+            <Route path="productos/importar" element={<ProductosImportar />} />
+            <Route path="productos/fotos" element={<ProductosFotos />} />
             <Route path="productos/:id/editar" element={<ProductoForm />} />
             <Route path="categorias" element={<CategoriasAdmin />} />
             <Route path="promociones" element={<PromocionesAdmin />} />
