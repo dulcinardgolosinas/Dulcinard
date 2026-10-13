@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useCartStore } from "../store/cartStore";
-import { formatCurrency, UNIT_LABELS } from "../lib/format";
+import { formatCurrency, finalPriceOf, UNIT_LABELS } from "../lib/format";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { PageLoader } from "../components/ui/Spinner";
@@ -62,9 +62,9 @@ export default function ProductoDetalle() {
 
       <div className="grid gap-10 md:grid-cols-2">
         <div>
-          <div className="aspect-square overflow-hidden rounded-2xl bg-ink-50">
+          <div className="aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-white">
             {images[activeImage] ? (
-              <img src={images[activeImage].url} alt={product.name} className="h-full w-full object-cover" />
+              <img src={images[activeImage].url} alt={product.name} className="h-full w-full object-contain p-4" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-ink-200">
                 <svg className="h-16 w-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
@@ -84,7 +84,7 @@ export default function ProductoDetalle() {
                     activeImage === i ? "border-brand-500" : "border-transparent"
                   }`}
                 >
-                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                  <img src={img.url} alt="" className="h-full w-full bg-white object-contain" />
                 </button>
               ))}
             </div>
@@ -96,13 +96,19 @@ export default function ProductoDetalle() {
           <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">{product.name}</h1>
 
           <div className="mt-4 flex items-center gap-3">
-            <p className="text-3xl font-bold text-brand-700">{formatCurrency(product.price)}</p>
+            <p className="text-3xl font-bold text-brand-700">{formatCurrency(finalPriceOf(product))}</p>
+            {product.discountPercent > 0 && (
+              <>
+                <p className="text-lg text-ink-400 line-through">{formatCurrency(product.price)}</p>
+                <Badge tone="success">{product.discountPercent}% OFF</Badge>
+              </>
+            )}
             <Badge tone="neutral">x {UNIT_LABELS[product.unit] || product.unit}</Badge>
           </div>
 
           <p className="mt-2 text-sm text-ink-500">
             {outOfStock ? (
-              <span className="font-semibold text-red-600">Sin stock disponible</span>
+              <span className="font-semibold text-danger-600">Sin stock disponible</span>
             ) : (
               <>Stock disponible: {product.stock} · Pedido mínimo: {product.minOrderQty}</>
             )}
@@ -128,7 +134,7 @@ export default function ProductoDetalle() {
             </Button>
           </div>
 
-          <p className="mt-4 text-xs text-ink-400">Subtotal: {formatCurrency(product.price * qty)}</p>
+          <p className="mt-4 text-xs text-ink-400">Subtotal: {formatCurrency(finalPriceOf(product) * qty)}</p>
         </div>
       </div>
     </div>
