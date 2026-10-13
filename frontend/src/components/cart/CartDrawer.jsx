@@ -39,7 +39,7 @@ export function CartDrawer() {
               {items.map((item) => (
                 <li key={item.productId} className="flex gap-3">
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink-50">
-                    {item.image && <img src={item.image} alt={item.name} className="h-full w-full object-cover" />}
+                    {item.image && <img src={item.image} alt={item.name} className="h-full w-full bg-white object-contain" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
@@ -62,7 +62,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         onClick={() => removeItem(item.productId)}
-                        className="text-xs font-medium text-ink-400 hover:text-red-600"
+                        className="text-xs font-medium text-ink-400 hover:text-danger-600"
                       >
                         Quitar
                       </button>
