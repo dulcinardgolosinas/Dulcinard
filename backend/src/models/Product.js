@@ -25,6 +25,8 @@ const productSchema = new mongoose.Schema(
     unitsPerPack: { type: Number, default: 1, min: 1 }, // ej: display x24
 
     stock: { type: Number, required: true, default: 0, min: 0 },
+    // Umbral de reposición: con stock <= minStock el panel admin lo marca como "Reponer stock".
+    minStock: { type: Number, default: 0, min: 0 },
     minOrderQty: { type: Number, default: 1, min: 1 },
 
     images: { type: [imageSchema], default: [] },
@@ -37,8 +39,13 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ name: "text", description: "text", brand: "text" });
 
+// Filtro reutilizable: productos en o por debajo de su stock mínimo.
+export const LOW_STOCK_FILTER = { $expr: { $lte: ["$stock", { $ifNull: ["$minStock", 0] }] } };
+
 productSchema.pre("validate", function (next) {
-  if (this.name && (!this.slug || this.isModified("name"))) {
+  // Un producto nuevo respeta el slug que traiga (la carga masiva lo arma único);
+  // al renombrar uno existente se regenera.
+  if (this.name && (!this.slug || (!this.isNew && this.isModified("name")))) {
     this.slug = `${slugify(this.name, { lower: true, strict: true, locale: "es" })}-${Date.now()
       .toString(36)
       .slice(-4)}`;
