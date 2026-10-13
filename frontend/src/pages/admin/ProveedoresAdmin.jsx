@@ -115,7 +115,7 @@ function ProviderCard({ provider, onChanged }) {
             type="button"
             onClick={handleDeleteLogo}
             disabled={deleting}
-            className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+            className="text-sm font-semibold text-danger-600 hover:underline disabled:opacity-50"
           >
             {deleting ? "Eliminando..." : "Eliminar logo"}
           </button>
