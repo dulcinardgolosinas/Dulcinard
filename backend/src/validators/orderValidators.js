@@ -1,10 +1,10 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
-import { ORDER_STATUSES } from "../models/Order.js";
+import { ORDER_STATUSES, CHECKOUT_PAYMENT_METHODS } from "../models/Order.js";
 import { PHONE_REGEX } from "../utils/validationPatterns.js";
 
 export const createOrderValidator = [
-  body("items").isArray({ min: 1 }).withMessage("El carrito está vacío"),
+  body("items").isArray({ min: 1, max: 200 }).withMessage("El carrito debe tener entre 1 y 200 productos"),
   body("items.*.productId").isMongoId().withMessage("Producto inválido en el carrito"),
   body("items.*.quantity").isInt({ min: 1, max: 100000 }).withMessage("La cantidad debe ser un número entero mayor a 0"),
   body("shippingAddress.phone")
@@ -29,6 +29,7 @@ export const createOrderValidator = [
     .withMessage("La localidad debe tener entre 2 y 80 caracteres"),
   body("shippingAddress.zone").optional({ checkFalsy: true }).isMongoId().withMessage("Zona de envío inválida"),
   body("shippingAddress.notes").optional({ checkFalsy: true }).trim().isLength({ max: 500 }).withMessage("Las notas no pueden superar los 500 caracteres"),
+  body("paymentMethod").optional({ checkFalsy: true }).isIn(CHECKOUT_PAYMENT_METHODS).withMessage("Método de pago inválido"),
   validate
 ];
 
