@@ -81,7 +81,7 @@ function ZoneForm({ editing, onSaved, onCancel }) {
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
         Zona activa
       </label>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={isSubmitting}>
           {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear zona"}
@@ -157,7 +157,7 @@ export default function ZonasEnvioAdmin() {
                         <button onClick={() => setEditing(z)} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">
                           Editar
                         </button>
-                        <button onClick={() => handleDelete(z)} className="text-sm font-semibold text-red-600 hover:underline">
+                        <button onClick={() => handleDelete(z)} className="text-sm font-semibold text-danger-600 hover:underline">
                           Eliminar
                         </button>
                       </td>
