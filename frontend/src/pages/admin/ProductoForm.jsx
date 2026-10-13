@@ -24,6 +24,7 @@ const schema = z.object({
   unit: z.enum(UNITS),
   unitsPerPack: intField("Las unidades por pack", { min: 1, max: 100000 }),
   stock: intField("El stock", { min: 0, max: 10000000 }),
+  minStock: intField("El stock mínimo", { min: 0, max: 10000000 }),
   minOrderQty: intField("El pedido mínimo", { min: 1, max: 100000 }),
   featured: z.boolean().optional(),
   active: z.boolean().optional()
@@ -57,6 +58,7 @@ export default function ProductoForm() {
       unit: "unidad",
       unitsPerPack: 1,
       stock: 0,
+      minStock: 0,
       minOrderQty: 1,
       featured: false,
       active: true
@@ -79,6 +81,7 @@ export default function ProductoForm() {
         unit: data.unit,
         unitsPerPack: data.unitsPerPack,
         stock: data.stock,
+        minStock: data.minStock ?? 0,
         minOrderQty: data.minOrderQty,
         featured: data.featured,
         active: data.active
@@ -170,6 +173,12 @@ export default function ProductoForm() {
           </Select>
           <Input label="Unidades por pack" type="number" {...register("unitsPerPack")} error={errors.unitsPerPack?.message} />
           <Input label="Stock disponible" type="number" {...register("stock")} error={errors.stock?.message} />
+          <Input
+            label="Stock mínimo (alerta de reposición)"
+            type="number"
+            {...register("minStock")}
+            error={errors.minStock?.message}
+          />
           <Input label="Pedido mínimo" type="number" {...register("minOrderQty")} error={errors.minOrderQty?.message} />
           <div className="flex items-center gap-6 pt-6">
             <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
@@ -193,12 +202,12 @@ export default function ProductoForm() {
                   <img
                     src={img.url}
                     alt=""
-                    className={`h-full w-full rounded-xl object-cover ${imagesToRemove.includes(img.publicId) ? "opacity-30" : ""}`}
+                    className={`h-full w-full rounded-xl border border-ink-100 bg-white object-contain ${imagesToRemove.includes(img.publicId) ? "opacity-30" : ""}`}
                   />
                   <button
                     type="button"
                     onClick={() => toggleRemoveImage(img.publicId)}
-                    className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-red-600 shadow"
+                    className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white text-danger-600 shadow"
                   >
                     {imagesToRemove.includes(img.publicId) ? <RotateCcw className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
                   </button>
@@ -211,7 +220,7 @@ export default function ProductoForm() {
           {newFiles.length > 0 && <p className="mt-2 text-xs text-ink-400">{newFiles.length} imagen(es) nueva(s) para subir</p>}
         </div>
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger-600">{error}</p>}
 
         <div className="flex gap-3">
           <Button type="submit" disabled={isSubmitting}>
