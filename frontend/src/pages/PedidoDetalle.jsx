@@ -5,7 +5,7 @@ import { api, apiErrorMessage } from "../lib/api";
 import { PageLoader, Spinner } from "../components/ui/Spinner";
 import { Badge, ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
-import { formatCurrency, UNIT_LABELS } from "../lib/format";
+import { formatCurrency, UNIT_LABELS, PAYMENT_METHOD_LABELS } from "../lib/format";
 import { paymentSuccessAlert, paymentFailureAlert } from "../lib/alerts";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
@@ -126,8 +126,14 @@ export default function PedidoDetalle() {
       {pagoQuery === "exito" && (
         <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-700">¡Pago recibido! Estamos procesando tu pedido.</p>
       )}
+      {pagoQuery === "efectivo" && order.paymentStatus !== "aprobado" && (
+        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+          ¡Recibimos tu pedido! Lo abonás en efectivo: queda pendiente de pago hasta que confirmemos el cobro. Escribinos por
+          WhatsApp para coordinar la entrega.
+        </p>
+      )}
       {pagoQuery === "error" && (
-        <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">Hubo un problema con el pago. Podés reintentarlo.</p>
+        <p className="mt-4 rounded-xl bg-danger-50 px-4 py-3 text-sm text-danger-700">Hubo un problema con el pago. Podés reintentarlo.</p>
       )}
 
       {order.status !== "cancelado" && (
@@ -157,6 +163,7 @@ export default function PedidoDetalle() {
               <p className="text-sm font-semibold text-ink-900">{item.name}</p>
               <p className="text-xs text-ink-400">
                 {item.quantity} x {UNIT_LABELS[item.unit] || item.unit} · {formatCurrency(item.unitPrice)}
+                {item.discountPercent > 0 && ` (${item.discountPercent}% OFF, antes ${formatCurrency(item.listPrice)})`}
               </p>
             </div>
             <p className="font-semibold text-ink-900">{formatCurrency(item.subtotal)}</p>
@@ -177,11 +184,15 @@ export default function PedidoDetalle() {
           <span>Total</span>
           <span>{formatCurrency(order.total)}</span>
         </div>
+        <div className="flex justify-between pt-2 text-xs text-ink-600">
+          <span>Pago: {PAYMENT_METHOD_LABELS[order.paymentMethod] || order.paymentMethod}</span>
+          <span>{order.paymentStatus === "aprobado" ? "Pagado" : "Pendiente de pago"}</span>
+        </div>
       </div>
 
-      {order.paymentStatus !== "aprobado" && order.status !== "cancelado" && (
+      {order.paymentMethod === "mercado_pago" && order.paymentStatus !== "aprobado" && order.status !== "cancelado" && (
         <div className="mt-6">
-          {payError && <p className="mb-3 text-sm text-red-600">{payError}</p>}
+          {payError && <p className="mb-3 text-sm text-danger-600">{payError}</p>}
           <Button size="lg" onClick={handlePay} disabled={paying}>
             {paying ? <Spinner className="h-4 w-4" /> : "Pagar con Mercado Pago"}
           </Button>

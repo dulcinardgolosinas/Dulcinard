@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Banknote, CreditCard } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -20,24 +21,66 @@ const schema = z.object({
   city: nameField("La localidad", { max: 80 }),
   phone: phoneField({ required: true }),
   savePhone: z.boolean().optional(),
-  notes: z.string().trim().max(500, "Las notas no pueden superar los 500 caracteres").optional()
+  notes: z.string().trim().max(500, "Las notas no pueden superar los 500 caracteres").optional(),
+  paymentMethod: z.enum(["mercado_pago", "efectivo"], { message: "Elegí un método de pago" })
 });
+
+const PAYMENT_OPTIONS = [
+  {
+    value: "mercado_pago",
+    title: "Mercado Pago",
+    description: "Tarjeta, débito o dinero en cuenta. Te redirigimos para pagar de forma segura.",
+    Icon: CreditCard
+  },
+  {
+    value: "efectivo",
+    title: "Efectivo",
+    description: "Pagás al recibir o retirar el pedido. Lo confirmamos cuando recibamos el pago.",
+    Icon: Banknote
+  }
+];
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { items, total, clear } = useCartStore();
+  const { items, total, clear, syncWithProducts } = useCartStore();
   const config = useSiteConfigStore((s) => s.config);
   const { user, updateUser } = useAuthStore();
   const [zones, setZones] = useState([]);
   const [error, setError] = useState("");
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { street: "", city: "", zone: "", phone: user?.phone || "", savePhone: false, notes: "" }
+    defaultValues: {
+      street: "",
+      city: "",
+      zone: "",
+      phone: user?.phone || "",
+      savePhone: false,
+      notes: "",
+      paymentMethod: "mercado_pago"
+    }
   });
+  const paymentMethod = watch("paymentMethod");
 
   useEffect(() => {
     api.get("/shipping-zones").then(({ data }) => setZones(data));
   }, []);
+
+  // Precios y stock reales del servidor: el carrito guardado en el navegador
+  // puede estar desactualizado o editado a mano. (El backend igual recalcula
+  // todo al crear el pedido; esto es para que el resumen muestre lo que se cobra.)
+  useEffect(() => {
+    const ids = useCartStore.getState().items.map((i) => i.productId);
+    if (!ids.length) return;
+    api
+      .get("/products", { params: { ids: ids.join(","), limit: 100 } })
+      .then(({ data }) => {
+        const removed = syncWithProducts(data.items);
+        if (removed.length) toastError(`Ya no están disponibles: ${removed.join(", ")}`);
+      })
+      .catch(() => {
+        // si falla, el backend valida igual al confirmar
+      });
+  }, [syncWithProducts]);
 
   const selectedZoneId = watch("zone");
   const selectedZone = zones.find((z) => z._id === selectedZoneId);
@@ -47,13 +90,25 @@ export default function Checkout() {
       : selectedZone.cost
     : config?.defaultShippingCost ?? 80;
 
-  async function onSubmit({ savePhone, ...values }) {
+  async function onSubmit({ savePhone, paymentMethod, ...values }) {
     setError("");
+    let order;
     try {
-      const { data: order } = await api.post("/orders", {
+      ({ data: order } = await api.post("/orders", {
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-        shippingAddress: values
-      });
+        shippingAddress: values,
+        paymentMethod
+      }));
+    } catch (err) {
+      const message = apiErrorMessage(err, "No pudimos generar tu pedido");
+      setError(message);
+      toastError(message);
+      return;
+    }
+
+    // Desde acá el pedido ya existe: en todas las salidas se vacía el carrito,
+    // para que un reintento no genere un pedido duplicado.
+    try {
 
       if (savePhone && values.phone !== user?.phone) {
         try {
@@ -65,13 +120,20 @@ export default function Checkout() {
         }
       }
 
+      if (paymentMethod === "efectivo") {
+        clear();
+        navigate(`/pedidos/${order._id}?pago=efectivo`);
+        return;
+      }
+
       const { data: pref } = await api.post(`/orders/${order._id}/pay`);
       clear();
       window.location.href = pref.initPoint;
     } catch (err) {
-      const message = apiErrorMessage(err, "No pudimos generar tu pedido");
-      setError(message);
-      toastError(message);
+      // El pedido quedó creado: se lleva al detalle, donde puede reintentar el pago.
+      clear();
+      toastError(apiErrorMessage(err, "Tu pedido se creó, pero no pudimos iniciar el pago. Reintentalo desde el pedido."));
+      navigate(`/pedidos/${order._id}`);
     }
   }
 
@@ -120,13 +182,45 @@ export default function Checkout() {
 
           <Textarea label="Notas para la entrega (opcional)" rows={3} {...register("notes")} error={errors.notes?.message} />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          <fieldset className="pt-2">
+            <legend className="mb-2 font-semibold text-ink-900">Método de pago</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {PAYMENT_OPTIONS.map(({ value, title, description, Icon }) => (
+                <label
+                  key={value}
+                  className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition-colors ${
+                    paymentMethod === value ? "border-brand-500 bg-brand-50" : "border-ink-200 bg-white hover:border-brand-300"
+                  }`}
+                >
+                  <input type="radio" value={value} {...register("paymentMethod")} className="mt-1 h-4 w-4 accent-brand-600" />
+                  <span>
+                    <span className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                      <Icon className="h-4 w-4 text-brand-600" strokeWidth={2} />
+                      {title}
+                    </span>
+                    <span className="mt-1 block text-xs text-ink-600">{description}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            {errors.paymentMethod && <p className="mt-1 text-xs text-danger-600">{errors.paymentMethod.message}</p>}
+          </fieldset>
+
+          {error && <p className="text-sm text-danger-600">{error}</p>}
 
           <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? <Spinner className="h-4 w-4" /> : "Confirmar y pagar con Mercado Pago"}
+            {isSubmitting ? (
+              <Spinner className="h-4 w-4" />
+            ) : paymentMethod === "efectivo" ? (
+              "Confirmar pedido (pago en efectivo)"
+            ) : (
+              "Confirmar y pagar con Mercado Pago"
+            )}
           </Button>
-          <p className="text-xs text-ink-400">
-            Al confirmar serás redirigido a Mercado Pago para completar el pago de forma segura.
+          <p className="text-xs text-ink-500">
+            {paymentMethod === "efectivo"
+              ? "Tu pedido queda pendiente de pago hasta que confirmemos el cobro en efectivo. Te contactamos para coordinar."
+              : "Al confirmar serás redirigido a Mercado Pago para completar el pago de forma segura."}
           </p>
         </form>
 

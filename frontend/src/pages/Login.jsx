@@ -50,7 +50,7 @@ export default function Login() {
       <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
       <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
 
-      {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+      {serverError && <p className="text-sm text-danger-600">{serverError}</p>}
 
       <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Ingresando..." : "Ingresar"}
