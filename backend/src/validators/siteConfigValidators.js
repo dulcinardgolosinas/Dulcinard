@@ -9,7 +9,18 @@ function optionalNumber(field, label, { min = 0, max = 100000000 } = {}) {
     .withMessage(`${label} debe ser un número mayor o igual a ${min}`);
 }
 
+// Colores editables de la paleta (SiteConfig.theme). "" = color por defecto.
+export const THEME_KEYS = ["primary", "secondary", "accent", "background", "text"];
+const HEX_COLOR_OR_EMPTY_REGEX = /^(#[0-9a-fA-F]{6})?$/;
+
 export const updateSiteConfigValidator = [
+  ...THEME_KEYS.map((key) =>
+    body(`theme.${key}`)
+      .optional()
+      .isString()
+      .matches(HEX_COLOR_OR_EMPTY_REGEX)
+      .withMessage("Los colores deben tener el formato #rrggbb")
+  ),
   body("brandName")
     .optional({ checkFalsy: true })
     .trim()

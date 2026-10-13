@@ -4,7 +4,7 @@ import { NAME_REGEX, ALPHANUMERIC_TEXT_REGEX, PHONE_REGEX } from "../utils/valid
 
 export const updateUserValidator = [
   body("role").optional({ checkFalsy: true }).isIn(["admin", "cliente"]).withMessage("Rol inválido"),
-  body("active").optional().isBoolean().withMessage("El estado activo debe ser verdadero o falso"),
+  body("active").optional().isBoolean().withMessage("El estado activo debe ser verdadero o falso").toBoolean(true),
   body("name")
     .optional({ checkFalsy: true })
     .trim()
