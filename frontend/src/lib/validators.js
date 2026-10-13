@@ -4,7 +4,8 @@ import { z } from "zod";
 // para que los mensajes de front y back sean consistentes.
 export const NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'.\-\s]*$/;
 export const PHONE_REGEX = /^[0-9+()\s-]+$/;
-export const ALPHANUMERIC_TEXT_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'".,°/\-\s]+$/;
+// Mismo criterio que el backend (utils/validationPatterns.js).
+export const ALPHANUMERIC_TEXT_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'".,°/()&+%#:!ºª\-\s]+$/;
 export const SKU_REGEX = /^[A-Za-z0-9_-]+$/;
 export const DIGITS_ONLY_REGEX = /^[0-9]+$/;
 export const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/;
