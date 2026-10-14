@@ -4,6 +4,7 @@ import { FileInput } from "../../components/ui/FileInput";
 import { Button } from "../../components/ui/Button";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { usePageHeroStore } from "../../store/pageHeroStore";
 
 const PAGE_LABELS = {
   "quienes-somos": "Quiénes somos",
@@ -235,6 +236,7 @@ function HomeHeroGallery() {
 export default function ImagenesHeroAdmin() {
   const [heroes, setHeroes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const setStoreImage = usePageHeroStore((s) => s.setImage);
 
   async function load() {
     const { data } = await api.get("/page-heroes");
@@ -248,6 +250,7 @@ export default function ImagenesHeroAdmin() {
 
   function handleChanged(updated) {
     setHeroes((prev) => prev.map((h) => (h.page === updated.page ? updated : h)));
+    setStoreImage(updated.page, updated.backgroundImage?.url || null);
   }
 
   if (loading) return <PageLoader />;
