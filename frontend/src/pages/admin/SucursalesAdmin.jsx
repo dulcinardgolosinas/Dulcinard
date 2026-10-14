@@ -235,7 +235,7 @@ export default function SucursalesAdmin() {
                     Sucursal principal
                   </label>
                 </div>
-                <button type="button" onClick={() => removeBranch(i)} className="text-sm font-semibold text-red-600 hover:underline">
+                <button type="button" onClick={() => removeBranch(i)} className="text-sm font-semibold text-danger-600 hover:underline">
                   Eliminar sucursal
                 </button>
               </div>

@@ -47,7 +47,16 @@ export const updateProfile = asyncHandler(async (req, res) => {
   if (name !== undefined) req.user.name = name;
   if (businessName !== undefined) req.user.businessName = businessName;
   if (phone !== undefined) req.user.phone = phone;
-  if (addresses !== undefined) req.user.addresses = addresses;
+  // Solo los campos conocidos de cada dirección (nada de _id u otros campos inventados).
+  if (addresses !== undefined) {
+    req.user.addresses = addresses.map(({ label, street, city, zone, notes }) => ({
+      label: label || "Principal",
+      street,
+      city,
+      zone: zone || null,
+      notes: notes || ""
+    }));
+  }
 
   await req.user.save();
   res.json({ user: sanitizeUser(req.user) });
@@ -61,6 +70,8 @@ export const changePassword = asyncHandler(async (req, res) => {
   if (!match) return res.status(400).json({ message: "La contraseña actual es incorrecta" });
 
   user.password = newPassword;
+  // Cierra las sesiones abiertas en otros dispositivos; esta recibe un token nuevo.
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
   await user.save();
-  res.json({ message: "Contraseña actualizada" });
+  res.json({ message: "Contraseña actualizada", token: generateToken(user) });
 });

@@ -96,7 +96,7 @@ export default function AdminLayout() {
         <div className="border-t border-ink-100 px-5 py-4">
           <p className="text-sm font-semibold text-ink-800">{user?.name}</p>
           <p className="text-xs text-ink-400">{user?.email}</p>
-          <button onClick={handleLogout} className="mt-2 text-xs font-semibold text-red-600 hover:underline">
+          <button onClick={handleLogout} className="mt-2 text-xs font-semibold text-danger-600 hover:underline">
             Cerrar sesión
           </button>
         </div>
@@ -138,7 +138,7 @@ export default function AdminLayout() {
               <div className="border-t border-ink-100 px-5 py-4">
                 <p className="text-sm font-semibold text-ink-800">{user?.name}</p>
                 <p className="text-xs text-ink-400">{user?.email}</p>
-                <button onClick={handleLogout} className="mt-2 text-xs font-semibold text-red-600 hover:underline">
+                <button onClick={handleLogout} className="mt-2 text-xs font-semibold text-danger-600 hover:underline">
                   Cerrar sesión
                 </button>
               </div>

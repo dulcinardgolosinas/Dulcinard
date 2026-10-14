@@ -57,7 +57,7 @@ function ProfileForm() {
       <Input label="Nombre del negocio" {...register("businessName")} error={errors.businessName?.message} />
       <Input label="Teléfono" {...register("phone")} error={errors.phone?.message} />
       {message && <p className="text-sm text-brand-600">{message}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
       <Button type="submit" disabled={isSubmitting}>
         Guardar cambios
       </Button>
@@ -76,7 +76,9 @@ function PasswordForm() {
     setMessage("");
     setError("");
     try {
-      await api.put("/auth/me/password", values);
+      const { data } = await api.put("/auth/me/password", values);
+      // El cambio cierra las demás sesiones: esta sigue con el token nuevo.
+      if (data.token) useAuthStore.setState({ token: data.token });
       setMessage("Contraseña actualizada.");
       toastSuccess("Contraseña actualizada");
       reset();
@@ -96,7 +98,7 @@ function PasswordForm() {
       <PasswordInput label="Contraseña actual" {...register("currentPassword")} error={errors.currentPassword?.message} />
       <PasswordInput label="Nueva contraseña" {...register("newPassword")} error={errors.newPassword?.message} />
       {message && <p className="text-sm text-brand-600">{message}</p>}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
       <Button type="submit" variant="outline" disabled={isSubmitting}>
         Cambiar contraseña
       </Button>
@@ -121,7 +123,7 @@ export default function Perfil() {
           <h1 className="font-display text-3xl font-bold text-ink-900">Mi cuenta</h1>
           <p className="mt-1 text-sm text-ink-500">{user?.email}</p>
         </div>
-        <button onClick={handleLogout} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-red-600">
+        <button onClick={handleLogout} className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-danger-600">
           <LogOut className="h-4 w-4" strokeWidth={2} />
           Cerrar sesión
         </button>

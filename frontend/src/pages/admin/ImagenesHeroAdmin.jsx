@@ -98,7 +98,7 @@ function HeroCard({ hero, onChanged }) {
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+            className="text-sm font-semibold text-danger-600 hover:underline disabled:opacity-50"
           >
             {deleting ? "Eliminando..." : "Eliminar imagen"}
           </button>
@@ -136,7 +136,7 @@ function HomeHeroImageCard({ image, onDeleted }) {
         type="button"
         onClick={handleDelete}
         disabled={deleting}
-        className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-50"
+        className="text-sm font-semibold text-danger-600 hover:underline disabled:opacity-50"
       >
         {deleting ? "Eliminando..." : "Eliminar"}
       </button>

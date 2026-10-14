@@ -9,6 +9,7 @@ import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { toastSuccess, toastError } from "../../lib/alerts";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
+import { ThemeColorsSection } from "./ThemeColorsSection";
 import { nameField, urlField, numberField, intField, DIGITS_ONLY_REGEX } from "../../lib/validators";
 
 const schema = z.object({
@@ -119,6 +120,8 @@ export default function ConfiguracionAdmin() {
         </div>
       </div>
 
+      <ThemeColorsSection config={config} onSaved={setConfig} />
+
       <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-6 space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
         <Input label="Nombre de la marca" {...register("brandName")} error={errors.brandName?.message} />
         <Input label="Instagram (URL)" {...register("instagram")} error={errors.instagram?.message} />
@@ -134,7 +137,7 @@ export default function ConfiguracionAdmin() {
         </div>
 
         {message && <p className="text-sm text-brand-600">{message}</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="text-sm text-danger-600">{error}</p>}
 
         <Button type="submit" disabled={isSubmitting}>
           Guardar configuración

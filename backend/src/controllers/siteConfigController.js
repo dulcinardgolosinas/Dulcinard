@@ -2,6 +2,7 @@ import SiteConfig from "../models/SiteConfig.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
+import { THEME_KEYS } from "../validators/siteConfigValidators.js";
 
 // SiteConfig es un singleton: si no existe documento, se crea uno con los defaults del schema.
 async function getOrCreateConfig() {
@@ -31,6 +32,11 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
   ];
   for (const field of fields) {
     if (req.body[field] !== undefined) config[field] = req.body[field];
+  }
+  if (req.body.theme && typeof req.body.theme === "object") {
+    for (const key of THEME_KEYS) {
+      if (req.body.theme[key] !== undefined) config.theme[key] = String(req.body.theme[key]).toLowerCase();
+    }
   }
   if (req.body.branches !== undefined) {
     config.branches = typeof req.body.branches === "string" ? JSON.parse(req.body.branches) : req.body.branches;

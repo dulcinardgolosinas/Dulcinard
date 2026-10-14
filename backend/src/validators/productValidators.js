@@ -26,6 +26,7 @@ const baseRules = [
   body("unit").optional({ checkFalsy: true }).isIn(SALE_UNITS).withMessage("Unidad de venta inválida"),
   body("unitsPerPack").optional({ checkFalsy: true }).isInt({ min: 1, max: 100000 }).withMessage("Las unidades por pack deben ser un número entero mayor a 0"),
   body("stock").notEmpty().withMessage("Ingresá el stock disponible").isInt({ min: 0, max: 10000000 }).withMessage("El stock debe ser un número entero mayor o igual a 0"),
+  body("minStock").optional({ checkFalsy: true }).isInt({ min: 0, max: 10000000 }).withMessage("El stock mínimo debe ser un número entero mayor o igual a 0"),
   body("minOrderQty").optional({ checkFalsy: true }).isInt({ min: 1, max: 100000 }).withMessage("El pedido mínimo debe ser un número entero mayor a 0")
 ];
 

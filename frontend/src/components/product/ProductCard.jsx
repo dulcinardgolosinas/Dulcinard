@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCartStore } from "../../store/cartStore";
-import { formatCurrency, UNIT_LABELS } from "../../lib/format";
+import { formatCurrency, finalPriceOf, UNIT_LABELS } from "../../lib/format";
 import { Badge } from "../ui/Badge";
 
 export function ProductCard({ product }) {
@@ -10,13 +10,13 @@ export function ProductCard({ product }) {
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(184,24,48,0.25)]">
-      <Link to={`/producto/${product.slug}`} className="relative block aspect-square overflow-hidden bg-ink-50">
+      <Link to={`/producto/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
         {image ? (
           <img
             src={image}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-ink-200">
@@ -26,10 +26,16 @@ export function ProductCard({ product }) {
             </svg>
           </div>
         )}
-        {product.featured && (
-          <Badge tone="accent" className="absolute left-2 top-2">
-            Destacado
+        {product.discountPercent > 0 ? (
+          <Badge tone="success" className="absolute left-2 top-2">
+            {product.discountPercent}% OFF
           </Badge>
+        ) : (
+          product.featured && (
+            <Badge tone="accent" className="absolute left-2 top-2">
+              Destacado
+            </Badge>
+          )
         )}
         {outOfStock && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/70">
@@ -46,7 +52,10 @@ export function ProductCard({ product }) {
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div>
-            <p className="text-base font-bold text-brand-700">{formatCurrency(product.price)}</p>
+            {product.discountPercent > 0 && (
+              <p className="text-[11px] text-ink-400 line-through">{formatCurrency(product.price)}</p>
+            )}
+            <p className="text-base font-bold text-brand-700">{formatCurrency(finalPriceOf(product))}</p>
             <p className="text-[11px] font-medium text-ink-400">
               x {UNIT_LABELS[product.unit] || product.unit}
               {product.minOrderQty > 1 ? ` · mín. ${product.minOrderQty}` : ""}

@@ -21,7 +21,9 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, default: "" },
     role: { type: String, enum: ["cliente", "admin"], default: "cliente" },
     addresses: { type: [addressSchema], default: [] },
-    active: { type: Boolean, default: true }
+    active: { type: Boolean, default: true },
+    // Se incrementa al cambiar la contraseña: invalida todos los tokens emitidos antes.
+    tokenVersion: { type: Number, default: 0 }
   },
   { timestamps: true }
 );

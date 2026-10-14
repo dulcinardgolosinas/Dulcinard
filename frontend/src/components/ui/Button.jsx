@@ -3,7 +3,7 @@ const variants = {
   accent: "bg-accent-600 text-white hover:bg-accent-700 shadow-sm",
   outline: "border border-ink-200 text-ink-800 hover:border-brand-400 hover:text-brand-600 bg-white",
   ghost: "text-ink-700 hover:bg-ink-100",
-  danger: "bg-red-600 text-white hover:bg-red-700"
+  danger: "bg-danger-600 text-white hover:bg-danger-700"
 };
 
 const sizes = {

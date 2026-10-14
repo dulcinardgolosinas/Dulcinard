@@ -5,7 +5,7 @@ import { Button } from "./Button";
 // archivos en el idioma del sistema operativo/navegador (ej: "Choose Files",
 // "No file chosen"), sin forma de traducirlo por CSS. Lo ocultamos y lo
 // manejamos con un botón + texto propios, en español.
-export function FileInput({ multiple = false, onChange, accept = "image/*", label }) {
+export function FileInput({ multiple = false, onChange, accept = "image/*", label, buttonLabel }) {
   const inputRef = useRef(null);
   const [summary, setSummary] = useState("Ningún archivo seleccionado");
 
@@ -22,7 +22,7 @@ export function FileInput({ multiple = false, onChange, accept = "image/*", labe
       {label && <p className="mb-1.5 text-sm font-medium text-ink-700">{label}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
-          {multiple ? "Elegir imágenes" : "Elegir imagen"}
+          {buttonLabel || (multiple ? "Elegir imágenes" : "Elegir imagen")}
         </Button>
         <span className="text-sm text-ink-500">{summary}</span>
       </div>

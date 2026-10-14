@@ -6,7 +6,9 @@ const styles = {
   accent: "bg-white text-brand-700 border border-brand-200",
   success: "bg-brand-600 text-white",
   warning: "bg-white text-brand-700 border border-brand-300",
-  danger: "bg-brand-900 text-white"
+  danger: "bg-brand-900 text-white",
+  // Alerta operativa (ej: "Reponer stock"), distinta de los estados de pedido.
+  alert: "bg-danger-600 text-white"
 };
 
 export function Badge({ tone = "neutral", className = "", children }) {
@@ -18,7 +20,7 @@ export function Badge({ tone = "neutral", className = "", children }) {
 }
 
 export const ORDER_STATUS_LABELS = {
-  pendiente: "Pendiente",
+  pendiente: "Pendiente de pago",
   confirmado: "Confirmado",
   en_preparacion: "En preparación",
   enviado: "Enviado",

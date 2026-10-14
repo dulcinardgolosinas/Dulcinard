@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
+import { applyTheme, applyCachedTheme } from "../lib/theme";
+
+// Colores elegidos en el admin: se aplican apenas carga la app (desde la
+// última visita) y se actualizan cuando llega la configuración del servidor.
+applyCachedTheme();
 
 function applyFavicon(url) {
   if (!url) return;
@@ -24,6 +29,7 @@ export const useSiteConfigStore = create((set, get) => ({
       set({ config: data, loading: false });
       // El logo de la marca (Cloudinary) también se usa como favicon.
       applyFavicon(data?.logo?.url);
+      applyTheme(data?.theme);
     } catch {
       set({ loading: false });
     }
@@ -34,5 +40,6 @@ export const useSiteConfigStore = create((set, get) => ({
   setConfig: (data) => {
     set({ config: data });
     applyFavicon(data?.logo?.url);
+    applyTheme(data?.theme);
   }
 }));

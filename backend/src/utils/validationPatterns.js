@@ -7,8 +7,9 @@ export const NAME_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ][A-Za-zÀ-ÖØ-öø-ÿ'.\-\s]
 // Dígitos con separadores comunes de teléfono (espacios, guiones, paréntesis, +).
 export const PHONE_REGEX = /^[0-9+()\s-]+$/;
 
-// Letras, números, espacios y separadores básicos (nombre de producto, marca, dirección).
-export const ALPHANUMERIC_TEXT_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'".,°/\-\s]+$/;
+// Letras, números, espacios y separadores habituales en nombres de productos de
+// proveedores (ej: "COOK&CREAM", "X ( 48 UN)", "+", "%"). Sin < > ni llaves.
+export const ALPHANUMERIC_TEXT_REGEX = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'".,°/()&+%#:!ºª\-\s]+$/;
 
 // SKU / códigos: letras, números, guiones y guion bajo, sin espacios.
 export const SKU_REGEX = /^[A-Za-z0-9_-]+$/;

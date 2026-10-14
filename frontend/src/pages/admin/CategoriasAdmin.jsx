@@ -80,7 +80,7 @@ function CategoryForm({ editing, onSaved, onCancel }) {
         {editing?.image?.url && !file && <img src={editing.image.url} alt="" className="mb-2 h-16 w-16 rounded-lg object-cover" />}
         <FileInput label="Imagen de portada" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={isSubmitting}>
           {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear categoría"}
@@ -157,7 +157,7 @@ export default function CategoriasAdmin() {
                         <button onClick={() => setEditing(c)} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">
                           Editar
                         </button>
-                        <button onClick={() => handleDelete(c)} className="text-sm font-semibold text-red-600 hover:underline">
+                        <button onClick={() => handleDelete(c)} className="text-sm font-semibold text-danger-600 hover:underline">
                           Eliminar
                         </button>
                       </td>

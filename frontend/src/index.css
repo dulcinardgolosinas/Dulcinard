@@ -2,9 +2,29 @@
 @import "tailwindcss";
 
 @theme {
-  /* Marca — ÚNICAMENTE blanco y rojo en todo el sitio. "brand" es el rojo
-     carmín principal (logo); "accent" es un rojo más vivo/saturado para dar
-     jerarquía visual (CTAs, badges, hover) sin salirse de la paleta. */
+  /* ==========================================================================
+     PALETA POR DEFECTO DEL SITIO
+     Tailwind genera las clases (bg-brand-600, text-ink-900, ...) a partir de
+     estas variables. Desde el panel admin (Configuración > Colores) se pueden
+     reemplazar sin tocar código: lib/theme.js genera la escala completa a
+     partir del color elegido y la aplica sobre :root. Si el admin no eligió
+     un color, se usan exactamente estos valores.
+
+     Rol            Escala / variable       Uso principal
+     -------------  ----------------------  ---------------------------------
+     Primario       brand-*  (600 = base)   botones, links, logo, estados activos
+     Secundario     ink-*    (500 = base)   textos secundarios, bordes, neutros
+     Acento         accent-* (600 = base)   CTAs destacados, WhatsApp, hover
+     Fondo          ink-50 / --color-background   fondo general
+     Texto          ink-900 / --color-foreground  texto principal
+     Error/alerta   danger-*                errores de formularios, "Reponer stock"
+
+     Fuera de este archivo, el mail de pedidos (backend) usa el color primario
+     guardado en la configuración, con #b81830 como valor por defecto.
+     ========================================================================== */
+
+  /* Primario — rojo carmín de la marca (logo). El sitio usa solo blanco y rojo:
+     "accent" es un rojo más vivo/saturado para dar jerarquía visual. */
   --color-brand-50: #fdf2f3;
   --color-brand-100: #fce3e5;
   --color-brand-200: #f9c6cb;
@@ -17,6 +37,7 @@
   --color-brand-900: #691225;
   --color-brand-950: #3a0710;
 
+  /* Acento */
   --color-accent-50: #fff1f1;
   --color-accent-100: #ffe1e1;
   --color-accent-200: #ffc7c7;
@@ -28,6 +49,7 @@
   --color-accent-800: #9f1414;
   --color-accent-900: #841818;
 
+  /* Secundario / neutros */
   --color-ink-50: #f6f5f5;
   --color-ink-100: #e7e5e4;
   --color-ink-200: #d1cdcb;
@@ -39,6 +61,22 @@
   --color-ink-800: #302b29;
   --color-ink-900: #201c1b;
   --color-ink-950: #130f0f;
+
+  /* Error / alerta (errores de formularios, stock a reponer, acciones destructivas) */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  /* Fondo y texto generales */
+  --color-background: var(--color-ink-50);
+  --color-foreground: var(--color-ink-900);
 
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
@@ -59,7 +97,8 @@
   }
 
   body {
-    @apply bg-ink-50 text-ink-900;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     overflow-x: hidden;
   }
 

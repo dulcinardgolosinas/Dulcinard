@@ -44,3 +44,4 @@ export async function deleteImage(publicId) {
 export function deleteMany(publicIds = []) {
   return Promise.all(publicIds.map((id) => deleteImage(id)));
 }
+

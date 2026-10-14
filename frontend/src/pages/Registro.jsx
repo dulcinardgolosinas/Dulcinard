@@ -77,7 +77,7 @@ export default function Registro() {
       </div>
       <p className="text-xs text-ink-400">Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.</p>
 
-      {serverError && <p className="text-sm text-red-600">{serverError}</p>}
+      {serverError && <p className="text-sm text-danger-600">{serverError}</p>}
 
       <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Creando cuenta..." : "Crear cuenta"}

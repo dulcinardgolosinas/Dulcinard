@@ -53,7 +53,9 @@ export function Footer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-6 lg:grid-cols-4">
+          {/* En celular las sucursales alargaban mucho el footer: se muestran
+              solo desde tablet (en celular están en Inicio, Contacto y Quiénes somos). */}
+          <div className="hidden gap-x-4 gap-y-6 md:grid md:grid-cols-2 lg:grid-cols-4">
             {branches.map((b) => (
               <div key={b._id} className="text-left">
                 <p className="text-sm font-semibold text-white">{b.name}</p>

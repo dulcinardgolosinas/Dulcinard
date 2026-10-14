@@ -1,9 +1,10 @@
 import Swal from "sweetalert2";
 
-// Paleta acorde a la marca (rojo carmín / acento amarillo) para que los
-// diálogos de SweetAlert2 no desentonen con el resto de la UI.
-const BRAND_CONFIRM_COLOR = "#b81830";
-const BRAND_CANCEL_COLOR = "#e7e5e4";
+// Paleta acorde a la marca para que los diálogos de SweetAlert2 no desentonen
+// con el resto de la UI. Se toman las variables CSS de index.css (SweetAlert2
+// las aplica como estilo inline), así siguen a la paleta centralizada.
+const BRAND_CONFIRM_COLOR = "var(--color-brand-600)";
+const BRAND_CANCEL_COLOR = "var(--color-ink-100)";
 // El texto del botón de SweetAlert2 es blanco por defecto: con este fondo
 // claro queda casi ilegible. El color oscuro se fuerza por CSS en index.css
 // (.swal2-cancel), acá solo queda el fondo.

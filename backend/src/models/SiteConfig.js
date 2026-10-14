@@ -55,7 +55,17 @@ const siteConfigSchema = new mongoose.Schema(
     deliveryEtaHours: { type: Number, default: 24 },
     deliveryEtaMaxHours: { type: Number, default: 48 },
 
-    branches: { type: [branchSchema], default: [] }
+    branches: { type: [branchSchema], default: [] },
+
+    // Paleta editable desde el admin (hex "#rrggbb"). Vacío = se usa el color
+    // por defecto definido en frontend/src/index.css.
+    theme: {
+      primary: { type: String, default: "" },
+      secondary: { type: String, default: "" },
+      accent: { type: String, default: "" },
+      background: { type: String, default: "" },
+      text: { type: String, default: "" }
+    }
   },
   { timestamps: true }
 );

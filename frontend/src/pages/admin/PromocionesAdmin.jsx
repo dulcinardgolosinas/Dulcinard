@@ -138,6 +138,10 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
 
       <div>
         <p className="mb-1.5 text-sm font-medium text-ink-700">Categorías incluidas</p>
+        <p className="mb-2 text-xs text-ink-500">
+          El descuento se aplica al precio de todos los productos de estas categorías. Sin categorías, la promo es solo
+          informativa (banner) y no descuenta.
+        </p>
         <Controller
           control={control}
           name="categories"
@@ -175,7 +179,7 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
         <FileInput label="Banner" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-danger-600">{error}</p>}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={isSubmitting}>
           {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear promoción"}
@@ -248,7 +252,7 @@ export default function PromocionesAdmin() {
                     <button onClick={() => setEditing(p)} className="text-sm font-semibold text-brand-600 hover:underline">
                       Editar
                     </button>
-                    <button onClick={() => handleDelete(p)} className="text-sm font-semibold text-red-600 hover:underline">
+                    <button onClick={() => handleDelete(p)} className="text-sm font-semibold text-danger-600 hover:underline">
                       Eliminar
                     </button>
                   </div>

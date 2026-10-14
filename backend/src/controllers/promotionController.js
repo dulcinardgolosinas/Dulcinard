@@ -3,6 +3,20 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
 
+// Lista de IDs enviada como JSON desde el form. Lanza 400 (no 500) si viene malformada.
+function parseIdList(raw) {
+  let list;
+  try {
+    list = JSON.parse(raw);
+  } catch {
+    list = null;
+  }
+  if (!Array.isArray(list) || !list.every((id) => typeof id === "string" && /^[0-9a-fA-F]{24}$/.test(id))) {
+    throw Object.assign(new Error("Lista de productos o categorías inválida"), { status: 400 });
+  }
+  return [...new Set(list)];
+}
+
 export const listPromotions = asyncHandler(async (req, res) => {
   const { activeOnly } = req.query;
   const filter = {};
@@ -32,8 +46,8 @@ export const createPromotion = asyncHandler(async (req, res) => {
     title,
     description,
     discountPercent,
-    products: products ? JSON.parse(products) : [],
-    categories: categories ? JSON.parse(categories) : [],
+    products: products ? parseIdList(products) : [],
+    categories: categories ? parseIdList(categories) : [],
     startDate,
     endDate,
     active
@@ -55,8 +69,8 @@ export const updatePromotion = asyncHandler(async (req, res) => {
   if (title !== undefined) promotion.title = title;
   if (description !== undefined) promotion.description = description;
   if (discountPercent !== undefined) promotion.discountPercent = discountPercent;
-  if (products !== undefined) promotion.products = JSON.parse(products);
-  if (categories !== undefined) promotion.categories = JSON.parse(categories);
+  if (products !== undefined) promotion.products = parseIdList(products);
+  if (categories !== undefined) promotion.categories = parseIdList(categories);
   if (startDate !== undefined) promotion.startDate = startDate;
   if (endDate !== undefined) promotion.endDate = endDate;
   if (active !== undefined) promotion.active = active;

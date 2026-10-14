@@ -1,20 +1,32 @@
-import Order from "../models/Order.js";
+import Order, { ORDER_STATUSES, PAYMENT_METHODS, PAYMENT_STATUSES, STOCK_HOLDING_STATUSES } from "../models/Order.js";
 import Product from "../models/Product.js";
 import SiteConfig from "../models/SiteConfig.js";
 import ShippingZone from "../models/ShippingZone.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { mpPreference, mpPayment } from "../config/mercadoPago.js";
 import { sendOrderNotification } from "../utils/sendOrderNotification.js";
+import { approveOrderPayment, syncStockForStatus } from "../utils/orderStock.js";
+import { parsePagination, paginatedResponse } from "../utils/query.js";
+import { getActivePromotions, discountFor, discountedPrice } from "../utils/pricing.js";
 
 // Recalcula el pedido en el servidor a partir de precios reales de la DB:
 // nunca confiamos en el precio que venga del carrito del cliente.
 async function buildOrderItems(cartItems) {
-  const ids = cartItems.map((i) => i.productId);
-  const products = await Product.find({ _id: { $in: ids }, active: true });
+  // Si el mismo producto viene repetido en varias líneas se suma en una sola:
+  // si no, cada línea pasaría por separado el chequeo de stock y de mínimo.
+  const quantities = new Map();
+  for (const { productId, quantity } of cartItems) {
+    quantities.set(String(productId), (quantities.get(String(productId)) || 0) + Number(quantity));
+  }
+
+  const [products, promotions] = await Promise.all([
+    Product.find({ _id: { $in: [...quantities.keys()] }, active: true }),
+    getActivePromotions()
+  ]);
   const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
   const items = [];
-  for (const { productId, quantity } of cartItems) {
+  for (const [productId, quantity] of quantities) {
     const product = productMap.get(productId);
     if (!product) throw Object.assign(new Error("Un producto del carrito ya no está disponible"), { status: 400 });
     if (quantity < product.minOrderQty) {
@@ -23,16 +35,23 @@ async function buildOrderItems(cartItems) {
         { status: 400 }
       );
     }
+    // Chequeo preventivo: el descuento real (atómico) se hace al confirmar el
+    // pago, en utils/orderStock.js.
     if (product.stock < quantity) {
       throw Object.assign(new Error(`Stock insuficiente para ${product.name}`), { status: 400 });
     }
 
-    const subtotal = product.price * quantity;
+    // Precio con la promo vigente, calculado acá (nunca el que mande el carrito).
+    const discountPercent = discountFor(product, promotions);
+    const unitPrice = discountedPrice(product.price, discountPercent);
+    const subtotal = Math.round(unitPrice * quantity * 100) / 100;
     items.push({
       product: product._id,
       name: product.name,
       unit: product.unit,
-      unitPrice: product.price,
+      listPrice: product.price,
+      discountPercent,
+      unitPrice,
       quantity,
       subtotal
     });
@@ -53,12 +72,13 @@ export const createOrder = asyncHandler(async (req, res) => {
   let freeShippingFrom = config?.freeShippingFrom ?? 0;
 
   if (shippingAddress?.zone) {
-    const zone = await ShippingZone.findById(shippingAddress.zone);
-    if (zone) {
-      minPurchase = zone.minPurchaseAmount;
-      shippingCost = zone.cost;
-      freeShippingFrom = zone.freeShippingFrom;
-    }
+    // Una zona inexistente o desactivada (ej: una más barata que ya no se usa)
+    // no puede elegirse mandando su ID a mano.
+    const zone = await ShippingZone.findOne({ _id: shippingAddress.zone, active: true });
+    if (!zone) return res.status(400).json({ message: "La zona de envío elegida no está disponible" });
+    minPurchase = zone.minPurchaseAmount;
+    shippingCost = zone.cost;
+    freeShippingFrom = zone.freeShippingFrom;
   }
 
   if (itemsTotal < minPurchase) {
@@ -72,12 +92,23 @@ export const createOrder = asyncHandler(async (req, res) => {
     itemsTotal,
     shippingCost,
     total: itemsTotal + shippingCost,
-    shippingAddress,
+    // Solo los campos de entrega conocidos, nunca el objeto tal cual vino.
+    shippingAddress: {
+      street: shippingAddress.street,
+      city: shippingAddress.city,
+      zone: shippingAddress.zone || undefined,
+      notes: shippingAddress.notes || "",
+      phone: shippingAddress.phone
+    },
     paymentMethod: req.body.paymentMethod || "mercado_pago"
   });
 
-  // Descontar stock reservado
-  await Promise.all(items.map((i) => Product.findByIdAndUpdate(i.product, { $inc: { stock: -i.quantity } })));
+  // El stock no se descuenta acá sino cuando se confirma el pago. Los pedidos en
+  // efectivo quedan "pendiente" de pago: se avisa al dueño para que coordine el cobro.
+  if (order.paymentMethod === "efectivo") {
+    await order.populate("shippingAddress.zone");
+    sendOrderNotification(order, req.user, { pendingCash: true });
+  }
 
   res.status(201).json(order);
 });
@@ -97,6 +128,12 @@ function isPublicUrl(url) {
 export const createPaymentPreference = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
+  if (order.paymentMethod !== "mercado_pago") {
+    return res.status(400).json({ message: "Este pedido se abona en efectivo, no con Mercado Pago" });
+  }
+  if (order.paymentStatus === "aprobado" || order.status === "cancelado") {
+    return res.status(400).json({ message: "Este pedido ya no admite pagos" });
+  }
 
   const clientUrl = process.env.CLIENT_URL || "";
   const preference = await mpPreference.create({
@@ -137,16 +174,23 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
 
 // Devuelve true si el pago recién pasó a "aprobado" en esta llamada, para
 // no reenviar la notificación por mail si el pedido ya estaba confirmado.
-function applyPaymentToOrder(order, payment) {
-  const wasApproved = order.paymentStatus === "aprobado";
-  order.mercadoPago.paymentId = String(payment.id);
+async function applyPaymentToOrder(order, payment) {
   if (payment.status === "approved") {
-    order.paymentStatus = "aprobado";
-    order.status = "confirmado";
-  } else if (payment.status === "rejected") {
-    order.paymentStatus = "rechazado";
+    // Defensa extra: el pago tiene que cubrir el total del pedido y estar en
+    // pesos. Si no coincide no se aprueba (queda para revisión manual).
+    const paidEnough = Number(payment.transaction_amount) + 0.01 >= order.total && payment.currency_id === "ARS";
+    if (!paidEnough) {
+      console.error(
+        `[pagos] Pago ${payment.id} no coincide con el pedido ${order._id}: ${payment.transaction_amount} ${payment.currency_id} vs ${order.total} ARS`
+      );
+      return false;
+    }
+    order.mercadoPago.paymentId = String(payment.id);
+    return approveOrderPayment(order);
   }
-  return !wasApproved && order.paymentStatus === "aprobado";
+  order.mercadoPago.paymentId = String(payment.id);
+  if (payment.status === "rejected" && order.paymentStatus !== "aprobado") order.paymentStatus = "rechazado";
+  return false;
 }
 
 export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
@@ -157,7 +201,7 @@ export const mercadoPagoWebhook = asyncHandler(async (req, res) => {
     const payment = await mpPayment.get({ id: paymentId });
     const order = await Order.findById(payment.external_reference).populate("user").populate("shippingAddress.zone");
     if (order) {
-      const justApproved = applyPaymentToOrder(order, payment);
+      const justApproved = await applyPaymentToOrder(order, payment);
       await order.save();
       // No bloquea la respuesta al webhook si el mail falla.
       if (justApproved) sendOrderNotification(order, order.user);
@@ -183,7 +227,7 @@ export const syncOrderPayment = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "El pago no corresponde a este pedido" });
   }
 
-  const justApproved = applyPaymentToOrder(order, payment);
+  const justApproved = await applyPaymentToOrder(order, payment);
   await order.save();
   // No bloquea la respuesta al cliente si el mail falla.
   if (justApproved) sendOrderNotification(order, req.user);
@@ -202,38 +246,88 @@ export const getMyOrder = asyncHandler(async (req, res) => {
   res.json(order);
 });
 
-export const listAllOrders = asyncHandler(async (req, res) => {
-  const { status, page = 1, limit = 20 } = req.query;
-  const filter = {};
-  if (status) filter.status = status;
+// Fecha "YYYY-MM-DD" -> Date. endOfDay incluye el día completo en el rango "hasta".
+function parseDateParam(value, endOfDay = false) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}-03:00`); // hora de Argentina
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-  const pageNum = Math.max(1, Number(page));
-  const limitNum = Math.min(100, Math.max(1, Number(limit)));
+export const listAllOrders = asyncHandler(async (req, res) => {
+  const { status, paymentMethod, paymentStatus, from, to } = req.query;
+  const filter = {};
+  if (ORDER_STATUSES.includes(status)) filter.status = status;
+  if (PAYMENT_METHODS.includes(paymentMethod)) filter.paymentMethod = paymentMethod;
+  if (PAYMENT_STATUSES.includes(paymentStatus)) filter.paymentStatus = paymentStatus;
+
+  const fromDate = parseDateParam(from);
+  const toDate = parseDateParam(to, true);
+  if (fromDate || toDate) {
+    filter.createdAt = {};
+    if (fromDate) filter.createdAt.$gte = fromDate;
+    if (toDate) filter.createdAt.$lte = toDate;
+  }
+
+  const pagination = parsePagination(req.query, 20);
 
   const [items, total] = await Promise.all([
     Order.find(filter)
       .populate("user", "name email businessName phone")
       .sort({ createdAt: -1 })
-      .skip((pageNum - 1) * limitNum)
-      .limit(limitNum),
+      .skip(pagination.skip)
+      .limit(pagination.limit),
     Order.countDocuments(filter)
   ]);
 
-  res.json({ items, total, page: pageNum, pages: Math.ceil(total / limitNum) || 1 });
+  res.json(paginatedResponse(items, total, pagination));
 });
 
+const ADMIN_ORDER_POPULATE = [
+  { path: "user", select: "name email businessName phone" },
+  { path: "paymentConfirmedBy", select: "name email" }
+];
+
 export const getOrderAdmin = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).populate("user", "name email businessName phone");
+  const order = await Order.findById(req.params.id).populate(ADMIN_ORDER_POPULATE);
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
   res.json(order);
 });
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
   const { status } = req.body;
-  const order = await Order.findById(req.params.id);
+  const order = await Order.findById(req.params.id).populate(ADMIN_ORDER_POPULATE);
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
+
+  if (STOCK_HOLDING_STATUSES.includes(status) && order.paymentStatus !== "aprobado") {
+    return res.status(400).json({ message: "Confirmá el pago del pedido antes de avanzarlo" });
+  }
+
+  // Confirmar descuenta stock (409 si no alcanza); cancelar o volver a
+  // "pendiente" lo devuelve.
+  await syncStockForStatus(order, status);
+  if (STOCK_HOLDING_STATUSES.includes(status)) order.stockIssue = "";
 
   order.status = status;
   await order.save();
+  res.json(order);
+});
+
+// Confirmación manual del pago (pensada para efectivo, sirve también si el
+// webhook de Mercado Pago no llegó). Sigue el mismo flujo que un pago online.
+export const confirmOrderPayment = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id).populate(ADMIN_ORDER_POPULATE).populate("shippingAddress.zone");
+  if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
+  if (order.status === "cancelado") {
+    return res.status(400).json({ message: "No se puede confirmar el pago de un pedido cancelado" });
+  }
+  if (order.paymentStatus === "aprobado") {
+    return res.status(400).json({ message: "El pago de este pedido ya estaba confirmado" });
+  }
+
+  const justApproved = await approveOrderPayment(order, { strictStock: true, confirmedBy: req.user._id });
+  await order.save();
+  if (justApproved) sendOrderNotification(order, order.user);
+
+  await order.populate(ADMIN_ORDER_POPULATE);
   res.json(order);
 });
