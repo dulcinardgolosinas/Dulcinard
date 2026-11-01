@@ -30,7 +30,6 @@ const links = [
   { to: "/admin/zonas-envio", label: "Zonas de envío" },
   { to: "/admin/proveedores", label: "Proveedores" },
   { to: "/admin/imagenes-hero", label: "Página principal" },
-  { to: "/admin/textos", label: "Textos de la tienda" },
   { to: "/admin/configuracion", label: "Configuración" }
 ];
 

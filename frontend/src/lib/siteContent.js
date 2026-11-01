@@ -1,8 +1,4 @@
-import { useSiteConfigStore } from "../store/siteConfigStore";
-
-// Textos de la tienda que se editan desde el panel ("Textos de la tienda").
-// Estos son los textos por defecto: se usan mientras el campo esté vacío.
-// Las claves coinciden con CONTENT_FIELDS de backend/src/models/SiteConfig.js.
+// Textos fijos de la tienda (inicio, Quiénes somos, Contacto y pie de página).
 export const DEFAULT_CONTENT = {
   homeTagline: "Distribuidora mayorista · Tucumán",
   homeSubtitle: "Cientos de productos para kioscos y comercios de Tucumán. Pedí online y lo recibís en tu local en 24 a 48 horas.",
@@ -27,14 +23,9 @@ export const DEFAULT_CONTENT = {
   footerText: "Distribuidora mayorista de golosinas y productos alimenticios. Pedidos por WhatsApp con entrega en 24 a 48 hs."
 };
 
-/** Textos de la tienda: lo cargado en el panel o, si está vacío, el texto por defecto. */
+/** Textos de la tienda. */
 export function useSiteContent() {
-  const content = useSiteConfigStore((s) => s.config?.content);
-  const merged = { ...DEFAULT_CONTENT };
-  for (const key of Object.keys(DEFAULT_CONTENT)) {
-    if (content?.[key]?.trim()) merged[key] = content[key];
-  }
-  return merged;
+  return DEFAULT_CONTENT;
 }
 
 /** Separa un texto largo en párrafos (una línea en blanco entre párrafo y párrafo). */
