@@ -1,5 +1,6 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
+import { CONTENT_FIELDS } from "../models/SiteConfig.js";
 import { NAME_REGEX, DIGITS_ONLY_REGEX } from "../utils/validationPatterns.js";
 
 function optionalNumber(field, label, { min = 0, max = 100000000 } = {}) {
@@ -40,6 +41,26 @@ export const updateSiteConfigValidator = [
   optionalNumber("freeShippingFrom", "El monto de envío gratis"),
   body("deliveryEtaHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega debe ser un número entero de horas entre 1 y 720"),
   body("deliveryEtaMaxHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega máximo debe ser un número entero de horas entre 1 y 720"),
+  ...Object.entries(CONTENT_FIELDS).map(([key, max]) =>
+    body(`content.${key}`)
+      .optional()
+      .isString()
+      .withMessage("Los textos tienen que ser texto")
+      .isLength({ max })
+      .withMessage(`Uno de los textos es demasiado largo (máximo ${max} caracteres)`)
+  ),
+  body("bankTransfer.alias")
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[a-zA-Z0-9.-]{6,20}$/)
+    .withMessage("El alias debe tener entre 6 y 20 caracteres (letras, números, puntos o guiones)"),
+  body("bankTransfer.cbu")
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^\d{22}$/)
+    .withMessage("El CBU o CVU debe tener 22 números"),
+  body("bankTransfer.holder").optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage("El titular no puede superar los 100 caracteres"),
+  body("bankTransfer.bankName").optional({ checkFalsy: true }).trim().isLength({ max: 60 }).withMessage("El banco no puede superar los 60 caracteres"),
   body("branches")
     .optional({ checkFalsy: true })
     .custom((value) => {

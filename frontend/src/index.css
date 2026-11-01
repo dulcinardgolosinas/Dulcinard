@@ -14,17 +14,17 @@
      -------------  ----------------------  ---------------------------------
      Primario       brand-*  (600 = base)   botones, links, logo, estados activos
      Secundario     ink-*    (500 = base)   textos secundarios, bordes, neutros
-     Acento         accent-* (600 = base)   CTAs destacados, WhatsApp, hover
+     Acento         accent-* = brand-*      (un solo rojo: el del menú)
      Fondo          ink-50 / --color-background   fondo general
      Texto          ink-900 / --color-foreground  texto principal
-     Error/alerta   danger-*                errores de formularios, "Reponer stock"
+     Error/alerta   danger-* = brand-*      errores de formularios, "Reponer stock"
 
      Fuera de este archivo, el mail de pedidos (backend) usa el color primario
      guardado en la configuración, con #b81830 como valor por defecto.
      ========================================================================== */
 
-  /* Primario — rojo carmín de la marca (logo). El sitio usa solo blanco y rojo:
-     "accent" es un rojo más vivo/saturado para dar jerarquía visual. */
+  /* Primario — rojo de la marca. El sitio usa un solo rojo (brand-600, el del
+     marcador del menú): accent y danger son alias de esta escala. */
   --color-brand-50: #fdf2f3;
   --color-brand-100: #fce3e5;
   --color-brand-200: #f9c6cb;
@@ -38,16 +38,16 @@
   --color-brand-950: #3a0710;
 
   /* Acento */
-  --color-accent-50: #fff1f1;
-  --color-accent-100: #ffe1e1;
-  --color-accent-200: #ffc7c7;
-  --color-accent-300: #ff9d9d;
-  --color-accent-400: #ff6b6b;
-  --color-accent-500: #f83b3b;
-  --color-accent-600: #e51f1f;
-  --color-accent-700: #c11414;
-  --color-accent-800: #9f1414;
-  --color-accent-900: #841818;
+  --color-accent-50: var(--color-brand-50);
+  --color-accent-100: var(--color-brand-100);
+  --color-accent-200: var(--color-brand-200);
+  --color-accent-300: var(--color-brand-300);
+  --color-accent-400: var(--color-brand-400);
+  --color-accent-500: var(--color-brand-500);
+  --color-accent-600: var(--color-brand-600);
+  --color-accent-700: var(--color-brand-700);
+  --color-accent-800: var(--color-brand-800);
+  --color-accent-900: var(--color-brand-900);
 
   /* Secundario / neutros */
   --color-ink-50: #f6f5f5;
@@ -63,16 +63,16 @@
   --color-ink-950: #130f0f;
 
   /* Error / alerta (errores de formularios, stock a reponer, acciones destructivas) */
-  --color-danger-50: #fef2f2;
-  --color-danger-100: #fee2e2;
-  --color-danger-200: #fecaca;
-  --color-danger-300: #fca5a5;
-  --color-danger-400: #f87171;
-  --color-danger-500: #ef4444;
-  --color-danger-600: #dc2626;
-  --color-danger-700: #b91c1c;
-  --color-danger-800: #991b1b;
-  --color-danger-900: #7f1d1d;
+  --color-danger-50: var(--color-brand-50);
+  --color-danger-100: var(--color-brand-100);
+  --color-danger-200: var(--color-brand-200);
+  --color-danger-300: var(--color-brand-300);
+  --color-danger-400: var(--color-brand-400);
+  --color-danger-500: var(--color-brand-500);
+  --color-danger-600: var(--color-brand-600);
+  --color-danger-700: var(--color-brand-700);
+  --color-danger-800: var(--color-brand-800);
+  --color-danger-900: var(--color-brand-900);
 
   /* Fondo y texto generales */
   --color-background: var(--color-ink-50);
@@ -140,17 +140,17 @@
   border-color: var(--color-brand-200) !important;
 }
 .swal2-icon.swal2-warning {
-  border-color: var(--color-accent-600) !important;
-  color: var(--color-accent-600) !important;
+  border-color: var(--color-brand-600) !important;
+  color: var(--color-brand-600) !important;
 }
 .swal2-icon.swal2-question {
   border-color: var(--color-ink-500) !important;
   color: var(--color-ink-500) !important;
 }
 .swal2-icon.swal2-error {
-  border-color: var(--color-brand-900) !important;
-  color: var(--color-brand-900) !important;
+  border-color: var(--color-brand-600) !important;
+  color: var(--color-brand-600) !important;
 }
 .swal2-icon.swal2-error [class^="swal2-x-mark-line"] {
-  background-color: var(--color-brand-900) !important;
+  background-color: var(--color-brand-600) !important;
 }

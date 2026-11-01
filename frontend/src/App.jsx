@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/layout/Layout";
 import { AuthLayout } from "./components/layout/AuthLayout";
 import { ProtectedRoute, AdminRoute } from "./routes/ProtectedRoute";
@@ -24,6 +24,7 @@ import ProductosAdmin from "./pages/admin/ProductosAdmin";
 import ProductoForm from "./pages/admin/ProductoForm";
 import ProductosImportar from "./pages/admin/ProductosImportar";
 import ProductosFotos from "./pages/admin/ProductosFotos";
+import StockExcel from "./pages/admin/StockExcel";
 import CategoriasAdmin from "./pages/admin/CategoriasAdmin";
 import PromocionesAdmin from "./pages/admin/PromocionesAdmin";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -34,6 +35,7 @@ import ZonasEnvioAdmin from "./pages/admin/ZonasEnvioAdmin";
 import ProveedoresAdmin from "./pages/admin/ProveedoresAdmin";
 import ImagenesHeroAdmin from "./pages/admin/ImagenesHeroAdmin";
 import ConfiguracionAdmin from "./pages/admin/ConfiguracionAdmin";
+import TextosAdmin from "./pages/admin/TextosAdmin";
 
 function App() {
   return (
@@ -46,6 +48,7 @@ function App() {
           <Route path="/contacto" element={<Contacto />} />
           <Route path="/envios" element={<ZonasEnvio />} />
           <Route path="/catalogo" element={<Catalogo />} />
+          <Route path="/productos" element={<Navigate to="/catalogo" replace />} />
           <Route path="/producto/:slug" element={<ProductoDetalle />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
@@ -69,6 +72,7 @@ function App() {
             <Route path="productos/nuevo" element={<ProductoForm />} />
             <Route path="productos/importar" element={<ProductosImportar />} />
             <Route path="productos/fotos" element={<ProductosFotos />} />
+            <Route path="productos/stock" element={<StockExcel />} />
             <Route path="productos/:id/editar" element={<ProductoForm />} />
             <Route path="categorias" element={<CategoriasAdmin />} />
             <Route path="promociones" element={<PromocionesAdmin />} />
@@ -80,6 +84,7 @@ function App() {
             <Route path="proveedores" element={<ProveedoresAdmin />} />
             <Route path="imagenes-hero" element={<ImagenesHeroAdmin />} />
             <Route path="configuracion" element={<ConfiguracionAdmin />} />
+            <Route path="textos" element={<TextosAdmin />} />
           </Route>
         </Route>
       </Routes>
