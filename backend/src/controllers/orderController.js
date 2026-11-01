@@ -8,6 +8,7 @@ import { sendOrderNotification } from "../utils/sendOrderNotification.js";
 import { approveOrderPayment, syncStockForStatus } from "../utils/orderStock.js";
 import { parsePagination, paginatedResponse } from "../utils/query.js";
 import { getActivePromotions, discountFor, discountedPrice } from "../utils/pricing.js";
+import { buildWorkbook, formatArDate, sendWorkbook } from "../utils/excelExport.js";
 
 // Recalcula el pedido en el servidor a partir de precios reales de la DB:
 // nunca confiamos en el precio que venga del carrito del cliente.
@@ -86,6 +87,10 @@ export const createOrder = asyncHandler(async (req, res) => {
   }
   if (freeShippingFrom > 0 && itemsTotal >= freeShippingFrom) shippingCost = 0;
 
+  if (req.body.paymentMethod === "transferencia" && !(config?.bankTransfer?.alias || config?.bankTransfer?.cbu)) {
+    return res.status(400).json({ message: "El pago por transferencia no está disponible en este momento" });
+  }
+
   const order = await Order.create({
     user: req.user._id,
     items,
@@ -103,12 +108,11 @@ export const createOrder = asyncHandler(async (req, res) => {
     paymentMethod: req.body.paymentMethod || "mercado_pago"
   });
 
-  // El stock no se descuenta acá sino cuando se confirma el pago. Los pedidos en
-  // efectivo quedan "pendiente" de pago: se avisa al dueño para que coordine el cobro.
-  if (order.paymentMethod === "efectivo") {
-    await order.populate("shippingAddress.zone");
-    sendOrderNotification(order, req.user, { pendingCash: true });
-  }
+  // El stock no se descuenta acá sino cuando se confirma el pago: el pedido
+  // queda "pendiente de pago". Se avisa al dueño de todos los pedidos nuevos;
+  // si el mail falla, el pedido igual queda guardado (sendOrderNotification no lanza).
+  await order.populate("shippingAddress.zone");
+  sendOrderNotification(order, req.user, { isNew: true });
 
   res.status(201).json(order);
 });
@@ -129,7 +133,7 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
   const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
   if (!order) return res.status(404).json({ message: "Pedido no encontrado" });
   if (order.paymentMethod !== "mercado_pago") {
-    return res.status(400).json({ message: "Este pedido se abona en efectivo, no con Mercado Pago" });
+    return res.status(400).json({ message: "Este pedido no se paga con Mercado Pago" });
   }
   if (order.paymentStatus === "aprobado" || order.status === "cancelado") {
     return res.status(400).json({ message: "Este pedido ya no admite pagos" });
@@ -280,6 +284,112 @@ export const listAllOrders = asyncHandler(async (req, res) => {
   ]);
 
   res.json(paginatedResponse(items, total, pagination));
+});
+
+const MAX_EXPORT_ORDERS = 10000;
+const PAYMENT_LABELS = { mercado_pago: "Mercado Pago", efectivo: "Efectivo", transferencia: "Transferencia bancaria" };
+const UNIT_LABELS = { unidad: "Unidad", caja: "Caja", display: "Display", bolsa: "Bolsa", pack: "Pack" };
+
+const deliveredAt = (order) =>
+  [...(order.statusHistory || [])].reverse().find((h) => h.status === "entregado")?.date || order.updatedAt;
+
+// GET /orders/export/delivered?from=AAAA-MM-DD&to=AAAA-MM-DD
+// Excel de los pedidos entregados, filtrados por la fecha en que se entregaron.
+export const exportDeliveredOrders = asyncHandler(async (req, res) => {
+  const fromDate = parseDateParam(req.query.from);
+  const toDate = parseDateParam(req.query.to, true);
+  const filter = { status: "entregado" };
+  if (fromDate || toDate) {
+    const date = {};
+    if (fromDate) date.$gte = fromDate;
+    if (toDate) date.$lte = toDate;
+    filter.statusHistory = { $elemMatch: { status: "entregado", date } };
+  }
+
+  const orders = await Order.find(filter)
+    .populate("user", "name email businessName phone")
+    .populate("shippingAddress.zone", "name")
+    .sort({ createdAt: 1 })
+    .limit(MAX_EXPORT_ORDERS + 1)
+    .lean();
+  if (orders.length > MAX_EXPORT_ORDERS) {
+    return res.status(400).json({ message: "Son demasiados pedidos para un solo archivo. Elegí un rango de fechas más corto." });
+  }
+  orders.sort((a, b) => deliveredAt(a) - deliveredAt(b));
+
+  const code = (o) => "#" + o._id.toString().slice(-6).toUpperCase();
+  const orderRows = orders.map((o) => [
+    code(o),
+    formatArDate(o.createdAt),
+    formatArDate(deliveredAt(o)),
+    o.user?.name || "",
+    o.user?.businessName || "",
+    o.user?.email || "",
+    o.shippingAddress?.phone || o.user?.phone || "",
+    [o.shippingAddress?.street, o.shippingAddress?.city].filter(Boolean).join(", "),
+    o.shippingAddress?.zone?.name || "",
+    o.items.map((i) => `${i.quantity} x ${i.name}`).join("\n"),
+    o.items.reduce((sum, i) => sum + i.quantity, 0),
+    o.itemsTotal,
+    o.shippingCost,
+    o.total,
+    PAYMENT_LABELS[o.paymentMethod] || o.paymentMethod
+  ]);
+  if (orders.length) {
+    orderRows.push([
+      "TOTAL", "", "", "", "", "", "", "", "", `${orders.length} pedido(s)`,
+      orders.reduce((s, o) => s + o.items.reduce((n, i) => n + i.quantity, 0), 0),
+      orders.reduce((s, o) => s + o.itemsTotal, 0),
+      orders.reduce((s, o) => s + o.shippingCost, 0),
+      orders.reduce((s, o) => s + o.total, 0),
+      ""
+    ]);
+  }
+  const itemRows = orders.flatMap((o) =>
+    o.items.map((i) => [code(o), formatArDate(deliveredAt(o), { withTime: false }), o.user?.name || "", o.user?.businessName || "", i.name, i.quantity, UNIT_LABELS[i.unit] || i.unit, i.unitPrice, i.subtotal])
+  );
+
+  const buffer = buildWorkbook([
+    {
+      name: "Pedidos entregados",
+      columns: [
+        { header: "Pedido", width: 10 },
+        { header: "Fecha del pedido", width: 18 },
+        { header: "Fecha de entrega", width: 18 },
+        { header: "Cliente", width: 24 },
+        { header: "Negocio", width: 22 },
+        { header: "Email", width: 28 },
+        { header: "Teléfono", width: 14 },
+        { header: "Dirección", width: 32 },
+        { header: "Zona", width: 16 },
+        { header: "Productos", width: 50 },
+        { header: "Cantidad total", format: "int" },
+        { header: "Productos ($)", width: 14, format: "money" },
+        { header: "Envío ($)", width: 12, format: "money" },
+        { header: "Total ($)", width: 14, format: "money" },
+        { header: "Forma de pago", width: 22 }
+      ],
+      rows: orderRows
+    },
+    {
+      name: "Detalle por producto",
+      columns: [
+        { header: "Pedido", width: 10 },
+        { header: "Fecha de entrega", width: 16 },
+        { header: "Cliente", width: 24 },
+        { header: "Negocio", width: 22 },
+        { header: "Producto", width: 40 },
+        { header: "Cantidad", format: "int" },
+        { header: "Unidad" },
+        { header: "Precio unitario ($)", width: 18, format: "money" },
+        { header: "Subtotal ($)", width: 14, format: "money" }
+      ],
+      rows: itemRows
+    }
+  ]);
+
+  const range = [req.query.from, req.query.to].filter(Boolean).join("_a_") || "todos";
+  sendWorkbook(res, buffer, `pedidos-entregados_${range}.xlsx`);
 });
 
 const ADMIN_ORDER_POPULATE = [
