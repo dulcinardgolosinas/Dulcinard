@@ -139,7 +139,8 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Este pedido ya no admite pagos" });
   }
 
-  const clientUrl = process.env.CLIENT_URL || "";
+  // Si CLIENT_URL tiene varias direcciones, Mercado Pago vuelve a la principal (la primera).
+  const clientUrl = (process.env.CLIENT_URL || "").split(",")[0].trim().replace(/\/$/, "");
   const preference = await mpPreference.create({
     body: {
       items: [

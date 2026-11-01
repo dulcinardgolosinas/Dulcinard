@@ -24,7 +24,13 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 
 app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_URL || "*", credentials: true }));
+// CLIENT_URL puede tener varias direcciones separadas por coma (ej: el dominio
+// propio con y sin www, y la de Vercel). La primera es la principal.
+const allowedOrigins = (process.env.CLIENT_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+app.use(cors({ origin: allowedOrigins.length ? allowedOrigins : "*", credentials: true }));
 app.use(express.json({ limit: "200kb" }));
 app.use(express.urlencoded({ extended: true, limit: "200kb" }));
 app.use(sanitizeRequest);
