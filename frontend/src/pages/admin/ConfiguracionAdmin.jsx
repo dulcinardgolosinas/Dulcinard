@@ -15,6 +15,7 @@ import { nameField, urlField, numberField, intField, DIGITS_ONLY_REGEX } from ".
 const schema = z.object({
   brandName: nameField("El nombre de la marca", { min: 2, max: 100 }),
   instagram: urlField({ label: "El link de Instagram" }),
+  facebook: urlField({ label: "El link de Facebook" }),
   whatsappNumber: z
     .string()
     .trim()
@@ -59,6 +60,7 @@ export default function ConfiguracionAdmin() {
       reset({
         brandName: data.brandName,
         instagram: data.instagram,
+        facebook: data.facebook || "",
         whatsappNumber: data.whatsappNumber,
         whatsappMessage: data.whatsappMessage,
         minPurchaseAmount: data.minPurchaseAmount,
@@ -132,63 +134,86 @@ export default function ConfiguracionAdmin() {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-6xl">
       <h1 className="text-2xl font-bold text-ink-900">Configuración</h1>
 
-      <div className="mt-6 rounded-2xl border border-ink-100 bg-white p-5">
-        <p className="mb-3 text-sm font-semibold text-ink-900">Logo de la marca</p>
-        <div className="flex flex-wrap items-center gap-4">
-          {config?.logo?.url && <img src={config.logo.url} alt="Logo" className="h-14 w-auto rounded-lg border border-ink-100 p-1" />}
-          <FileInput onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
-          <Button type="button" size="sm" variant="outline" onClick={uploadLogo} disabled={!logoFile || uploadingLogo}>
-            {uploadingLogo ? (
-              <>
-                <Spinner className="h-4 w-4" /> Subiendo...
-              </>
-            ) : (
-              "Subir logo"
-            )}
+      {/* Dos columnas en pantallas grandes: a la izquierda cómo se ve la marca,
+          a la derecha los datos de la tienda. En el celular, una debajo de la otra. */}
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-ink-400">Marca</p>
+          <div className="mt-2 rounded-2xl border border-ink-100 bg-white p-5">
+            <p className="mb-3 text-sm font-semibold text-ink-900">Logo de la marca</p>
+            <div className="flex flex-wrap items-center gap-4">
+              {config?.logo?.url && <img src={config.logo.url} alt="Logo" className="h-14 w-auto rounded-lg border border-ink-100 p-1" />}
+              <FileInput onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
+              <Button type="button" size="sm" variant="outline" onClick={uploadLogo} disabled={!logoFile || uploadingLogo}>
+                {uploadingLogo ? (
+                  <>
+                    <Spinner className="h-4 w-4" /> Subiendo...
+                  </>
+                ) : (
+                  "Subir logo"
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <ThemeColorsSection config={config} onSaved={setConfig} />
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-ink-400">Datos de la tienda</p>
+          <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-2 space-y-5 rounded-2xl border border-ink-100 bg-white p-5">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-ink-900">Nombre y contacto</p>
+              <Input label="Nombre de la marca" {...register("brandName")} error={errors.brandName?.message} />
+              <Input label="Link de Instagram" {...register("instagram")} error={errors.instagram?.message} />
+              <Input
+                label="Link de Facebook"
+                placeholder="https://www.facebook.com/dulcinard/"
+                {...register("facebook")}
+                error={errors.facebook?.message}
+              />
+              <Input label="Número de WhatsApp (sin 0 ni 15, ej: 3814091213)" {...register("whatsappNumber")} error={errors.whatsappNumber?.message} />
+              <Textarea label="Mensaje predefinido de WhatsApp" rows={2} {...register("whatsappMessage")} error={errors.whatsappMessage?.message} />
+            </div>
+
+            <div className="border-t border-ink-100 pt-4">
+              <p className="text-sm font-semibold text-ink-900">Compras y envíos</p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Input label="Monto mínimo de compra ($)" type="number" {...register("minPurchaseAmount")} error={errors.minPurchaseAmount?.message} />
+                <Input label="Costo de envío por defecto ($)" type="number" {...register("defaultShippingCost")} error={errors.defaultShippingCost?.message} />
+                <Input label="Envío gratis desde ($, 0 = no hay)" type="number" {...register("freeShippingFrom")} error={errors.freeShippingFrom?.message} />
+                <div className="hidden sm:block" />
+                <Input label="Entrega desde (horas)" type="number" {...register("deliveryEtaHours")} error={errors.deliveryEtaHours?.message} />
+                <Input label="Entrega hasta (horas)" type="number" {...register("deliveryEtaMaxHours")} error={errors.deliveryEtaMaxHours?.message} />
+              </div>
+            </div>
+
+            <div className="border-t border-ink-100 pt-4">
+              <p className="text-sm font-semibold text-ink-900">Datos para pagos por transferencia</p>
+              <p className="mt-1 text-xs text-ink-500">
+                Son los datos que ve el cliente cuando elige pagar por transferencia. Si dejás vacíos el alias y el CBU, la opción de
+                transferencia no aparece en la tienda.
+              </p>
+              <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <Input label="Alias" placeholder="dulcinard.golosinas" {...register("bankTransfer.alias")} error={errors.bankTransfer?.alias?.message} />
+                <Input label="CBU o CVU (22 números)" inputMode="numeric" {...register("bankTransfer.cbu")} error={errors.bankTransfer?.cbu?.message} />
+                <Input label="Titular de la cuenta" {...register("bankTransfer.holder")} error={errors.bankTransfer?.holder?.message} />
+                <Input label="Banco o billetera (opcional)" {...register("bankTransfer.bankName")} error={errors.bankTransfer?.bankName?.message} />
+              </div>
+            </div>
+
+          {message && <p className="text-sm text-brand-600">{message}</p>}
+          {error && <p className="text-sm text-danger-600">{error}</p>}
+
+          <Button type="submit" disabled={isSubmitting}>
+            Guardar datos de la tienda
           </Button>
+          </form>
         </div>
       </div>
-
-      <ThemeColorsSection config={config} onSaved={setConfig} />
-
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="mt-6 space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
-        <Input label="Nombre de la marca" {...register("brandName")} error={errors.brandName?.message} />
-        <Input label="Link de Instagram" {...register("instagram")} error={errors.instagram?.message} />
-        <Input label="Número de WhatsApp (sin 0 ni 15, ej: 3814091213)" {...register("whatsappNumber")} error={errors.whatsappNumber?.message} />
-        <Textarea label="Mensaje predefinido de WhatsApp" rows={2} {...register("whatsappMessage")} error={errors.whatsappMessage?.message} />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Input label="Monto mínimo de compra ($)" type="number" {...register("minPurchaseAmount")} error={errors.minPurchaseAmount?.message} />
-          <Input label="Costo de envío por defecto ($)" type="number" {...register("defaultShippingCost")} error={errors.defaultShippingCost?.message} />
-          <Input label="Envío gratis desde ($, 0 = deshabilitado)" type="number" {...register("freeShippingFrom")} error={errors.freeShippingFrom?.message} />
-          <Input label="Entrega desde (horas)" type="number" {...register("deliveryEtaHours")} error={errors.deliveryEtaHours?.message} />
-          <Input label="Entrega hasta (horas)" type="number" {...register("deliveryEtaMaxHours")} error={errors.deliveryEtaMaxHours?.message} />
-        </div>
-
-        <div className="border-t border-ink-100 pt-4">
-          <p className="text-sm font-semibold text-ink-900">Datos para pagos por transferencia</p>
-          <p className="mt-1 text-xs text-ink-500">
-            Son los datos que ve el cliente cuando elige pagar por transferencia. Si dejás vacíos el alias y el CBU, la opción de
-            transferencia no aparece en la tienda.
-          </p>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
-            <Input label="Alias" placeholder="dulcinard.golosinas" {...register("bankTransfer.alias")} error={errors.bankTransfer?.alias?.message} />
-            <Input label="CBU o CVU (22 números)" inputMode="numeric" {...register("bankTransfer.cbu")} error={errors.bankTransfer?.cbu?.message} />
-            <Input label="Titular de la cuenta" {...register("bankTransfer.holder")} error={errors.bankTransfer?.holder?.message} />
-            <Input label="Banco o billetera (opcional)" {...register("bankTransfer.bankName")} error={errors.bankTransfer?.bankName?.message} />
-          </div>
-        </div>
-
-        {message && <p className="text-sm text-brand-600">{message}</p>}
-        {error && <p className="text-sm text-danger-600">{error}</p>}
-
-        <Button type="submit" disabled={isSubmitting}>
-          Guardar configuración
-        </Button>
-      </form>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { buildAdminOrderWhatsappHref } from "../../lib/whatsapp";
 import { WhatsappIcon } from "../../components/ui/WhatsappIcon";
 import { toastSuccess, toastError, confirmAction } from "../../lib/alerts";
 import { downloadFromApi } from "../../lib/download";
+import DeliveredImport from "./DeliveredImport";
 import { FileSpreadsheet } from "lucide-react";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
@@ -27,7 +28,8 @@ const toInputDate = (date) => {
 };
 const formatInputDate = (value) => value.split("-").reverse().join("/");
 
-// Excel con los pedidos entregados entre dos fechas (por defecto, el mes actual).
+// Excel con los pedidos ya entregados entre dos fechas (por defecto, el mes
+// actual), para llevar la cuenta. Queda plegado debajo de la carga de entregados.
 function DeliveredExport() {
   const now = new Date();
   const [from, setFrom] = useState(toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)));
@@ -56,12 +58,14 @@ function DeliveredExport() {
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-ink-100 bg-white p-4">
-      <p className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+    <details className="group mt-3 rounded-2xl border border-ink-100 bg-white p-4">
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-ink-700">
         <FileSpreadsheet className="h-4 w-4 text-brand-600" />
-        Descargar pedidos entregados en Excel
-      </p>
-      <p className="mt-1 text-xs text-ink-500">Incluye fecha, cliente, productos, cantidades y total de cada pedido entregado entre esas fechas.</p>
+        Descargar los pedidos ya entregados (para llevar la cuenta)
+        <span className="ml-auto text-xs font-semibold text-brand-600 group-open:hidden">Ver</span>
+        <span className="ml-auto hidden text-xs font-semibold text-brand-600 group-open:inline">Ocultar</span>
+      </summary>
+      <p className="mt-2 text-xs text-ink-500">Incluye fecha, cliente, productos, cantidades y total de cada pedido entregado entre esas fechas.</p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-ink-600">Desde</span>
@@ -71,11 +75,11 @@ function DeliveredExport() {
           <span className="mb-1 block text-xs font-medium text-ink-600">Hasta</span>
           <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="rounded-xl border border-ink-200 px-3 py-2 text-sm" />
         </label>
-        <Button onClick={download} disabled={downloading}>
+        <Button variant="outline" onClick={download} disabled={downloading}>
           {downloading ? "Descargando..." : "Descargar Excel"}
         </Button>
       </div>
-    </div>
+    </details>
   );
 }
 const PAGE_SIZE = 20;
@@ -183,6 +187,7 @@ export default function PedidosAdmin() {
     <div>
       <h1 className="text-2xl font-bold text-ink-900">Pedidos</h1>
 
+      <DeliveredImport onDone={load} />
       <DeliveredExport />
 
       <div className="mt-5 flex flex-wrap gap-2">
