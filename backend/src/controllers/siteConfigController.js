@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
 import { THEME_KEYS } from "../validators/siteConfigValidators.js";
+import { CONTENT_FIELDS } from "../models/SiteConfig.js";
 
 // SiteConfig es un singleton: si no existe documento, se crea uno con los defaults del schema.
 async function getOrCreateConfig() {
@@ -36,6 +37,16 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
   if (req.body.theme && typeof req.body.theme === "object") {
     for (const key of THEME_KEYS) {
       if (req.body.theme[key] !== undefined) config.theme[key] = String(req.body.theme[key]).toLowerCase();
+    }
+  }
+  if (req.body.content && typeof req.body.content === "object") {
+    for (const key of Object.keys(CONTENT_FIELDS)) {
+      if (typeof req.body.content[key] === "string") config.content[key] = req.body.content[key].trim();
+    }
+  }
+  if (req.body.bankTransfer && typeof req.body.bankTransfer === "object") {
+    for (const key of ["alias", "cbu", "holder", "bankName"]) {
+      if (req.body.bankTransfer[key] !== undefined) config.bankTransfer[key] = String(req.body.bankTransfer[key]).trim();
     }
   }
   if (req.body.branches !== undefined) {
