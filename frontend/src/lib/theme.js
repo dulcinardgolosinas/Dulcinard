@@ -12,15 +12,13 @@ const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 export const DEFAULT_THEME = {
   primary: "#b81830", // brand-600
   secondary: "#6b615d", // ink-500
-  accent: "#e51f1f", // accent-600
   background: "#f6f5f5", // ink-50
   text: "#201c1b" // ink-900
 };
 
 export const THEME_FIELDS = [
-  { key: "primary", label: "Primario", help: "Botones, links y elementos de marca" },
+  { key: "primary", label: "Rojo de la marca", help: "El único rojo del sitio: menú, botones, links, precios y pie de página" },
   { key: "secondary", label: "Secundario", help: "Textos secundarios, bordes y fondos neutros" },
-  { key: "accent", label: "Acento", help: "Botones destacados (WhatsApp) y detalles" },
   { key: "background", label: "Fondo", help: "Fondo general de las páginas" },
   { key: "text", label: "Texto", help: "Texto principal y títulos" }
 ];
@@ -28,7 +26,6 @@ export const THEME_FIELDS = [
 // Qué escala genera cada color y en qué paso queda el color elegido.
 const SCALES = {
   primary: { prefix: "brand", baseStep: 600 },
-  accent: { prefix: "accent", baseStep: 600 },
   secondary: { prefix: "ink", baseStep: 500 }
 };
 
@@ -135,7 +132,6 @@ export function themeContrastChecks(theme) {
   const t = Object.fromEntries(Object.entries(DEFAULT_THEME).map(([k, v]) => [k, isHexColor(theme[k]) ? theme[k] : v]));
   return [
     { label: "Botones primarios (texto blanco) y links sobre blanco", ratio: contrastRatio("#ffffff", t.primary) },
-    { label: "Texto blanco sobre botones de acento", ratio: contrastRatio("#ffffff", t.accent) },
     { label: "Texto principal sobre el fondo", ratio: contrastRatio(t.text, t.background) },
     { label: "Texto principal sobre tarjetas blancas", ratio: contrastRatio(t.text, "#ffffff") },
     { label: "Texto secundario sobre el fondo", ratio: contrastRatio(t.secondary, t.background) }
