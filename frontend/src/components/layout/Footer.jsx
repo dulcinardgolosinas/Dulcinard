@@ -41,17 +41,19 @@ export function Footer() {
                   </svg>
                 </a>
               )}
-              <a
-                href="https://www.facebook.com/dulcinard/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 transition-colors hover:bg-brand-50"
-                aria-label="Facebook"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.87.24-1.46 1.49-1.46H16.5V4.36C16.19 4.32 15.13 4.22 13.9 4.22c-2.55 0-4.29 1.56-4.29 4.42v2.86H7v3h2.61V21h3.89Z" />
-                </svg>
-              </a>
+              {config?.facebook && (
+                <a
+                  href={config.facebook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-brand-600 transition-colors hover:bg-brand-50"
+                  aria-label="Facebook"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13.5 21v-7.5h2.5l.4-3H13.5V8.5c0-.87.24-1.46 1.49-1.46H16.5V4.36C16.19 4.32 15.13 4.22 13.9 4.22c-2.55 0-4.29 1.56-4.29 4.42v2.86H7v3h2.61V21h3.89Z" />
+                  </svg>
+                </a>
+              )}
             </div>
           </div>
 
