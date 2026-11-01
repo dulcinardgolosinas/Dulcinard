@@ -29,27 +29,6 @@ const branchSchema = new mongoose.Schema(
   { _id: true, timestamps: true }
 );
 
-// Textos editables de la tienda (SiteConfig.content) y su largo máximo. "" =
-// se usa el texto por defecto (definido en frontend/src/lib/siteContent.js).
-export const CONTENT_FIELDS = {
-  homeTagline: 80,
-  homeSubtitle: 300,
-  aboutIntro: 500,
-  aboutStoryTitle: 120,
-  aboutStory: 3000,
-  aboutQuote: 300,
-  aboutQuoteNote: 200,
-  value1Title: 40,
-  value1Text: 200,
-  value2Title: 40,
-  value2Text: 200,
-  value3Title: 40,
-  value3Text: 200,
-  contactTitle: 80,
-  contactText: 400,
-  footerText: 300
-};
-
 const siteConfigSchema = new mongoose.Schema(
   {
     // Singleton: siempre habrá un único documento de configuración
@@ -63,6 +42,7 @@ const siteConfigSchema = new mongoose.Schema(
       publicId: { type: String, default: "" }
     },
     instagram: { type: String, default: "https://instagram.com/dulcinard_golosinas" },
+    facebook: { type: String, default: "https://www.facebook.com/dulcinard/" },
     whatsappNumber: { type: String, default: "3814091213" },
     whatsappMessage: {
       type: String,
@@ -80,10 +60,6 @@ const siteConfigSchema = new mongoose.Schema(
 
     // Datos que ve el cliente cuando elige pagar por transferencia. Sin alias
     // ni CBU, la transferencia no se ofrece en el checkout.
-    // Textos editables desde el panel ("Textos de la tienda"). Vacío = se usa
-    // el texto por defecto del frontend (frontend/src/lib/siteContent.js).
-    content: Object.fromEntries(Object.keys(CONTENT_FIELDS).map((key) => [key, { type: String, default: "" }])),
-
     bankTransfer: {
       alias: { type: String, default: "" },
       cbu: { type: String, default: "" },
