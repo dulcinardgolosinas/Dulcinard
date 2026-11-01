@@ -61,7 +61,7 @@ export default function Pedidos() {
                 rel="noopener noreferrer"
                 aria-label="Coordinar por WhatsApp"
                 onClick={(e) => e.stopPropagation()}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent-600 text-white transition-colors hover:bg-accent-700"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-700"
               >
                 <WhatsappIcon className="h-4 w-4" />
               </a>
