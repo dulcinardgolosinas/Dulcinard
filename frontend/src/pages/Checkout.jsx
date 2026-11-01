@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Banknote, CreditCard } from "lucide-react";
+import { Banknote, CreditCard, Landmark } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,6 +14,9 @@ import { Spinner } from "../components/ui/Spinner";
 import { formatCurrency, UNIT_LABELS } from "../lib/format";
 import { alphanumericField, nameField, phoneField } from "../lib/validators";
 import { toastError, toastSuccess } from "../lib/alerts";
+import { BankTransferInfo } from "../components/ui/BankTransferInfo";
+
+const hasBankTransfer = (config) => Boolean(config?.bankTransfer?.alias || config?.bankTransfer?.cbu);
 
 const schema = z.object({
   zone: z.string().min(1, "Elegí tu zona de envío"),
@@ -22,7 +25,7 @@ const schema = z.object({
   phone: phoneField({ required: true }),
   savePhone: z.boolean().optional(),
   notes: z.string().trim().max(500, "Las notas no pueden superar los 500 caracteres").optional(),
-  paymentMethod: z.enum(["mercado_pago", "efectivo"], { message: "Elegí un método de pago" })
+  paymentMethod: z.enum(["mercado_pago", "transferencia", "efectivo"], { message: "Elegí un método de pago" })
 });
 
 const PAYMENT_OPTIONS = [
@@ -31,6 +34,12 @@ const PAYMENT_OPTIONS = [
     title: "Mercado Pago",
     description: "Tarjeta, débito o dinero en cuenta. Te redirigimos para pagar de forma segura.",
     Icon: CreditCard
+  },
+  {
+    value: "transferencia",
+    title: "Transferencia bancaria",
+    description: "Transferís desde tu banco o billetera. Te mostramos el alias y el CBU.",
+    Icon: Landmark
   },
   {
     value: "efectivo",
@@ -120,9 +129,9 @@ export default function Checkout() {
         }
       }
 
-      if (paymentMethod === "efectivo") {
+      if (paymentMethod === "efectivo" || paymentMethod === "transferencia") {
         clear();
-        navigate(`/pedidos/${order._id}?pago=efectivo`);
+        navigate(`/pedidos/${order._id}?pago=${paymentMethod}`);
         return;
       }
 
@@ -185,11 +194,11 @@ export default function Checkout() {
           <fieldset className="pt-2">
             <legend className="mb-2 font-semibold text-ink-900">Método de pago</legend>
             <div className="grid gap-3 sm:grid-cols-2">
-              {PAYMENT_OPTIONS.map(({ value, title, description, Icon }) => (
+              {PAYMENT_OPTIONS.filter((o) => o.value !== "transferencia" || hasBankTransfer(config)).map(({ value, title, description, Icon }) => (
                 <label
                   key={value}
                   className={`flex cursor-pointer gap-3 rounded-2xl border p-4 transition-colors ${
-                    paymentMethod === value ? "border-brand-500 bg-brand-50" : "border-ink-200 bg-white hover:border-brand-300"
+                    paymentMethod === value ? "border-brand-600 bg-brand-50" : "border-ink-200 bg-white hover:border-brand-300"
                   }`}
                 >
                   <input type="radio" value={value} {...register("paymentMethod")} className="mt-1 h-4 w-4 accent-brand-600" />
@@ -204,6 +213,7 @@ export default function Checkout() {
               ))}
             </div>
             {errors.paymentMethod && <p className="mt-1 text-xs text-danger-600">{errors.paymentMethod.message}</p>}
+            {paymentMethod === "transferencia" && <BankTransferInfo bank={config?.bankTransfer} className="mt-3" />}
           </fieldset>
 
           {error && <p className="text-sm text-danger-600">{error}</p>}
@@ -213,6 +223,8 @@ export default function Checkout() {
               <Spinner className="h-4 w-4" />
             ) : paymentMethod === "efectivo" ? (
               "Confirmar pedido (pago en efectivo)"
+            ) : paymentMethod === "transferencia" ? (
+              "Confirmar pedido (pago por transferencia)"
             ) : (
               "Confirmar y pagar con Mercado Pago"
             )}
@@ -220,6 +232,8 @@ export default function Checkout() {
           <p className="text-xs text-ink-500">
             {paymentMethod === "efectivo"
               ? "Tu pedido queda pendiente de pago hasta que confirmemos el cobro en efectivo. Te contactamos para coordinar."
+              : paymentMethod === "transferencia"
+              ? "Tu pedido queda pendiente de pago hasta que recibamos la transferencia. Después de confirmar vas a ver de nuevo los datos para transferir."
               : "Al confirmar serás redirigido a Mercado Pago para completar el pago de forma segura."}
           </p>
         </form>

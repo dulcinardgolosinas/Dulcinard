@@ -183,11 +183,11 @@ export default function ProductoForm() {
           <div className="flex items-center gap-6 pt-6">
             <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
               <input type="checkbox" {...register("featured")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-              Destacado
+              Destacado (se muestra primero)
             </label>
             <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
               <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-              Activo
+              Visible en la tienda
             </label>
           </div>
         </div>

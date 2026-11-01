@@ -53,7 +53,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink-900">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-ink-900">Resumen</h1>
 
       {stats.lowStock > 0 && (
         <Link

@@ -18,7 +18,7 @@ export const UNIT_LABELS = {
 export const PAYMENT_METHOD_LABELS = {
   mercado_pago: "Mercado Pago",
   efectivo: "Efectivo",
-  transferencia: "Transferencia"
+  transferencia: "Transferencia bancaria"
 };
 
 export const PAYMENT_STATUS_LABELS = {

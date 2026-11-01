@@ -2,7 +2,7 @@ import { formatCurrency, UNIT_LABELS } from "./format";
 
 // Normaliza cualquier número (con o sin código de país/característica) al
 // formato que espera wa.me para Argentina: 54 9 <código de área><número>.
-function toWhatsappNumber(raw) {
+export function toWhatsappNumber(raw) {
   const digits = (raw || "").replace(/\D/g, "");
   if (!digits) return null;
   if (digits.startsWith("549")) return digits;

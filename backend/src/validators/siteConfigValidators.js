@@ -27,6 +27,7 @@ export const updateSiteConfigValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage("El nombre de la marca debe tener entre 2 y 100 caracteres"),
   body("instagram").optional({ checkFalsy: true }).trim().isURL().withMessage("El link de Instagram no es una URL válida"),
+  body("facebook").optional({ checkFalsy: true }).trim().isURL().withMessage("El link de Facebook no es una URL válida"),
   body("whatsappNumber")
     .optional({ checkFalsy: true })
     .trim()
@@ -40,6 +41,18 @@ export const updateSiteConfigValidator = [
   optionalNumber("freeShippingFrom", "El monto de envío gratis"),
   body("deliveryEtaHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega debe ser un número entero de horas entre 1 y 720"),
   body("deliveryEtaMaxHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega máximo debe ser un número entero de horas entre 1 y 720"),
+  body("bankTransfer.alias")
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^[a-zA-Z0-9.-]{6,20}$/)
+    .withMessage("El alias debe tener entre 6 y 20 caracteres (letras, números, puntos o guiones)"),
+  body("bankTransfer.cbu")
+    .optional({ checkFalsy: true })
+    .trim()
+    .matches(/^\d{22}$/)
+    .withMessage("El CBU o CVU debe tener 22 números"),
+  body("bankTransfer.holder").optional({ checkFalsy: true }).trim().isLength({ max: 100 }).withMessage("El titular no puede superar los 100 caracteres"),
+  body("bankTransfer.bankName").optional({ checkFalsy: true }).trim().isLength({ max: 60 }).withMessage("El banco no puede superar los 60 caracteres"),
   body("branches")
     .optional({ checkFalsy: true })
     .custom((value) => {

@@ -6,8 +6,10 @@ import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { Button } from "../components/ui/Button";
 import { fadeUp } from "../lib/motion";
+import { useSiteContent, paragraphs } from "../lib/siteContent";
 
 function Hero() {
+  const content = useSiteContent();
   return (
     <section className="relative overflow-hidden text-white">
       <HeroBackdrop page="quienes-somos" />
@@ -19,19 +21,18 @@ function Hero() {
             variants={fadeUp}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-sm"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
             Quiénes somos
           </motion.span>
 
           <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
             Una comunidad que
             <br />
-            <span className="text-accent-600">crece de a mayor</span>
+            <span className="text-brand-600">crece de a mayor</span>
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
-            Somos DULCI NARD: venta mayorista y minorista de golosinas y comestibles en Tucumán. Trabajamos con las
-            marcas líderes del mercado para que tu kiosco o comercio nunca le falte variedad.
+            {content.aboutIntro}
           </motion.p>
         </motion.div>
       </div>
@@ -71,7 +72,7 @@ function StatsFloat({ branchCount }) {
             whileHover={{ y: -4 }}
             className="group flex cursor-default items-center gap-4 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-brand-100 hover:bg-brand-50/60 hover:shadow-[0_12px_30px_-12px_rgba(184,24,48,0.35)]"
           >
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
                 {s.icon}
               </svg>
@@ -89,13 +90,10 @@ function StatsFloat({ branchCount }) {
   );
 }
 
-const values = [
-  { title: "Calidad", desc: "Trabajamos con las marcas líderes del rubro golosinas y alimentos.", icon: Sparkles },
-  { title: "Cercanía", desc: "5 sucursales pensadas para que siempre tengas una a mano.", icon: Handshake },
-  { title: "Rapidez", desc: "Pedís hoy, lo tenés en tu local en 24 a 48 hs. Sin vueltas.", icon: Zap }
-];
+const VALUE_ICONS = [Sparkles, Handshake, Zap];
 
 function Story() {
+  const content = useSiteContent();
   return (
     <section className="relative overflow-hidden py-16 md:py-24">
       <LogoWatermark side="left" />
@@ -107,28 +105,15 @@ function Story() {
           transition={{ duration: 0.6 }}
         >
           <span className="mb-1 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-600">
-            <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-500 to-accent-400" />
+            <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-600 to-brand-600" />
             Nuestra historia
           </span>
-          <h2 className="mt-2 font-display text-2xl font-bold text-ink-900 md:text-3xl">
-            Trayectoria y compromiso de <span className="whitespace-nowrap">DULCI NARD</span>
-          </h2>
-          <p className="mt-5 text-ink-600 leading-relaxed">
-            DULCI NARD nació para estar cerca de los kiosqueros y comerciantes de Tucumán. Empezamos como
-            distribuidores mayoristas de golosinas y comestibles, y con el tiempo fuimos creciendo hasta convertirnos
-            en un proveedor de confianza para cientos de comercios de la provincia.
-          </p>
-          <p className="mt-4 text-ink-600 leading-relaxed">
-            Hoy contamos con <strong className="font-semibold text-ink-900">5 sucursales</strong> distribuidas
-            estratégicamente para que siempre tengas un depósito cerca, y trabajamos con las marcas más importantes
-            del país —Arcor, Georgalos, Mondelez, Bonafide, y muchas más— para ofrecerte la variedad que tu negocio
-            necesita, al mejor precio y con la mejor atención.
-          </p>
-          <p className="mt-4 text-ink-600 leading-relaxed">
-            Creamos esta página para achicar la distancia con nuestros clientes: para que puedas ver nuestro catálogo
-            completo, hacer tu pedido cuando quieras y resolver tus dudas sin vueltas. Como siempre,{" "}
-            <strong className="font-semibold text-ink-900">DULCI NARD está cerca tuyo.</strong>
-          </p>
+          <h2 className="mt-2 font-display text-2xl font-bold text-ink-900 md:text-3xl">{content.aboutStoryTitle}</h2>
+          {paragraphs(content.aboutStory).map((text, i) => (
+            <p key={i} className={`${i === 0 ? "mt-5" : "mt-4"} text-ink-600 leading-relaxed`}>
+              {text}
+            </p>
+          ))}
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/catalogo">
               <Button size="lg">Ver catálogo completo</Button>
@@ -146,18 +131,17 @@ function Story() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-ink-950 p-8 text-white shadow-xl"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-600 to-ink-950 p-8 text-white shadow-xl"
         >
-          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-accent-400/25 blur-3xl" />
+          <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand-600/25 blur-3xl" />
           <p className="relative font-display text-xl font-bold leading-snug md:text-2xl">
-            “Facilitarle a cada kiosco y comercio de Tucumán el acceso a golosinas y productos alimenticios al mejor
-            precio mayorista.”
+            “{content.aboutQuote}”
           </p>
-          <p className="relative mt-5 text-sm font-semibold uppercase tracking-wide text-accent-300">
+          <p className="relative mt-5 text-sm font-semibold uppercase tracking-wide text-white">
             Nuestro compromiso
           </p>
           <p className="relative mt-1 text-sm text-white/80">
-            Con un proceso de pedido simple por WhatsApp o desde nuestra tienda online.
+            {content.aboutQuoteNote}
           </p>
         </motion.div>
       </div>
@@ -166,6 +150,8 @@ function Story() {
 }
 
 function Values() {
+  const content = useSiteContent();
+  const values = [1, 2, 3].map((n, i) => ({ title: content[`value${n}Title`], desc: content[`value${n}Text`], icon: VALUE_ICONS[i] }));
   return (
     <section className="mx-auto max-w-7xl px-4 pb-20 md:px-6">
       <div className="grid gap-5 sm:grid-cols-3">
@@ -179,7 +165,7 @@ function Values() {
             whileHover={{ y: -6 }}
             className="group rounded-3xl border border-ink-100 bg-white p-7 text-center transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
           >
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <v.icon className="h-6 w-6" strokeWidth={1.8} />
             </div>
             <p className="mt-4 font-display text-lg font-bold text-ink-900">{v.title}</p>

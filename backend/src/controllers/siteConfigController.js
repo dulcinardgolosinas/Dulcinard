@@ -22,6 +22,7 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
   const fields = [
     "brandName",
     "instagram",
+    "facebook",
     "whatsappNumber",
     "whatsappMessage",
     "minPurchaseAmount",
@@ -36,6 +37,11 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
   if (req.body.theme && typeof req.body.theme === "object") {
     for (const key of THEME_KEYS) {
       if (req.body.theme[key] !== undefined) config.theme[key] = String(req.body.theme[key]).toLowerCase();
+    }
+  }
+  if (req.body.bankTransfer && typeof req.body.bankTransfer === "object") {
+    for (const key of ["alias", "cbu", "holder", "bankName"]) {
+      if (req.body.bankTransfer[key] !== undefined) config.bankTransfer[key] = String(req.body.bankTransfer[key]).trim();
     }
   }
   if (req.body.branches !== undefined) {

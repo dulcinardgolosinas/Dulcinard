@@ -1,13 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { ImageOff, MapPin, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
-import { confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, alphanumericField, phoneField, urlField } from "../../lib/validators";
 
 const branchSchema = z.object({
@@ -62,6 +63,13 @@ function BranchImageUpload({ branchId, currentUrl, onUploaded, onUploadingChange
 
   async function upload() {
     if (!file || !branchId) return;
+    const confirmed = await confirmAction({
+      title: "¿Subir esta foto?",
+      text: "Reemplaza la foto actual de la sucursal.",
+      confirmText: "Sí, subir",
+      icon: "question"
+    });
+    if (!confirmed) return;
     setUploading(true);
     onUploadingChange(true);
     try {
@@ -115,6 +123,52 @@ function BranchImageUpload({ branchId, currentUrl, onUploaded, onUploadingChange
   );
 }
 
+function BranchSummary({ branch, hasErrors, onEdit, onDelete }) {
+  return (
+    <div className={`flex flex-wrap items-center gap-3 rounded-2xl border bg-white p-3 sm:flex-nowrap ${hasErrors ? "border-brand-400" : "border-ink-100"}`}>
+      <div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
+        {branch?.image?.url ? (
+          <img src={branch.image.url} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-ink-300">
+            <ImageOff className="h-5 w-5" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-2 font-semibold text-ink-900">
+          <span className="truncate">{branch?.name || "Sucursal sin nombre"}</span>
+          {branch?.primary && (
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+              <Star className="h-3 w-3" /> Principal
+            </span>
+          )}
+          {!branch?.active && <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-[11px] font-semibold text-ink-600">Oculta</span>}
+        </p>
+        <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-ink-600">
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-ink-400" />
+          {branch?.address || "Sin dirección"}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-ink-500">
+          {branch?.schedule?.weekdays?.label}: {branch?.schedule?.weekdays?.hours || "—"} · {branch?.schedule?.saturday?.label}:{" "}
+          {branch?.schedule?.saturday?.hours || "—"}
+        </p>
+        {hasErrors && <p className="mt-0.5 text-xs font-semibold text-brand-600">Faltan datos: tocá Editar para completarlos</p>}
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" size="sm" variant="outline" onClick={onEdit}>
+          <Pencil className="h-4 w-4" />
+          Editar
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={onDelete} aria-label={`Eliminar ${branch?.name || "sucursal"}`} className="text-brand-600">
+          <Trash2 className="h-4 w-4" />
+          <span className="hidden sm:inline">Eliminar</span>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function SucursalesAdmin() {
   const {
     control,
@@ -133,6 +187,16 @@ export default function SucursalesAdmin() {
   const { fields, append, remove } = useFieldArray({ control, name: "branches" });
   const branchesValues = watch("branches");
   const [uploadingCount, setUploadingCount] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  // Sucursales con el formulario abierto (por su id de la lista).
+  const [openIds, setOpenIds] = useState(() => new Set());
+  const setOpen = (id, open) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (open) next.add(id);
+      else next.delete(id);
+      return next;
+    });
 
   function handleUploadingChange(isUploading) {
     setUploadingCount((c) => c + (isUploading ? 1 : -1));
@@ -141,6 +205,7 @@ export default function SucursalesAdmin() {
   async function load() {
     const { data } = await api.get("/site-config");
     reset({ branches: data.branches?.length ? data.branches : [] });
+    setLoaded(true);
   }
 
   useEffect(() => {
@@ -153,31 +218,62 @@ export default function SucursalesAdmin() {
     const confirmed = await confirmDelete(`la sucursal "${branch.name || "sin nombre"}"`);
     if (!confirmed) return;
     remove(index);
+    toastSuccess("Sucursal quitada de la lista. Tocá \"Guardar sucursales\" para que se aplique.");
   }
+
+  // La sucursal recién agregada se abre sola para completarla.
+  const addingRef = useRef(false);
+  function addBranch() {
+    addingRef.current = true;
+    append(emptyBranch());
+  }
+  useEffect(() => {
+    if (!addingRef.current || !fields.length) return;
+    addingRef.current = false;
+    setOpen(fields[fields.length - 1].id, true);
+  }, [fields]);
 
   function setPrimary(index) {
     fields.forEach((_, i) => setValue(`branches.${i}.primary`, i === index, { shouldDirty: true }));
   }
 
   async function onSubmit(values) {
+    const confirmed = await confirmAction({
+      title: "¿Guardar las sucursales?",
+      text: "Los cambios se ven en la tienda apenas los guardes.",
+      confirmText: "Sí, guardar",
+      icon: "question"
+    });
+    if (!confirmed) return;
     try {
-      await api.put("/site-config", { branches: JSON.stringify(values.branches) });
+      const { data } = await api.put("/site-config", { branches: JSON.stringify(values.branches) });
+      reset({ branches: data.branches || [] });
+      setOpenIds(new Set());
       toastSuccess("Sucursales actualizadas");
     } catch (err) {
       toastError(apiErrorMessage(err, "No pudimos guardar las sucursales"));
     }
   }
 
-  function onInvalid() {
+  // Si hay errores, se abren las sucursales que los tienen para verlos.
+  function onInvalid(formErrors) {
+    (formErrors.branches || []).forEach((err, i) => err && fields[i] && setOpen(fields[i].id, true));
     toastError("Revisá los campos marcados en rojo antes de guardar");
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-ink-900">Sucursales</h1>
-        <Button type="button" variant="outline" onClick={() => append(emptyBranch())}>
-          + Agregar sucursal
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-ink-900">Sucursales</h1>
+          <p className="mt-1 max-w-xl text-sm text-ink-500">
+            Tocá <b>Editar</b> para cambiar los datos de una sucursal. Cuando termines, tocá <b>Guardar sucursales</b> para que los
+            cambios se vean en la tienda.
+          </p>
+        </div>
+        <Button type="button" onClick={addBranch}>
+          <Plus className="h-4 w-4" />
+          Agregar sucursal
         </Button>
       </div>
 
@@ -185,8 +281,21 @@ export default function SucursalesAdmin() {
         {fields.map((field, i) => {
           const branchErrors = errors.branches?.[i];
           const current = branchesValues?.[i];
+          const isOpen = openIds.has(field.id);
+          if (!isOpen) {
+            return (
+              <BranchSummary
+                key={field.id}
+                branch={current}
+                hasErrors={Boolean(branchErrors)}
+                onEdit={() => setOpen(field.id, true)}
+                onDelete={() => removeBranch(i)}
+              />
+            );
+          }
           return (
-            <div key={field.id} className="rounded-2xl border border-ink-100 bg-white p-5">
+            <div key={field.id} className="rounded-2xl border-2 border-brand-200 bg-white p-5">
+              <p className="mb-4 font-semibold text-ink-900">{current?._id ? `Editar: ${current?.name || "sucursal"}` : "Nueva sucursal"}</p>
               <div className="mb-4">
                 <p className="mb-1.5 text-sm font-medium text-ink-700">Foto de la sucursal</p>
                 <BranchImageUpload
@@ -222,7 +331,7 @@ export default function SucursalesAdmin() {
                       {...register(`branches.${i}.active`)}
                       className="h-4 w-4 rounded border-ink-300 text-brand-600"
                     />
-                    Sucursal activa
+                    Visible en la tienda
                   </label>
                   <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
                     <input
@@ -235,19 +344,34 @@ export default function SucursalesAdmin() {
                     Sucursal principal
                   </label>
                 </div>
-                <button type="button" onClick={() => removeBranch(i)} className="text-sm font-semibold text-danger-600 hover:underline">
-                  Eliminar sucursal
-                </button>
+                <div className="flex items-center gap-3">
+                  <button type="button" onClick={() => removeBranch(i)} className="text-sm font-semibold text-brand-600 hover:underline">
+                    Eliminar sucursal
+                  </button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setOpen(field.id, false)}
+                  >
+                    Listo
+                  </Button>
+                </div>
               </div>
             </div>
           );
         })}
 
-        {fields.length === 0 && <PageLoader />}
+        {!loaded && <PageLoader />}
+        {loaded && fields.length === 0 && (
+          <p className="rounded-2xl border border-ink-100 bg-white px-5 py-8 text-center text-sm text-ink-500">
+            Todavía no hay sucursales. Tocá "Agregar sucursal" para cargar la primera.
+          </p>
+        )}
       </div>
 
       <div className="mt-6 flex items-center gap-3">
-        <Button type="submit" disabled={isSubmitting || fields.length === 0 || uploadingCount > 0}>
+        <Button type="submit" disabled={isSubmitting || !loaded || uploadingCount > 0}>
           {isSubmitting ? <Spinner className="h-4 w-4" /> : "Guardar sucursales"}
         </Button>
         {uploadingCount > 0 && (

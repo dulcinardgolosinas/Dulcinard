@@ -10,6 +10,7 @@ import {
 import { requireAuth, requireAdmin, optionalAuth } from "../middleware/auth.js";
 import { upload, uploadSpreadsheet } from "../middleware/upload.js";
 import { updatePricesFromFile } from "../controllers/priceUpdateController.js";
+import { exportStock, importStockFromFile } from "../controllers/stockExcelController.js";
 import {
   listProductsWithoutImages,
   matchImageFiles,
@@ -25,6 +26,9 @@ router.get("/", optionalAuth, listProducts);
 router.get("/brands", listBrands);
 // Actualización masiva de precios: va antes de "/:idOrSlug" para que "import" no se tome como slug.
 router.post("/import/prices", requireAuth, requireAdmin, uploadSpreadsheet.single("file"), updatePricesFromFile);
+// Stock en Excel: descargar el actual y actualizarlo en masa.
+router.get("/export/stock", requireAuth, requireAdmin, exportStock);
+router.post("/import/stock", requireAuth, requireAdmin, uploadSpreadsheet.single("file"), importStockFromFile);
 // Subida masiva de fotos (también antes de "/:idOrSlug").
 router.get("/images/missing", requireAuth, requireAdmin, listProductsWithoutImages);
 router.post("/images/match", requireAuth, requireAdmin, matchImageFiles);

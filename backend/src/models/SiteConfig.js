@@ -42,6 +42,7 @@ const siteConfigSchema = new mongoose.Schema(
       publicId: { type: String, default: "" }
     },
     instagram: { type: String, default: "https://instagram.com/dulcinard_golosinas" },
+    facebook: { type: String, default: "https://www.facebook.com/dulcinard/" },
     whatsappNumber: { type: String, default: "3814091213" },
     whatsappMessage: {
       type: String,
@@ -56,6 +57,15 @@ const siteConfigSchema = new mongoose.Schema(
     deliveryEtaMaxHours: { type: Number, default: 48 },
 
     branches: { type: [branchSchema], default: [] },
+
+    // Datos que ve el cliente cuando elige pagar por transferencia. Sin alias
+    // ni CBU, la transferencia no se ofrece en el checkout.
+    bankTransfer: {
+      alias: { type: String, default: "" },
+      cbu: { type: String, default: "" },
+      holder: { type: String, default: "" },
+      bankName: { type: String, default: "" }
+    },
 
     // Paleta editable desde el admin (hex "#rrggbb"). Vacío = se usa el color
     // por defecto definido en frontend/src/index.css.

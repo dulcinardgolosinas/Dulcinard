@@ -1,6 +1,6 @@
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 
-const FALLBACK_LOGO = "https://res.cloudinary.com/dabikk5ei/image/upload/v1785899452/dulcinard/branding/rfwcpj2aorrjjlbtyzvz.png";
+const FALLBACK_LOGO = "https://res.cloudinary.com/nu4m5rh8/image/upload/v1793559589/dulcinard/branding/rfwcpj2aorrjjlbtyzvz.png";
 
 const sides = {
   left: "-left-24 -rotate-6 sm:-left-20",

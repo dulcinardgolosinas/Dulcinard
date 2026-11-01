@@ -9,7 +9,7 @@ export function ProductCard({ product }) {
   const outOfStock = product.stock <= 0;
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(184,24,48,0.25)]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(184,24,48,0.25)]">
       <Link to={`/producto/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
         {image ? (
           <img
@@ -45,18 +45,24 @@ export function ProductCard({ product }) {
       </Link>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">
-        {product.brand && <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">{product.brand}</span>}
-        <Link to={`/producto/${product.slug}`} className="line-clamp-2 text-sm font-semibold text-ink-900 hover:text-brand-600">
+        {/* Todas las tarjetas reservan el mismo lugar (marca, 2 renglones de nombre y
+            precio anterior) para que tengan el mismo alto aunque falte algún dato. */}
+        <span className="h-4 truncate text-[11px] font-semibold uppercase leading-4 tracking-wide text-ink-400">{product.brand}</span>
+        <Link
+          to={`/producto/${product.slug}`}
+          title={product.name}
+          className="line-clamp-2 min-h-10 text-sm font-semibold leading-5 text-ink-900 hover:text-brand-600"
+        >
           {product.name}
         </Link>
 
         <div className="mt-auto flex items-center justify-between pt-2">
           <div>
-            {product.discountPercent > 0 && (
-              <p className="text-[11px] text-ink-400 line-through">{formatCurrency(product.price)}</p>
-            )}
-            <p className="text-base font-bold text-brand-700">{formatCurrency(finalPriceOf(product))}</p>
-            <p className="text-[11px] font-medium text-ink-400">
+            <p className={`h-4 text-[11px] leading-4 text-ink-400 line-through ${product.discountPercent > 0 ? "" : "invisible"}`}>
+              {formatCurrency(product.price)}
+            </p>
+            <p className="text-base font-bold text-brand-600">{formatCurrency(finalPriceOf(product))}</p>
+            <p className="truncate text-[11px] font-medium text-ink-400">
               x {UNIT_LABELS[product.unit] || product.unit}
               {product.minOrderQty > 1 ? ` · mín. ${product.minOrderQty}` : ""}
             </p>

@@ -4,7 +4,7 @@ const GRAIN =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E";
 
 // Fondo por defecto si la página todavía no tiene una imagen cargada desde el admin.
-const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/dabikk5ei/image/upload/v1785935416/hero-rojo_zpfbvv.jpg";
+const DEFAULT_BG_IMAGE = "https://res.cloudinary.com/nu4m5rh8/image/upload/v1793559589/hero-rojo_zpfbvv.jpg";
 
 // Fondo compartido por los hero oscuros (Contacto, Quiénes somos, Envíos):
 // foto de fondo (cargada desde el admin, por página) con un velo oscuro suave

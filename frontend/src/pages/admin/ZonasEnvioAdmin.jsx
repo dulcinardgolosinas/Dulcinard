@@ -79,7 +79,7 @@ function ZoneForm({ editing, onSaved, onCancel }) {
       <Input label="Envío gratis desde ($, 0 = deshabilitado)" type="number" {...register("freeShippingFrom")} error={errors.freeShippingFrom?.message} />
       <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-        Zona activa
+        Disponible para elegir en la compra
       </label>
       {error && <p className="text-sm text-danger-600">{error}</p>}
       <div className="flex gap-2">
@@ -151,7 +151,7 @@ export default function ZonasEnvioAdmin() {
                       <td className="px-4 py-3 text-ink-600">{formatCurrency(z.minPurchaseAmount)}</td>
                       <td className="px-4 py-3 text-ink-600">{formatCurrency(z.cost)}</td>
                       <td className="px-4 py-3">
-                        <Badge tone={z.active ? "success" : "neutral"}>{z.active ? "Activa" : "Inactiva"}</Badge>
+                        <Badge tone={z.active ? "success" : "neutral"}>{z.active ? "Disponible" : "No disponible"}</Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => setEditing(z)} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">

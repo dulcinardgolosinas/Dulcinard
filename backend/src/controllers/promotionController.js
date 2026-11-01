@@ -33,6 +33,21 @@ export const listPromotions = asyncHandler(async (req, res) => {
   res.json(promotions);
 });
 
+// Público y liviano, para la sección de promociones del home: solo las
+// vigentes y solo los campos que se muestran (sin la lista de productos).
+export const listHomePromotions = asyncHandler(async (req, res) => {
+  const now = new Date();
+  const promotions = await Promotion.find({ active: true, startDate: { $lte: now }, endDate: { $gte: now } })
+    .select("title description discountPercent banner.url endDate categories")
+    .populate("categories", "name slug")
+    .sort({ discountPercent: -1, endDate: 1 })
+    .limit(8)
+    .lean();
+  // El navegador puede reusar la respuesta un minuto: las promos no cambian tan seguido.
+  res.set("Cache-Control", "public, max-age=60");
+  res.json(promotions);
+});
+
 export const getPromotion = asyncHandler(async (req, res) => {
   const promotion = await Promotion.findById(req.params.id);
   if (!promotion) return res.status(404).json({ message: "Promoción no encontrada" });

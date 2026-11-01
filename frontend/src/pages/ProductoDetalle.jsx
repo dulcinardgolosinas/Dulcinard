@@ -81,7 +81,7 @@ export default function ProductoDetalle() {
                   key={img.publicId}
                   onClick={() => setActiveImage(i)}
                   className={`h-16 w-16 overflow-hidden rounded-xl border-2 ${
-                    activeImage === i ? "border-brand-500" : "border-transparent"
+                    activeImage === i ? "border-brand-600" : "border-transparent"
                   }`}
                 >
                   <img src={img.url} alt="" className="h-full w-full bg-white object-contain" />
@@ -96,7 +96,7 @@ export default function ProductoDetalle() {
           <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">{product.name}</h1>
 
           <div className="mt-4 flex items-center gap-3">
-            <p className="text-3xl font-bold text-brand-700">{formatCurrency(finalPriceOf(product))}</p>
+            <p className="text-3xl font-bold text-brand-600">{formatCurrency(finalPriceOf(product))}</p>
             {product.discountPercent > 0 && (
               <>
                 <p className="text-lg text-ink-400 line-through">{formatCurrency(product.price)}</p>

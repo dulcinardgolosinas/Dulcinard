@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, ImagePlus, Upload } from "lucide-react";
+import { AlertTriangle, FileSpreadsheet, ImagePlus, Upload } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
 import { PageLoader } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
@@ -101,6 +101,12 @@ export default function ProductosAdmin() {
               Cargar / actualizar precios
             </Button>
           </Link>
+          <Link to="/admin/productos/stock">
+            <Button variant="outline">
+              <FileSpreadsheet className="h-4 w-4" strokeWidth={2} />
+              Stock en Excel
+            </Button>
+          </Link>
           <Link to="/admin/productos/fotos">
             <Button variant="outline">
               <ImagePlus className="h-4 w-4" strokeWidth={2} />
@@ -120,7 +126,7 @@ export default function ProductosAdmin() {
         <input
           value={draft.search}
           onChange={(e) => setDraft((d) => ({ ...d, search: e.target.value }))}
-          placeholder="Buscar por nombre, SKU o marca..."
+          placeholder="Buscar por nombre, código o marca..."
           aria-label="Buscar productos"
           className={fieldClass}
         />
@@ -212,7 +218,7 @@ export default function ProductosAdmin() {
                             <p className="font-medium text-ink-900">{p.name}</p>
                             <p className="text-xs text-ink-500">
                               {p.category?.name}
-                              {p.sku && ` · SKU ${p.sku}`}
+                              {p.sku && ` · Código ${p.sku}`}
                             </p>
                           </div>
                         </div>
@@ -234,7 +240,7 @@ export default function ProductosAdmin() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge tone={p.active ? "success" : "neutral"}>{p.active ? "Activo" : "Inactivo"}</Badge>
+                        <Badge tone={p.active ? "success" : "neutral"}>{p.active ? "Visible" : "Oculto"}</Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link to={`/admin/productos/${p._id}/editar`} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">

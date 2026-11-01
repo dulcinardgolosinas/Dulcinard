@@ -2,10 +2,10 @@
 // con relleno/contorno/oscuridad, no con matices de color distintos.
 const styles = {
   neutral: "bg-ink-100 text-ink-700",
-  brand: "bg-brand-100 text-brand-700",
-  accent: "bg-white text-brand-700 border border-brand-200",
+  brand: "bg-brand-100 text-brand-600",
+  accent: "bg-white text-brand-600 border border-brand-200",
   success: "bg-brand-600 text-white",
-  warning: "bg-white text-brand-700 border border-brand-300",
+  warning: "bg-white text-brand-600 border border-brand-300",
   danger: "bg-brand-900 text-white",
   // Alerta operativa (ej: "Reponer stock"), distinta de los estados de pedido.
   alert: "bg-danger-600 text-white"

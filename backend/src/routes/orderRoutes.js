@@ -9,11 +9,14 @@ import {
   listAllOrders,
   getOrderAdmin,
   updateOrderStatus,
-  confirmOrderPayment
+  confirmOrderPayment,
+  exportDeliveredOrders
 } from "../controllers/orderController.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { orderLimiter } from "../middleware/security.js";
-import { createOrderValidator, updateOrderStatusValidator } from "../validators/orderValidators.js";
+import { uploadSpreadsheet } from "../middleware/upload.js";
+import { exportPendingDelivery, importDeliveredOrders } from "../controllers/deliveredImportController.js";
+import { createOrderValidator, updateOrderStatusValidator, exportDeliveredValidator } from "../validators/orderValidators.js";
 
 const router = Router();
 
@@ -27,6 +30,11 @@ router.post("/:id/pay", requireAuth, orderLimiter, createPaymentPreference);
 router.post("/:id/sync-payment", requireAuth, orderLimiter, syncOrderPayment);
 
 router.get("/", requireAuth, requireAdmin, listAllOrders);
+// Antes de "/:id" para que "export" no se tome como id de pedido.
+router.get("/export/delivered", requireAuth, requireAdmin, exportDeliveredValidator, exportDeliveredOrders);
+// Marcar entregados en masa: planilla para completar y subida con vista previa.
+router.get("/export/pending-delivery", requireAuth, requireAdmin, exportPendingDelivery);
+router.post("/import/delivered", requireAuth, requireAdmin, uploadSpreadsheet.single("file"), importDeliveredOrders);
 router.get("/:id", requireAuth, requireAdmin, getOrderAdmin);
 router.put("/:id/status", requireAuth, requireAdmin, updateOrderStatusValidator, updateOrderStatus);
 router.put("/:id/confirm-payment", requireAuth, requireAdmin, confirmOrderPayment);

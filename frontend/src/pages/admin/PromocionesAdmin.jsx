@@ -140,7 +140,7 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
         <p className="mb-1.5 text-sm font-medium text-ink-700">Categorías incluidas</p>
         <p className="mb-2 text-xs text-ink-500">
           El descuento se aplica al precio de todos los productos de estas categorías. Sin categorías, la promo es solo
-          informativa (banner) y no descuenta.
+          un aviso con imagen y no descuenta.
         </p>
         <Controller
           control={control}
@@ -157,7 +157,7 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
                       field.onChange(checked ? field.value.filter((id) => id !== c._id) : [...(field.value || []), c._id])
                     }
                     className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                      checked ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"
+                      checked ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"
                     }`}
                   >
                     {c.name}
@@ -171,12 +171,12 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
 
       <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-        Activa
+        Publicada
       </label>
 
       <div>
         {editing?.banner?.url && !file && <img src={editing.banner.url} alt="" className="mb-2 h-20 w-full rounded-lg object-cover" />}
-        <FileInput label="Banner" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        <FileInput label="Imagen de la promoción" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
 
       {error && <p className="text-sm text-danger-600">{error}</p>}
@@ -248,7 +248,7 @@ export default function PromocionesAdmin() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <Badge tone={p.isCurrentlyActive ? "success" : "neutral"}>{p.isCurrentlyActive ? "Vigente" : "Inactiva"}</Badge>
+                    <Badge tone={p.isCurrentlyActive ? "success" : "neutral"}>{p.isCurrentlyActive ? "Vigente" : "No vigente"}</Badge>
                     <button onClick={() => setEditing(p)} className="text-sm font-semibold text-brand-600 hover:underline">
                       Editar
                     </button>

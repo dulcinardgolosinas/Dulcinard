@@ -10,6 +10,7 @@ import { paymentSuccessAlert, paymentFailureAlert } from "../lib/alerts";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
 import { WhatsappIcon } from "../components/ui/WhatsappIcon";
+import { BankTransferInfo } from "../components/ui/BankTransferInfo";
 
 const STEPS = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
 
@@ -117,19 +118,25 @@ export default function PedidoDetalle() {
         href={buildCustomerOrderWhatsappHref(order, config?.whatsappNumber)}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
+        className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
       >
         <WhatsappIcon className="h-4 w-4" />
         Coordinar por WhatsApp
       </a>
 
       {pagoQuery === "exito" && (
-        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-700">¡Pago recibido! Estamos procesando tu pedido.</p>
+        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-600">¡Pago recibido! Estamos procesando tu pedido.</p>
       )}
       {pagoQuery === "efectivo" && order.paymentStatus !== "aprobado" && (
-        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-600">
           ¡Recibimos tu pedido! Lo abonás en efectivo: queda pendiente de pago hasta que confirmemos el cobro. Escribinos por
           WhatsApp para coordinar la entrega.
+        </p>
+      )}
+      {pagoQuery === "transferencia" && order.paymentStatus !== "aprobado" && (
+        <p className="mt-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-600">
+          ¡Recibimos tu pedido! Queda pendiente de pago hasta que recibamos la transferencia. Abajo tenés los datos para
+          transferir.
         </p>
       )}
       {pagoQuery === "error" && (
@@ -189,6 +196,10 @@ export default function PedidoDetalle() {
           <span>{order.paymentStatus === "aprobado" ? "Pagado" : "Pendiente de pago"}</span>
         </div>
       </div>
+
+      {order.paymentMethod === "transferencia" && order.paymentStatus !== "aprobado" && order.status !== "cancelado" && (
+        <BankTransferInfo bank={config?.bankTransfer} amount={order.total} className="mt-6" />
+      )}
 
       {order.paymentMethod === "mercado_pago" && order.paymentStatus !== "aprobado" && order.status !== "cancelado" && (
         <div className="mt-6">

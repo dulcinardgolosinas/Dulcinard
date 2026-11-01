@@ -74,7 +74,7 @@ function CategoryForm({ editing, onSaved, onCancel }) {
       <Textarea label="Descripción" rows={2} {...register("description")} error={errors.description?.message} />
       <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-        Activa (visible en el catálogo)
+        Visible en la tienda
       </label>
       <div>
         {editing?.image?.url && !file && <img src={editing.image.url} alt="" className="mb-2 h-16 w-16 rounded-lg object-cover" />}
@@ -151,7 +151,7 @@ export default function CategoriasAdmin() {
                         {c.name}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge tone={c.active ? "success" : "neutral"}>{c.active ? "Activa" : "Inactiva"}</Badge>
+                        <Badge tone={c.active ? "success" : "neutral"}>{c.active ? "Visible" : "Oculta"}</Badge>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <button onClick={() => setEditing(c)} className="mr-3 text-sm font-semibold text-brand-600 hover:underline">

@@ -4,8 +4,10 @@ import { useSiteConfigStore } from "../store/siteConfigStore";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
+import { useSiteContent } from "../lib/siteContent";
 
 function Hero({ waHref }) {
+  const content = useSiteContent();
   return (
     <section className="relative overflow-hidden text-white">
       <HeroBackdrop page="contacto" />
@@ -17,23 +19,22 @@ function Hero({ waHref }) {
             variants={fadeUp}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-sm"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
             Contacto
           </motion.span>
 
           <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
-            Hablemos
+            {content.contactTitle}
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-5 max-w-md text-base text-white/80 md:text-lg">
-            Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras 5 sucursales en San Miguel de Tucumán y
-            Concepción.
+            {content.contactText}
           </motion.p>
 
           <motion.div custom={3} variants={fadeUp} className="mt-8">
             <a href={waHref} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3">
-              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-600 shadow-[0_8px_30px_-8px_rgba(229,31,31,0.7)] transition-transform group-hover:scale-110">
-                <span className="absolute inset-0 animate-ping rounded-full bg-accent-600 opacity-60" />
+              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 shadow-[0_8px_30px_-8px_rgba(184,24,48,0.7)] transition-transform group-hover:scale-110">
+                <span className="absolute inset-0 animate-ping rounded-full bg-brand-600 opacity-60" />
                 <svg className="relative h-7 w-7 text-white" viewBox="0 0 32 32" fill="currentColor">
                   <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
                 </svg>
@@ -62,7 +63,7 @@ function Branches({ branches }) {
       <LogoWatermark side="right" />
       <div className="relative mb-8">
         <span className="mb-1 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-600">
-          <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-500 to-accent-400" />
+          <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-600 to-brand-600" />
           Encontranos
         </span>
         <h2 className="font-display text-2xl font-bold text-ink-900 md:text-3xl">Nuestras sucursales</h2>
@@ -83,7 +84,7 @@ function Branches({ branches }) {
               {branchIcons[i % branchIcons.length]}
             </span>
 
-            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+            <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
                 <circle cx="12" cy="9.5" r="2.5" />
