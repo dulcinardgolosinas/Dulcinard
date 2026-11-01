@@ -70,7 +70,7 @@ export default function Catalogo() {
           <button
             onClick={() => updateFilter("category", "")}
             className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-              !category ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"
+              !category ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"
             }`}
           >
             Todas
@@ -80,7 +80,7 @@ export default function Catalogo() {
               key={c._id}
               onClick={() => updateFilter("category", c._id)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium ${
-                category === c._id ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"
+                category === c._id ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"
               }`}
             >
               {c.name}
