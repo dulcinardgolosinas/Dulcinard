@@ -4,7 +4,7 @@ import { FileInput } from "../../components/ui/FileInput";
 import { Button } from "../../components/ui/Button";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
-import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { confirmAction, confirmDelete, promptText, toastSuccess, toastError } from "../../lib/alerts";
 
 function ProviderCard({ provider, onChanged }) {
   const [file, setFile] = useState(null);
@@ -61,10 +61,37 @@ function ProviderCard({ provider, onChanged }) {
     }
   }
 
+  async function rename() {
+    const name = await promptText({
+      title: "Cambiar nombre",
+      label: "Nombre del proveedor",
+      value: provider.name,
+      validate: (text) => (text.length < 2 || text.length > 60 ? "El nombre debe tener entre 2 y 60 caracteres" : null)
+    });
+    if (!name || name === provider.name) return;
+    try {
+      const { data } = await api.put(`/providers/${provider._id}`, { name });
+      onChanged(data);
+      toastSuccess("Nombre actualizado");
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos cambiar el nombre"));
+    }
+  }
+
   async function toggleActive() {
+    const confirmed = await confirmAction({
+      title: provider.active ? "¿Ocultar este proveedor?" : "¿Mostrar este proveedor?",
+      text: provider.active
+        ? `"${provider.name}" deja de verse en la página principal. Podés volver a mostrarlo cuando quieras.`
+        : `"${provider.name}" vuelve a verse en la página principal.`,
+      confirmText: provider.active ? "Sí, ocultar" : "Sí, mostrar",
+      icon: "question"
+    });
+    if (!confirmed) return;
     try {
       const { data } = await api.put(`/providers/${provider._id}`, { active: !provider.active });
       onChanged(data);
+      toastSuccess(data.active ? "Proveedor visible en la tienda" : "Proveedor oculto");
     } catch (err) {
       toastError(apiErrorMessage(err, "No pudimos actualizar el proveedor"));
     }
@@ -72,9 +99,16 @@ function ProviderCard({ provider, onChanged }) {
 
   async function saveOrder() {
     if (order === provider.order) return;
+    const confirmed = await confirmAction({
+      title: "¿Cambiar la posición?",
+      text: `"${provider.name}" va a aparecer en la posición ${order}.`,
+      confirmText: "Sí, cambiar",
+      icon: "question"
+    });
+    if (!confirmed) return setOrder(provider.order);
     try {
       const { data } = await api.put(`/providers/${provider._id}`, { order });
-      toastSuccess("Orden actualizado");
+      toastSuccess("Posición actualizada");
       onChanged(data);
     } catch (err) {
       toastError(apiErrorMessage(err, "No pudimos actualizar el orden"));
@@ -84,8 +118,13 @@ function ProviderCard({ provider, onChanged }) {
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-ink-100 bg-white p-4">
       <div className="flex items-center justify-between">
-        <p className="font-semibold text-ink-900">{provider.name}</p>
-        <Badge tone={provider.active ? "success" : "neutral"}>{provider.active ? "Activo" : "Inactivo"}</Badge>
+        <div className="min-w-0">
+          <p className="truncate font-semibold text-ink-900">{provider.name}</p>
+          <button type="button" onClick={rename} className="text-xs font-semibold text-brand-600 hover:underline">
+            Cambiar nombre
+          </button>
+        </div>
+        <Badge tone={provider.active ? "success" : "neutral"}>{provider.active ? "Visible" : "Oculto"}</Badge>
       </div>
 
       <div className="flex h-16 items-center justify-center rounded-xl border border-dashed border-ink-200 bg-ink-50 p-2">

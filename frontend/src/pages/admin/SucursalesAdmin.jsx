@@ -7,7 +7,7 @@ import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
-import { confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
+import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, alphanumericField, phoneField, urlField } from "../../lib/validators";
 
 const branchSchema = z.object({
@@ -62,6 +62,13 @@ function BranchImageUpload({ branchId, currentUrl, onUploaded, onUploadingChange
 
   async function upload() {
     if (!file || !branchId) return;
+    const confirmed = await confirmAction({
+      title: "¿Subir esta foto?",
+      text: "Reemplaza la foto actual de la sucursal.",
+      confirmText: "Sí, subir",
+      icon: "question"
+    });
+    if (!confirmed) return;
     setUploading(true);
     onUploadingChange(true);
     try {
@@ -160,6 +167,13 @@ export default function SucursalesAdmin() {
   }
 
   async function onSubmit(values) {
+    const confirmed = await confirmAction({
+      title: "¿Guardar las sucursales?",
+      text: "Los cambios se ven en la tienda apenas los guardes.",
+      confirmText: "Sí, guardar",
+      icon: "question"
+    });
+    if (!confirmed) return;
     try {
       await api.put("/site-config", { branches: JSON.stringify(values.branches) });
       toastSuccess("Sucursales actualizadas");
@@ -222,7 +236,7 @@ export default function SucursalesAdmin() {
                       {...register(`branches.${i}.active`)}
                       className="h-4 w-4 rounded border-ink-300 text-brand-600"
                     />
-                    Sucursal activa
+                    Visible en la tienda
                   </label>
                   <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
                     <input
