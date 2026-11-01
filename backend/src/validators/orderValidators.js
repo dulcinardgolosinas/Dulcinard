@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import { validate } from "../middleware/validate.js";
 import { ORDER_STATUSES, CHECKOUT_PAYMENT_METHODS } from "../models/Order.js";
 import { PHONE_REGEX } from "../utils/validationPatterns.js";
@@ -30,6 +30,17 @@ export const createOrderValidator = [
   body("shippingAddress.zone").optional({ checkFalsy: true }).isMongoId().withMessage("Zona de envío inválida"),
   body("shippingAddress.notes").optional({ checkFalsy: true }).trim().isLength({ max: 500 }).withMessage("Las notas no pueden superar los 500 caracteres"),
   body("paymentMethod").optional({ checkFalsy: true }).isIn(CHECKOUT_PAYMENT_METHODS).withMessage("Método de pago inválido"),
+  validate
+];
+
+const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
+export const exportDeliveredValidator = [
+  query("from").optional({ checkFalsy: true }).matches(DATE_PARAM).withMessage("La fecha \"desde\" no es válida"),
+  query("to").optional({ checkFalsy: true }).matches(DATE_PARAM).withMessage("La fecha \"hasta\" no es válida"),
+  query("to")
+    .optional({ checkFalsy: true })
+    .custom((to, { req }) => !req.query.from || req.query.from <= to)
+    .withMessage("La fecha \"desde\" tiene que ser anterior a la fecha \"hasta\""),
   validate
 ];
 
