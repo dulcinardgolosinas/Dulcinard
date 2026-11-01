@@ -113,7 +113,7 @@ export function HeroCarousel() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/35 to-ink-950/90" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-950/75 via-ink-950/20 to-transparent" />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 pb-32 pt-44 md:px-6 md:py-32">
+      <div className="relative mx-auto w-full max-w-7xl px-4 pb-32 pt-44 md:px-6 lg:pt-52">
         <motion.div initial="hidden" animate="show" className="max-w-3xl">
           <motion.span
             custom={0}
