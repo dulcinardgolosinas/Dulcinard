@@ -1,188 +1,113 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, RotateCcw } from "lucide-react";
+import { AlertTriangle, Check, Plus } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
-import { DEFAULT_THEME, THEME_FIELDS, applyTheme, isHexColor, themeContrastChecks } from "../../lib/theme";
+import { DEFAULT_THEME, applyTheme, isHexColor, themeContrastChecks } from "../../lib/theme";
 
-const EMPTY_THEME = Object.fromEntries(THEME_FIELDS.map(({ key }) => [key, ""]));
+// Colores de la marca para elegir. "" = el rojo original de Dulcinard. Con "Otro" se agrega cualquier color.
+const OPTIONS = [
+  { value: "", color: DEFAULT_THEME.primary, label: "Rojo original" },
+  { value: "#dd001c", color: "#dd001c", label: "Rojo vivo" },
+  { value: "#8a1028", color: "#8a1028", label: "Bordó" }
+];
 
-function normalizeTheme(theme) {
-  return { ...EMPTY_THEME, ...Object.fromEntries(Object.entries(theme || {}).filter(([k]) => k in EMPTY_THEME)) };
-}
+const same = (a, b) => (a || "").toLowerCase() === (b || "").toLowerCase();
 
-// Paleta del sitio editable desde el admin. Los cambios se ven en vivo en todo
-// el panel; si se sale sin guardar, se vuelve a la paleta guardada.
+// Color de la marca (menú, botones, precios y pie de página). Al tocar uno se
+// ve en el panel; se aplica a la tienda al guardar.
 export function ThemeColorsSection({ config, onSaved }) {
   const setGlobalConfig = useSiteConfigStore((s) => s.setConfig);
-  const [draft, setDraft] = useState(() => normalizeTheme(config?.theme));
+  const savedRef = useRef(same(config?.theme?.primary, DEFAULT_THEME.primary) ? "" : config?.theme?.primary || "");
+  const [color, setColor] = useState(savedRef.current);
   const [saving, setSaving] = useState(false);
-  const savedThemeRef = useRef(normalizeTheme(config?.theme));
 
   useEffect(() => {
-    applyTheme(draft);
-  }, [draft]);
+    applyTheme({ ...(config?.theme || {}), primary: color });
+  }, [color, config?.theme]);
 
-  // Al salir de la página sin guardar, se restaura la paleta guardada.
-  useEffect(() => () => applyTheme(savedThemeRef.current), []);
+  // Al salir sin guardar, vuelve el color guardado.
+  useEffect(() => () => applyTheme({ ...(config?.theme || {}), primary: savedRef.current }), [config?.theme]);
 
-  const dirty = THEME_FIELDS.some(({ key }) => draft[key] !== savedThemeRef.current[key]);
-  const checks = themeContrastChecks(draft);
-  const failing = checks.filter((c) => !c.ok);
+  const isPreset = OPTIONS.some((o) => same(o.value, color));
+  const readable = themeContrastChecks({ primary: color || DEFAULT_THEME.primary })[0].ok;
 
-  function setColor(key, value) {
-    setDraft((d) => ({ ...d, [key]: value }));
-  }
-
-  async function save(theme) {
+  async function handleSave() {
+    const confirmed = await confirmAction({
+      title: "¿Guardar este color?",
+      text: readable ? "Se cambia en toda la tienda." : "Es un color muy claro: los textos blancos se van a leer mal. ¿Guardarlo igual?",
+      confirmText: "Sí, guardar",
+      icon: readable ? "question" : "warning"
+    });
+    if (!confirmed) return;
     setSaving(true);
     try {
-      const { data } = await api.put("/site-config", { theme });
-      savedThemeRef.current = normalizeTheme(data.theme);
-      setDraft(savedThemeRef.current);
+      const { data } = await api.put("/site-config", { theme: { primary: color } });
+      savedRef.current = color;
       setGlobalConfig(data);
       onSaved?.(data);
-      toastSuccess("Colores actualizados");
+      toastSuccess("Color guardado");
     } catch (err) {
-      toastError(apiErrorMessage(err, "No pudimos guardar los colores"));
+      toastError(apiErrorMessage(err, "No pudimos guardar el color"));
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleSave() {
-    if (THEME_FIELDS.some(({ key }) => draft[key] && !isHexColor(draft[key]))) {
-      return toastError("Revisá los colores: deben tener el formato #rrggbb");
-    }
-    if (failing.length) {
-      const confirmed = await confirmAction({
-        title: "Hay combinaciones poco legibles",
-        text: `${failing.length} combinación(es) no llegan al contraste mínimo recomendado. ¿Guardar igual?`,
-        confirmText: "Sí, guardar",
-        icon: "warning"
-      });
-      if (!confirmed) return;
-    } else {
-      const confirmed = await confirmAction({
-        title: "¿Guardar los colores?",
-        text: "Los colores nuevos se ven en toda la tienda apenas los guardes.",
-        confirmText: "Sí, guardar",
-        icon: "question"
-      });
-      if (!confirmed) return;
-    }
-    save(draft);
-  }
-
-  async function handleReset() {
-    const confirmed = await confirmAction({
-      title: "¿Restaurar colores originales?",
-      text: "El sitio vuelve a la paleta original de Dulcinard.",
-      confirmText: "Sí, restaurar",
-      icon: "question"
-    });
-    if (confirmed) save(EMPTY_THEME);
-  }
-
   return (
     <div className="mt-6 rounded-2xl border border-ink-100 bg-white p-5">
-      <p className="text-sm font-semibold text-ink-900">Colores del sitio</p>
-      <p className="mt-1 text-xs text-ink-500">
-        Los cambios se ven en vivo en el panel. Se aplican a toda la tienda recién cuando guardás.
-      </p>
+      <p className="text-sm font-semibold text-ink-900">Color de la marca</p>
+      <p className="mt-1 text-xs text-ink-500">Tocá un color y guardalo.</p>
 
-      <div className="mt-4 space-y-3">
-        {THEME_FIELDS.map(({ key, label, help }) => {
-          const value = draft[key] || DEFAULT_THEME[key];
-          const custom = Boolean(draft[key]);
+      <div className="mt-4 flex flex-wrap gap-4">
+        {OPTIONS.map((option) => {
+          const active = same(color, option.value);
           return (
-            <div key={key} className="flex flex-wrap items-center gap-3">
-              <input
-                type="color"
-                value={isHexColor(value) ? value : DEFAULT_THEME[key]}
-                onChange={(e) => setColor(key, e.target.value)}
-                aria-label={`Color ${label.toLowerCase()}`}
-                className="h-10 w-12 cursor-pointer rounded-lg border border-ink-200 bg-white p-1"
-              />
-              <div className="min-w-40 flex-1">
-                <p className="text-sm font-medium text-ink-800">
-                  {label} {!custom && <span className="text-xs font-normal text-ink-500">(original)</span>}
-                </p>
-                <p className="text-xs text-ink-500">{help}</p>
-              </div>
-              <input
-                value={draft[key]}
-                onChange={(e) => setColor(key, e.target.value.trim())}
-                placeholder={DEFAULT_THEME[key]}
-                aria-label={`Código del color ${label.toLowerCase()}`}
-                className={`w-28 rounded-xl border px-3 py-2 font-mono text-sm outline-none ${
-                  draft[key] && !isHexColor(draft[key]) ? "border-danger-400" : "border-ink-200 focus:border-brand-500"
-                }`}
-              />
-              {custom && (
-                <button
-                  type="button"
-                  onClick={() => setColor(key, "")}
-                  className="text-xs font-semibold text-ink-500 hover:text-brand-600"
-                >
-                  Original
-                </button>
-              )}
-            </div>
+            <button key={option.label} type="button" onClick={() => setColor(option.value)} className="flex flex-col items-center gap-1.5">
+              <span
+                className={`flex h-12 w-12 items-center justify-center rounded-full text-white ring-offset-2 transition ${active ? "ring-2 ring-ink-900" : ""}`}
+                style={{ backgroundColor: option.color }}
+              >
+                {active && <Check className="h-5 w-5" strokeWidth={3} />}
+              </span>
+              <span className={`text-xs ${active ? "font-semibold text-ink-900" : "text-ink-500"}`}>{option.label}</span>
+            </button>
           );
         })}
+
+        {/* Cualquier otro color, con la paleta del navegador. */}
+        <label className="flex cursor-pointer flex-col items-center gap-1.5">
+          <span
+            className={`relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full ring-offset-2 ${
+              isPreset ? "border-2 border-dashed border-ink-300 text-ink-500" : "text-white ring-2 ring-ink-900"
+            }`}
+            style={isPreset ? undefined : { backgroundColor: color }}
+          >
+            {isPreset ? <Plus className="h-5 w-5" /> : <Check className="h-5 w-5" strokeWidth={3} />}
+            <input
+              type="color"
+              value={isHexColor(color) ? color : DEFAULT_THEME.primary}
+              onChange={(e) => setColor(e.target.value)}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              aria-label="Elegir otro color"
+            />
+          </span>
+          <span className={`text-xs ${isPreset ? "text-ink-500" : "font-semibold text-ink-900"}`}>Agregar color</span>
+        </label>
       </div>
 
-      <div className="mt-5 rounded-xl bg-ink-50 p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-500">Vista previa</p>
-        <p className="font-display text-lg font-bold text-ink-900">Título de ejemplo</p>
-        <p className="text-sm text-ink-500">Texto secundario de ejemplo con un <span className="font-semibold text-brand-600">link</span>.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button size="sm">Botón primario</Button>
-          <Button size="sm" variant="accent">
-            Botón acento
-          </Button>
-          <Button size="sm" variant="outline">
-            Secundario
-          </Button>
-        </div>
-      </div>
+      {!readable && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-ink-50 px-3 py-2 text-xs font-medium text-ink-700">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          Es un color muy claro: los textos blancos de los botones se van a leer mal. Mejor uno más oscuro.
+        </p>
+      )}
 
-      <div className="mt-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">Legibilidad (contraste mínimo 4.5)</p>
-        <ul className="space-y-1">
-          {checks.map((check) => (
-            <li key={check.label} className={`flex items-center gap-2 text-xs ${check.ok ? "text-ink-600" : "font-semibold text-danger-700"}`}>
-              {check.ok ? (
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              ) : (
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-              )}
-              {check.label}: {check.ratio.toFixed(1)}
-              {!check.ok && " — poco legible"}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <Button type="button" onClick={handleSave} disabled={!dirty || saving}>
-          {saving ? <Spinner className="h-4 w-4" /> : "Guardar colores"}
-        </Button>
-        {dirty && (
-          <Button type="button" variant="ghost" onClick={() => setDraft(savedThemeRef.current)} disabled={saving}>
-            Descartar cambios
-          </Button>
-        )}
-        {THEME_FIELDS.some(({ key }) => savedThemeRef.current[key]) && (
-          <Button type="button" variant="outline" onClick={handleReset} disabled={saving}>
-            <RotateCcw className="h-4 w-4" strokeWidth={2} />
-            Restaurar originales
-          </Button>
-        )}
-      </div>
+      <Button type="button" className="mt-5" onClick={handleSave} disabled={same(color, savedRef.current) || saving}>
+        {saving ? <Spinner className="h-4 w-4" /> : "Guardar"}
+      </Button>
     </div>
   );
 }
