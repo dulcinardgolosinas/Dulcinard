@@ -78,11 +78,11 @@ export function CartDrawer() {
         {items.length > 0 && (
           <div className="border-t border-ink-100 px-5 py-4">
             {missingForMin > 0 ? (
-              <p className="mb-3 rounded-xl bg-accent-50 px-3 py-2 text-xs font-medium text-accent-800">
+              <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-600">
                 Te faltan {formatCurrency(missingForMin)} para alcanzar el mínimo de compra ({formatCurrency(minPurchase)}).
               </p>
             ) : (
-              <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+              <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs font-medium text-brand-600">
                 ¡Superaste el monto mínimo de compra!
               </p>
             )}
