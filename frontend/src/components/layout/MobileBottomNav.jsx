@@ -114,7 +114,7 @@ export function MobileBottomNav() {
                     onClick={() => setMoreOpen(false)}
                     className={({ isActive }) =>
                       `flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold ${
-                        isActive ? "bg-brand-50 text-brand-700" : "text-ink-700 hover:bg-ink-50"
+                        isActive ? "bg-brand-50 text-brand-600" : "text-ink-700 hover:bg-ink-50"
                       }`
                     }
                   >
