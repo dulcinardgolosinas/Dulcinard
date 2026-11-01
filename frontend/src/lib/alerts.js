@@ -103,3 +103,24 @@ export function toastError(message = "Ocurrió un error") {
 export function toastWarning(message) {
   return Toast.fire({ icon: "warning", title: message });
 }
+
+/**
+ * Pide un texto (ej: un nombre nuevo) en un diálogo. Devuelve el texto o null
+ * si se cancela. `validate` devuelve un mensaje de error o null.
+ */
+export async function promptText({ title, label, value = "", confirmText = "Guardar", validate } = {}) {
+  const result = await Swal.fire({
+    title,
+    input: "text",
+    inputLabel: label,
+    inputValue: value,
+    showCancelButton: true,
+    confirmButtonText: confirmText,
+    cancelButtonText: "Cancelar",
+    confirmButtonColor: BRAND_CONFIRM_COLOR,
+    cancelButtonColor: BRAND_CANCEL_COLOR,
+    reverseButtons: true,
+    inputValidator: (text) => validate?.(text.trim()) || null
+  });
+  return result.isConfirmed ? result.value.trim() : null;
+}
