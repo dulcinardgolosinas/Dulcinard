@@ -38,7 +38,7 @@ async function resizeImage(file) {
 function SummaryCard({ label, value, tone }) {
   const tones = {
     neutral: "border-ink-100 bg-white text-ink-900",
-    good: "border-brand-200 bg-brand-50 text-brand-800",
+    good: "border-brand-200 bg-brand-50 text-brand-600",
     bad: "border-danger-200 bg-danger-50 text-danger-800"
   };
   return (
@@ -178,7 +178,7 @@ export default function ProductosFotos() {
             type="button"
             onClick={() => setTab(value)}
             className={`flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-colors sm:flex-none ${
-              tab === value ? "bg-white text-brand-700 shadow-sm" : "text-ink-600 hover:text-ink-900"
+              tab === value ? "bg-white text-brand-600 shadow-sm" : "text-ink-600 hover:text-ink-900"
             }`}
           >
             {label}
@@ -225,7 +225,7 @@ export default function ProductosFotos() {
           if (!uploading) handleFiles(e.dataTransfer.files);
         }}
         className={`mt-6 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-10 text-center transition-colors ${
-          dragOver ? "border-brand-500 bg-brand-50" : "border-ink-200 bg-white"
+          dragOver ? "border-brand-600 bg-brand-50" : "border-ink-200 bg-white"
         }`}
       >
         <ImagePlus className="h-10 w-10 text-brand-600" strokeWidth={1.5} />
@@ -322,7 +322,7 @@ export default function ProductosFotos() {
                     </div>
                     <span className="shrink-0 text-xs font-semibold">
                       {i.upload === "uploading" && <Spinner className="h-4 w-4 text-brand-600" />}
-                      {i.upload === "done" && <span className="text-brand-700">Subida</span>}
+                      {i.upload === "done" && <span className="text-brand-600">Subida</span>}
                       {i.upload === "error" && <span className="text-danger-700">Error</span>}
                     </span>
                   </li>

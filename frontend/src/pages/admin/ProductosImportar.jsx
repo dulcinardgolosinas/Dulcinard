@@ -8,10 +8,10 @@ import { Spinner } from "../../components/ui/Spinner";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 import { formatCurrency } from "../../lib/format";
 
-function SummaryCard({ label, value, tone }) {
+export function SummaryCard({ label, value, tone }) {
   const tones = {
     neutral: "border-ink-100 bg-white text-ink-900",
-    good: "border-brand-200 bg-brand-50 text-brand-800",
+    good: "border-brand-200 bg-brand-50 text-brand-600",
     bad: "border-danger-200 bg-danger-50 text-danger-800"
   };
   return (
@@ -29,7 +29,7 @@ function percentChange(oldPrice, newPrice) {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
-function CollapsibleList({ title, count, tone = "neutral", children }) {
+export function CollapsibleList({ title, count, tone = "neutral", children }) {
   const [open, setOpen] = useState(false);
   if (!count) return null;
   const tones = { neutral: "text-ink-800", bad: "text-danger-700" };
@@ -188,7 +188,7 @@ function PriceUpdate() {
                       <td className="px-4 py-2.5 text-right font-semibold text-ink-900">{formatCurrency(c.newPrice)}</td>
                       <td
                         className={`px-4 py-2.5 text-right text-xs font-semibold ${
-                          c.newPrice > c.oldPrice ? "text-danger-700" : "text-brand-700"
+                          c.newPrice > c.oldPrice ? "text-danger-700" : "text-brand-600"
                         }`}
                       >
                         {percentChange(c.oldPrice, c.newPrice)}
