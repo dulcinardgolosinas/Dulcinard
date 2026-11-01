@@ -10,7 +10,7 @@ export function Spinner({ className = "" }) {
 
 export function PageLoader() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-brand-500">
+    <div className="flex min-h-[40vh] items-center justify-center text-brand-600">
       <Spinner className="h-8 w-8" />
     </div>
   );
