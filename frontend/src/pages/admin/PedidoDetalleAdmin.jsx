@@ -30,6 +30,13 @@ export default function PedidoDetalleAdmin() {
   }, [id]);
 
   async function updateStatus(status) {
+    const confirmed = await confirmAction({
+      title: "¿Cambiar el estado del pedido?",
+      text: `El pedido va a pasar a "${ORDER_STATUS_LABELS[status]}".`,
+      confirmText: "Sí, cambiar",
+      icon: "question"
+    });
+    if (!confirmed) return;
     setSaving(true);
     try {
       const { data } = await api.put(`/orders/${id}/status`, { status });
@@ -45,9 +52,9 @@ export default function PedidoDetalleAdmin() {
   async function confirmPayment() {
     const isCash = order.paymentMethod === "efectivo";
     const confirmed = await confirmAction({
-      title: "¿Confirmar pago?",
-      text: `Vas a registrar que recibiste ${formatCurrency(order.total)}${isCash ? " en efectivo" : ""}. Se descontará el stock y el pedido pasará a "Confirmado".`,
-      confirmText: "Sí, confirmar pago",
+      title: "¿Marcar como pagado?",
+      text: `Vas a registrar que recibiste ${formatCurrency(order.total)}${isCash ? " en efectivo" : order.paymentMethod === "transferencia" ? " por transferencia" : ""}. Se descontará el stock y el pedido pasará a "Confirmado".`,
+      confirmText: "Sí, está pagado",
       icon: "question"
     });
     if (!confirmed) return;
@@ -88,7 +95,7 @@ export default function PedidoDetalleAdmin() {
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent-700"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
         >
           <WhatsappIcon className="h-4 w-4" />
           Coordinar con el cliente por WhatsApp
@@ -143,15 +150,21 @@ export default function PedidoDetalleAdmin() {
               </p>
             )}
             {order.mercadoPago?.paymentId && (
-              <p className="mt-1 text-xs text-ink-500">ID de pago de Mercado Pago: {order.mercadoPago.paymentId}</p>
+              <p className="mt-1 text-xs text-ink-500">Número de operación de Mercado Pago: {order.mercadoPago.paymentId}</p>
             )}
           </div>
           {canConfirmPayment && (
             <Button onClick={confirmPayment} disabled={saving}>
-              {saving ? <Spinner className="h-4 w-4" /> : "Confirmar pago recibido"}
+              {saving ? <Spinner className="h-4 w-4" /> : "Marcar como pagado"}
             </Button>
           )}
         </div>
+        {canConfirmPayment && order.paymentMethod === "transferencia" && (
+          <p className="mt-3 rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600">
+            Pedido por transferencia: revisá en tu banco que llegó la plata y después tocá "Marcar como pagado". Ahí se
+            descuenta el stock.
+          </p>
+        )}
         {canConfirmPayment && order.paymentMethod === "efectivo" && (
           <p className="mt-3 rounded-xl bg-ink-50 px-3 py-2 text-xs text-ink-600">
             Pedido en efectivo: queda pendiente de pago hasta que confirmes el cobro. Al confirmarlo se descuenta el stock y
@@ -172,7 +185,7 @@ export default function PedidoDetalleAdmin() {
               disabled={saving || (!paid && CONFIRMED_ORDER_STATUSES.includes(s))}
               onClick={() => updateStatus(s)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium disabled:opacity-50 ${
-                order.status === s ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600 hover:border-brand-300"
+                order.status === s ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600 hover:border-brand-300"
               }`}
             >
               {ORDER_STATUS_LABELS[s]}
