@@ -219,7 +219,7 @@ export function CatalogoFotos() {
                   key={value}
                   type="button"
                   onClick={() => setFilter(value)}
-                  className={`rounded-full px-3 py-1.5 ${filter === value ? "bg-white text-brand-700 shadow-sm" : "text-ink-600"}`}
+                  className={`rounded-full px-3 py-1.5 ${filter === value ? "bg-white text-brand-600 shadow-sm" : "text-ink-600"}`}
                 >
                   {label}
                 </button>
@@ -257,7 +257,7 @@ export function CatalogoFotos() {
             {visible.map((photo) => {
               const product = productsById.get(photo.productId);
               const dup = duplicateIds.has(photo.id);
-              const border = photo.upload === "done" ? "border-brand-300" : !photo.productId || dup ? "border-danger-200" : photo.score < 0.75 ? "border-accent-300" : "border-ink-100";
+              const border = photo.upload === "done" ? "border-brand-300" : !photo.productId || dup ? "border-danger-200" : photo.score < 0.75 ? "border-brand-300" : "border-ink-100";
               return (
                 <div key={photo.id} className={`flex flex-col rounded-2xl border bg-white p-3 ${border}`}>
                   <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-xl bg-ink-50">
@@ -289,12 +289,12 @@ export function CatalogoFotos() {
                       Guardar
                     </label>
                     <span className="text-right font-semibold">
-                      {photo.upload === "done" && <span className="text-brand-700">Guardada</span>}
+                      {photo.upload === "done" && <span className="text-brand-600">Guardada</span>}
                       {photo.upload === "uploading" && <Spinner className="h-3.5 w-3.5 text-brand-600" />}
                       {photo.upload === "error" && <span className="text-danger-700">{photo.message}</span>}
                       {!photo.upload && dup && <span className="text-danger-700">Otra foto ya va a este producto</span>}
                       {!photo.upload && !dup && !photo.productId && <span className="text-danger-700">Sin producto</span>}
-                      {!photo.upload && !dup && photo.productId && photo.score < 0.75 && <span className="text-accent-700">Revisar</span>}
+                      {!photo.upload && !dup && photo.productId && photo.score < 0.75 && <span className="text-brand-600">Revisar</span>}
                       {!photo.upload && !dup && photo.productId && photo.score >= 0.75 && product?.hasImage && (
                         <span className="text-ink-500">Reemplaza la actual</span>
                       )}

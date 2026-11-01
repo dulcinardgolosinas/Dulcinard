@@ -20,7 +20,7 @@ function ViewSiteLink({ className = "" }) {
 }
 
 const links = [
-  { to: "/admin", label: "Dashboard", end: true },
+  { to: "/admin", label: "Resumen", end: true },
   { to: "/admin/productos", label: "Productos" },
   { to: "/admin/categorias", label: "Categorías" },
   { to: "/admin/promociones", label: "Promociones" },
@@ -29,7 +29,8 @@ const links = [
   { to: "/admin/sucursales", label: "Sucursales" },
   { to: "/admin/zonas-envio", label: "Zonas de envío" },
   { to: "/admin/proveedores", label: "Proveedores" },
-  { to: "/admin/imagenes-hero", label: "Imágenes de fondo" },
+  { to: "/admin/imagenes-hero", label: "Página principal" },
+  { to: "/admin/textos", label: "Textos de la tienda" },
   { to: "/admin/configuracion", label: "Configuración" }
 ];
 
@@ -55,7 +56,7 @@ function NavLinks({ onNavigate }) {
           onClick={onNavigate}
           className={({ isActive }) =>
             `block rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-              isActive ? "bg-brand-50 text-brand-700" : "text-ink-600 hover:bg-ink-50"
+              isActive ? "bg-brand-50 text-brand-600" : "text-ink-600 hover:bg-ink-50"
             }`
           }
         >

@@ -22,14 +22,14 @@ function Hero() {
             variants={fadeUp}
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold tracking-wide backdrop-blur-sm"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-accent-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand-600" />
             Envíos
           </motion.span>
 
           <motion.h1 custom={1} variants={fadeUp} className="mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-5xl md:text-6xl">
             Lo llevamos
             <br />
-            <span className="text-accent-600">hasta tu local</span>
+            <span className="text-brand-600">hasta tu local</span>
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
@@ -79,7 +79,7 @@ function ProcessSteps() {
             className="relative flex gap-4"
           >
             <div className="relative flex shrink-0 flex-col items-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   {s.icon}
                 </svg>
@@ -108,7 +108,7 @@ function ZonesGrid({ zones, loading }) {
       <LogoWatermark side="right" />
       <div className="relative mx-auto max-w-7xl px-4 md:px-6">
         <span className="mb-1 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-600">
-          <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-500 to-accent-400" />
+          <span className="h-1.5 w-6 rounded-full bg-gradient-to-r from-brand-600 to-brand-600" />
           Cobertura
         </span>
         <h2 className="mt-2 font-display text-2xl font-bold text-ink-900 md:text-3xl">Zonas y costos de envío</h2>
@@ -129,7 +129,7 @@ function ZonesGrid({ zones, loading }) {
               whileHover={{ y: -6 }}
               className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
                 <ZoneIcon className="h-5 w-5" strokeWidth={1.8} />
               </div>
               <p className="mt-4 font-display text-lg font-bold text-ink-900">{z.name}</p>
@@ -144,7 +144,7 @@ function ZonesGrid({ zones, loading }) {
                   <span className="font-semibold text-brand-600">{formatCurrency(z.cost)}</span>
                 </div>
                 {z.freeShippingFrom > 0 && (
-                  <p className="rounded-lg bg-accent-50 px-2.5 py-1.5 text-xs font-medium text-accent-800">
+                  <p className="rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs font-medium text-brand-600">
                     Gratis desde {formatCurrency(z.freeShippingFrom)}
                   </p>
                 )}
