@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   listPromotions,
+  listHomePromotions,
   getPromotion,
   createPromotion,
   updatePromotion,
@@ -13,6 +14,7 @@ import { createPromotionValidator, updatePromotionValidator } from "../validator
 const router = Router();
 
 router.get("/", listPromotions);
+router.get("/home", listHomePromotions);
 router.get("/:id", getPromotion);
 router.post("/", requireAuth, requireAdmin, upload.single("banner"), createPromotionValidator, createPromotion);
 router.put("/:id", requireAuth, requireAdmin, upload.single("banner"), updatePromotionValidator, updatePromotion);
