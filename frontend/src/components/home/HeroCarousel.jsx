@@ -11,7 +11,7 @@ import { scrollToProducts, slideHref } from "../../lib/navigation";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { Button } from "../ui/Button";
 
-const HERO_VIDEO_URL = "https://res.cloudinary.com/dabikk5ei/video/upload/v1785900628/video_golosinas_de71fs.mp4";
+const HERO_VIDEO_URL = "https://res.cloudinary.com/nu4m5rh8/video/upload/v1793559589/video_golosinas_de71fs.mp4";
 const AUTOPLAY_MS = 6000;
 const SLIDE_WIDTHS = [640, 960, 1280, 1600, 2000];
 const SWIPE_DISTANCE = 60;

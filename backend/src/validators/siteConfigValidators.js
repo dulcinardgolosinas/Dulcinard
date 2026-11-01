@@ -1,6 +1,5 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
-import { CONTENT_FIELDS } from "../models/SiteConfig.js";
 import { NAME_REGEX, DIGITS_ONLY_REGEX } from "../utils/validationPatterns.js";
 
 function optionalNumber(field, label, { min = 0, max = 100000000 } = {}) {
@@ -28,6 +27,7 @@ export const updateSiteConfigValidator = [
     .isLength({ min: 2, max: 100 })
     .withMessage("El nombre de la marca debe tener entre 2 y 100 caracteres"),
   body("instagram").optional({ checkFalsy: true }).trim().isURL().withMessage("El link de Instagram no es una URL válida"),
+  body("facebook").optional({ checkFalsy: true }).trim().isURL().withMessage("El link de Facebook no es una URL válida"),
   body("whatsappNumber")
     .optional({ checkFalsy: true })
     .trim()
@@ -41,14 +41,6 @@ export const updateSiteConfigValidator = [
   optionalNumber("freeShippingFrom", "El monto de envío gratis"),
   body("deliveryEtaHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega debe ser un número entero de horas entre 1 y 720"),
   body("deliveryEtaMaxHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega máximo debe ser un número entero de horas entre 1 y 720"),
-  ...Object.entries(CONTENT_FIELDS).map(([key, max]) =>
-    body(`content.${key}`)
-      .optional()
-      .isString()
-      .withMessage("Los textos tienen que ser texto")
-      .isLength({ max })
-      .withMessage(`Uno de los textos es demasiado largo (máximo ${max} caracteres)`)
-  ),
   body("bankTransfer.alias")
     .optional({ checkFalsy: true })
     .trim()

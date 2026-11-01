@@ -35,7 +35,6 @@ import ZonasEnvioAdmin from "./pages/admin/ZonasEnvioAdmin";
 import ProveedoresAdmin from "./pages/admin/ProveedoresAdmin";
 import ImagenesHeroAdmin from "./pages/admin/ImagenesHeroAdmin";
 import ConfiguracionAdmin from "./pages/admin/ConfiguracionAdmin";
-import TextosAdmin from "./pages/admin/TextosAdmin";
 
 function App() {
   return (
@@ -84,7 +83,6 @@ function App() {
             <Route path="proveedores" element={<ProveedoresAdmin />} />
             <Route path="imagenes-hero" element={<ImagenesHeroAdmin />} />
             <Route path="configuracion" element={<ConfiguracionAdmin />} />
-            <Route path="textos" element={<TextosAdmin />} />
           </Route>
         </Route>
       </Routes>
