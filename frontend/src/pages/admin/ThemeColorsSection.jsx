@@ -64,6 +64,14 @@ export function ThemeColorsSection({ config, onSaved }) {
         icon: "warning"
       });
       if (!confirmed) return;
+    } else {
+      const confirmed = await confirmAction({
+        title: "¿Guardar los colores?",
+        text: "Los colores nuevos se ven en toda la tienda apenas los guardes.",
+        confirmText: "Sí, guardar",
+        icon: "question"
+      });
+      if (!confirmed) return;
     }
     save(draft);
   }
