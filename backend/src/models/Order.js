@@ -15,7 +15,7 @@ export const STOCK_HOLDING_STATUSES = ["confirmado", "en_preparacion", "enviado"
 
 export const PAYMENT_METHODS = ["mercado_pago", "efectivo", "transferencia"];
 // Métodos que el cliente puede elegir en el checkout.
-export const CHECKOUT_PAYMENT_METHODS = ["mercado_pago", "efectivo"];
+export const CHECKOUT_PAYMENT_METHODS = ["mercado_pago", "efectivo", "transferencia"];
 export const PAYMENT_STATUSES = ["pendiente", "aprobado", "rechazado"];
 
 const orderItemSchema = new mongoose.Schema(
