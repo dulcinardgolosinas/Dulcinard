@@ -15,19 +15,79 @@ import {
 import { useSearchFilters } from "../../lib/useSearchFilters";
 import { buildAdminOrderWhatsappHref } from "../../lib/whatsapp";
 import { WhatsappIcon } from "../../components/ui/WhatsappIcon";
-import { toastSuccess, toastError } from "../../lib/alerts";
+import { toastSuccess, toastError, confirmAction } from "../../lib/alerts";
+import { downloadFromApi } from "../../lib/download";
+import { FileSpreadsheet } from "lucide-react";
 
 const STATUSES = Object.keys(ORDER_STATUS_LABELS);
+
+const toInputDate = (date) => {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+};
+const formatInputDate = (value) => value.split("-").reverse().join("/");
+
+// Excel con los pedidos entregados entre dos fechas (por defecto, el mes actual).
+function DeliveredExport() {
+  const now = new Date();
+  const [from, setFrom] = useState(toInputDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+  const [to, setTo] = useState(toInputDate(now));
+  const [downloading, setDownloading] = useState(false);
+
+  async function download() {
+    if (from && to && from > to) return toastError("La fecha \"desde\" tiene que ser anterior a la fecha \"hasta\"");
+    const range = from && to ? `del ${formatInputDate(from)} al ${formatInputDate(to)}` : from ? `desde el ${formatInputDate(from)}` : to ? `hasta el ${formatInputDate(to)}` : "de todas las fechas";
+    const confirmed = await confirmAction({
+      title: "¿Descargar pedidos entregados?",
+      text: `Se va a descargar un Excel con los pedidos entregados ${range}.`,
+      confirmText: "Sí, descargar",
+      icon: "question"
+    });
+    if (!confirmed) return;
+    setDownloading(true);
+    try {
+      await downloadFromApi("/orders/export/delivered", { params: { from: from || undefined, to: to || undefined }, fallbackName: "pedidos-entregados.xlsx" });
+      toastSuccess("Excel descargado");
+    } catch (err) {
+      toastError(err.message);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <div className="mt-5 rounded-2xl border border-ink-100 bg-white p-4">
+      <p className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+        <FileSpreadsheet className="h-4 w-4 text-brand-600" />
+        Descargar pedidos entregados en Excel
+      </p>
+      <p className="mt-1 text-xs text-ink-500">Incluye fecha, cliente, productos, cantidades y total de cada pedido entregado entre esas fechas.</p>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-ink-600">Desde</span>
+          <input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="rounded-xl border border-ink-200 px-3 py-2 text-sm" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-ink-600">Hasta</span>
+          <input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="rounded-xl border border-ink-200 px-3 py-2 text-sm" />
+        </label>
+        <Button onClick={download} disabled={downloading}>
+          {downloading ? "Descargando..." : "Descargar Excel"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 const PAGE_SIZE = 20;
 
 const FILTER_DEFAULTS = { status: "", paymentMethod: "", from: "", to: "", page: "1" };
 
 const STATUS_SELECT_TONES = {
   pendiente: "border-ink-200 bg-white text-ink-700",
-  confirmado: "border-brand-200 bg-brand-50 text-brand-700",
-  en_preparacion: "border-brand-200 bg-brand-50 text-brand-700",
-  enviado: "border-brand-200 bg-brand-50 text-brand-700",
-  entregado: "border-brand-500 bg-brand-600 text-white",
+  confirmado: "border-brand-200 bg-brand-50 text-brand-600",
+  en_preparacion: "border-brand-200 bg-brand-50 text-brand-600",
+  enviado: "border-brand-200 bg-brand-50 text-brand-600",
+  entregado: "border-brand-600 bg-brand-600 text-white",
   cancelado: "border-ink-300 bg-ink-100 text-ink-600"
 };
 
@@ -41,6 +101,13 @@ function StatusSelect({ order, onChanged }) {
   async function handleChange(e) {
     const nextStatus = e.target.value;
     if (nextStatus === order.status) return;
+    const confirmed = await confirmAction({
+      title: "¿Cambiar el estado del pedido?",
+      text: `El pedido va a pasar de "${ORDER_STATUS_LABELS[order.status]}" a "${ORDER_STATUS_LABELS[nextStatus]}".`,
+      confirmText: "Sí, cambiar",
+      icon: "question"
+    });
+    if (!confirmed) return;
     setSaving(true);
     try {
       const { data } = await api.put(`/orders/${order._id}/status`, { status: nextStatus });
@@ -116,10 +183,12 @@ export default function PedidosAdmin() {
     <div>
       <h1 className="text-2xl font-bold text-ink-900">Pedidos</h1>
 
+      <DeliveredExport />
+
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           onClick={() => setFilters({ status: "" })}
-          className={`rounded-full border px-3 py-1.5 text-xs font-medium ${!filters.status ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"}`}
+          className={`rounded-full border px-3 py-1.5 text-xs font-medium ${!filters.status ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"}`}
         >
           Todos
         </button>
@@ -127,7 +196,7 @@ export default function PedidosAdmin() {
           <button
             key={s}
             onClick={() => setFilters({ status: s })}
-            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${filters.status === s ? "border-brand-500 bg-brand-50 text-brand-700" : "border-ink-200 text-ink-600"}`}
+            className={`rounded-full border px-3 py-1.5 text-xs font-medium ${filters.status === s ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"}`}
           >
             {ORDER_STATUS_LABELS[s]}
           </button>
@@ -220,14 +289,14 @@ export default function PedidosAdmin() {
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Coordinar por WhatsApp"
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-600 text-white transition-colors hover:bg-accent-700"
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-700"
                             >
                               <WhatsappIcon className="h-3.5 w-3.5" />
                             </a>
                           )}
                           <Link to={`/admin/pedidos/${o._id}`} className="text-sm font-semibold text-brand-600 hover:underline">
-                            {o.paymentStatus !== "aprobado" && o.paymentMethod === "efectivo" && o.status !== "cancelado"
-                              ? "Confirmar pago"
+                            {o.paymentStatus !== "aprobado" && o.paymentMethod !== "mercado_pago" && o.status !== "cancelado"
+                              ? "Marcar como pagado"
                               : "Ver detalle"}
                           </Link>
                         </div>
