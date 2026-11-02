@@ -82,7 +82,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative flex min-h-[88vh] items-end overflow-hidden bg-brand-950 text-white md:min-h-[92vh] md:items-center"
+      className="relative flex min-h-[56svh] items-end overflow-hidden bg-brand-950 text-white md:min-h-[50vh] md:items-center lg:min-h-[62vh]"
       aria-roledescription="carrusel"
       aria-label="Productos destacados"
       onMouseEnter={() => setPaused(true)}
@@ -139,7 +139,7 @@ export function HeroCarousel() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-950/70 via-ink-950/35 to-ink-950/90" />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-ink-950/75 via-ink-950/20 to-transparent" />
 
-      <div className="relative mx-auto w-full max-w-7xl px-4 pb-32 pt-44 md:px-6 lg:pt-52">
+      <div className="relative mx-auto w-full max-w-7xl px-4 pb-24 pt-36 md:px-6 lg:pt-48">
         <motion.div initial="hidden" animate="show" className="max-w-3xl">
           <motion.span
             custom={0}
@@ -153,12 +153,12 @@ export function HeroCarousel() {
           <motion.h1
             custom={1}
             variants={fadeUp}
-            className="mt-5 font-display text-6xl font-black leading-[0.9] tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.45)] sm:text-7xl md:text-8xl lg:text-9xl"
+            className="mt-4 font-display text-5xl font-black leading-[0.9] tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.45)] sm:text-6xl lg:text-7xl"
           >
             DULCINARD
           </motion.h1>
 
-          <div className="mt-5 min-h-[3.5rem]">
+          <div className="mt-4 min-h-[3rem]">
             <AnimatePresence mode="wait">
               <motion.p
                 key={slide?._id || "default"}
@@ -173,7 +173,7 @@ export function HeroCarousel() {
             </AnimatePresence>
           </div>
 
-          <motion.div custom={2} variants={fadeUp} className="mt-7 flex flex-wrap gap-3">
+          <motion.div custom={2} variants={fadeUp} className="mt-5 flex flex-wrap gap-3">
             <Link to={slide ? slideHref(slide) : "/catalogo"}>
               <Button variant="accent" size="lg" className="shadow-[0_8px_30px_-8px_rgba(184,24,48,0.6)] transition-transform hover:scale-105">
                 <ShoppingBag className="h-5 w-5" strokeWidth={2} />
@@ -189,7 +189,7 @@ export function HeroCarousel() {
             </button>
           </motion.div>
 
-          <motion.div custom={3} variants={fadeUp} className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-white/75 sm:text-sm">
+          <motion.div custom={3} variants={fadeUp} className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-white/75 sm:text-sm">
             <span>Compra mínima {formatCurrency(config?.minPurchaseAmount ?? 100000)}</span>
             <span className="h-1 w-1 rounded-full bg-white/40" />
             <span>Envío {formatCurrency(config?.defaultShippingCost ?? 3500)}</span>
