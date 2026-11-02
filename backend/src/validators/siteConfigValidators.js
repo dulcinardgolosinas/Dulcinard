@@ -41,6 +41,7 @@ export const updateSiteConfigValidator = [
   optionalNumber("freeShippingFrom", "El monto de envío gratis"),
   body("deliveryEtaHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega debe ser un número entero de horas entre 1 y 720"),
   body("deliveryEtaMaxHours").optional({ checkFalsy: true }).isInt({ min: 1, max: 720 }).withMessage("El tiempo de entrega máximo debe ser un número entero de horas entre 1 y 720"),
+  body("promoPopupEnabled").optional().isBoolean().withMessage("Valor inválido para el cartel de promociones").toBoolean(),
   body("bankTransfer.alias")
     .optional({ checkFalsy: true })
     .trim()
