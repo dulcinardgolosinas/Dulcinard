@@ -9,6 +9,7 @@ import { Input, PasswordInput } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { toastSuccess, toastError } from "../lib/alerts";
 import { emailField } from "../lib/validators";
+import { Seo } from "../components/Seo";
 
 const schema = z.object({
   email: emailField,
@@ -47,6 +48,7 @@ export default function Login() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+      <Seo title="Ingresar" noIndex />
       <Input label="Email" type="email" {...register("email")} error={errors.email?.message} />
       <PasswordInput label="Contraseña" {...register("password")} error={errors.password?.message} />
 

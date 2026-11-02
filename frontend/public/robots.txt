@@ -1,0 +1,11 @@
+# Buscadores: pueden ver toda la tienda menos el panel y las páginas privadas.
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /checkout
+Disallow: /perfil
+Disallow: /pedidos
+Disallow: /login
+Disallow: /registro
+
+Sitemap: https://dulcinardgolosinas.com/sitemap.xml

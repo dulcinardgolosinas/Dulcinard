@@ -15,6 +15,7 @@ import userRoutes from "./routes/userRoutes.js";
 import providerRoutes from "./routes/providerRoutes.js";
 import pageHeroRoutes from "./routes/pageHeroRoutes.js";
 import homeHeroRoutes from "./routes/homeHeroRoutes.js";
+import { getSitemap } from "./controllers/sitemapController.js";
 import { notFound, errorHandler } from "./middleware/errorHandler.js";
 
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/page-heroes", pageHeroRoutes);
 app.use("/api/home-hero-images", homeHeroRoutes);
+app.get("/api/sitemap.xml", getSitemap);
 
 app.use(notFound);
 app.use(errorHandler);

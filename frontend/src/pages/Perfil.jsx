@@ -10,6 +10,7 @@ import { Input, PasswordInput } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { confirmLogout, toastSuccess, toastError } from "../lib/alerts";
 import { nameField, optionalAlphanumericField, phoneField, passwordField } from "../lib/validators";
+import { Seo } from "../components/Seo";
 
 const profileSchema = z.object({
   name: nameField("El nombre"),
@@ -118,6 +119,7 @@ export default function Perfil() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 md:px-6">
+      <Seo title="Mi cuenta" noIndex />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold text-ink-900">Mi cuenta</h1>

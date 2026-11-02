@@ -8,6 +8,7 @@ import { PageLoader } from "../components/ui/Spinner";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
+import { Seo } from "../components/Seo";
 
 function Hero() {
   const config = useSiteConfigStore((s) => s.config);
@@ -171,6 +172,10 @@ export default function ZonasEnvio() {
 
   return (
     <div>
+      <Seo
+        title="Envíos y zonas de entrega"
+        description="Zonas de envío de Dulcinard en Tucumán, costos y montos mínimos. Recibí tu pedido mayorista en tu local en 24 a 48 hs."
+      />
       <Hero />
       <ProcessSteps />
       <ZonesGrid zones={zones} loading={loading} />
