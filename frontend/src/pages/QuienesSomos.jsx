@@ -7,6 +7,7 @@ import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { Button } from "../components/ui/Button";
 import { fadeUp } from "../lib/motion";
 import { useSiteContent, paragraphs } from "../lib/siteContent";
+import { Seo } from "../components/Seo";
 
 function Hero() {
   const content = useSiteContent();
@@ -182,6 +183,10 @@ export default function QuienesSomos() {
 
   return (
     <div>
+      <Seo
+        title="Quiénes somos"
+        description="Conocé Dulcinard: distribuidora mayorista de golosinas y comestibles en Tucumán, con sucursales en toda la provincia y las mejores marcas."
+      />
       <Hero />
       <StatsFloat branchCount={config?.branches?.length || 4} />
       <Story />

@@ -6,6 +6,8 @@ import { formatCurrency, finalPriceOf, UNIT_LABELS } from "../lib/format";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { PageLoader } from "../components/ui/Spinner";
+import { Seo } from "../components/Seo";
+import { cldUrl } from "../lib/cloudinary";
 
 export default function ProductoDetalle() {
   const { slug } = useParams();
@@ -44,6 +46,30 @@ export default function ProductoDetalle() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 md:px-6">
+      <Seo
+        title={product.name}
+        description={
+          product.description ||
+          `${product.name}${product.brand ? ` (${product.brand})` : ""} al por mayor en Dulcinard Tucumán. Precio mayorista ${formatCurrency(finalPriceOf(product))}. Pedí online.`
+        }
+        image={images[0]?.url ? cldUrl(images[0].url, { width: 1200 }) : undefined}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: product.name,
+          description: product.description || undefined,
+          brand: product.brand ? { "@type": "Brand", name: product.brand } : undefined,
+          sku: product.sku || undefined,
+          image: images.map((img) => img.url),
+          offers: {
+            "@type": "Offer",
+            price: finalPriceOf(product),
+            priceCurrency: "ARS",
+            availability: outOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
+            url: window.location.href
+          }
+        }}
+      />
       <nav className="mb-6 text-xs text-ink-400">
         <Link to="/catalogo" className="hover:text-brand-600">
           Catálogo
