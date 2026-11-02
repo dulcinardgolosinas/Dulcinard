@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { cldUrl } from "../../lib/cloudinary";
 import { toWhatsappNumber } from "../../lib/whatsapp";
-import { fetchHomePromotions, promoAction, readCachedPromotions } from "../../lib/promotions";
+import { MessageCircle, ShoppingBag } from "lucide-react";
+import { fetchHomePromotions, promoBuyLink, promoWhatsappHref, readCachedPromotions } from "../../lib/promotions";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { PromoInfo, DiscountBadge } from "./PromoInfo";
 
@@ -22,10 +23,6 @@ function PromoSkeleton() {
 }
 
 function PromoCard({ promo, waNumber }) {
-  const action = promoAction(promo, waNumber);
-  const actionClass =
-    "mt-4 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700";
-
   return (
     <article className="flex w-[82%] shrink-0 snap-start flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-[0_20px_45px_-25px_rgba(32,28,27,0.3)] sm:w-auto">
       <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-brand-600 to-brand-950">
@@ -48,19 +45,29 @@ function PromoCard({ promo, waNumber }) {
         {promo.categories?.length > 0 && (
           <p className="mt-1 text-xs text-ink-500">En {promo.categories.map((c) => c.name).join(", ")}</p>
         )}
+        {promo.products?.length > 0 && (
+          <p className="mt-1 text-xs text-ink-500">Incluye: {promo.products.map((p) => p.name).join(" · ")}</p>
+        )}
         <div className="mt-auto pt-3">
           <PromoInfo promo={promo} />
-          {action.to ? (
-            <Link to={action.to} className={actionClass}>
-              <action.Icon className="h-4 w-4" strokeWidth={2} />
-              {action.label}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              to={promoBuyLink(promo)}
+              className="inline-flex items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            >
+              <ShoppingBag className="h-4 w-4" strokeWidth={2} />
+              Comprar
             </Link>
-          ) : (
-            <a href={action.href} target="_blank" rel="noopener noreferrer" className={actionClass}>
-              <action.Icon className="h-4 w-4" strokeWidth={2} />
-              {action.label}
+            <a
+              href={promoWhatsappHref(promo, waNumber)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 px-4 py-2 text-sm font-semibold text-brand-600 transition-colors hover:bg-brand-50"
+            >
+              <MessageCircle className="h-4 w-4" strokeWidth={2} />
+              Consultar
             </a>
-          )}
+          </div>
         </div>
       </div>
     </article>

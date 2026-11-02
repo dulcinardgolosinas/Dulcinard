@@ -52,8 +52,9 @@ export const listPromotions = asyncHandler(async (req, res) => {
 export const listHomePromotions = asyncHandler(async (req, res) => {
   const now = new Date();
   const promotions = await Promotion.find({ active: true, startDate: { $lte: now }, endDate: { $gte: now } })
-    .select("title description discountPercent price regularPrice showInPopup banner.url startDate endDate categories")
+    .select("title description discountPercent price regularPrice showInPopup banner.url startDate endDate categories products")
     .populate("categories", "name slug")
+    .populate({ path: "products", select: "name slug", match: { active: true } })
     .sort({ discountPercent: -1, endDate: 1 })
     .limit(8)
     .lean();

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { X } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Input, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
@@ -36,6 +37,7 @@ const makeSchema = (editing) =>
     description: z.string().trim().max(500, "La descripción no puede superar los 500 caracteres").optional(),
     discountPercent: numberField("El descuento", { min: 0, max: 100 }),
     categories: z.array(z.string()).optional(),
+    products: z.array(z.string()).optional(),
     startDate: editing ? z.string().min(1, "Elegí la fecha de inicio") : futureDateField("La fecha de inicio"),
     endDate: futureDateField("La fecha de fin"),
     active: z.boolean().optional(),
@@ -57,6 +59,7 @@ const formValues = (editing) => ({
   description: editing?.description || "",
   discountPercent: editing?.discountPercent || 0,
   categories: editing?.categories?.map((c) => c._id || c) || [],
+  products: editing?.products?.map((p) => p._id || p) || [],
   startDate: toInputDate(editing?.startDate) || toInputDate(new Date()),
   endDate: toInputDate(editing?.endDate),
   active: editing?.active ?? true,
@@ -65,7 +68,66 @@ const formValues = (editing) => ({
   showInPopup: editing?.showInPopup ?? true
 });
 
-function PromotionForm({ editing, categories, onSaved, onCancel }) {
+function ProductPicker({ options, value, onChange }) {
+  const [text, setText] = useState("");
+  const selected = value.map((id) => options.find((o) => o._id === id) || { _id: id, name: "Producto" });
+
+  function add(name) {
+    const match = options.find((o) => o.name.toLowerCase() === name.trim().toLowerCase());
+    if (!match) return;
+    if (!value.includes(match._id)) onChange([...value, match._id]);
+    setText("");
+  }
+
+  return (
+    <div>
+      <p className="mb-1.5 text-sm font-medium text-ink-700">Productos de la promoción</p>
+      <p className="mb-2 text-xs text-ink-500">
+        El botón "Comprar" lleva a estos productos. Si la promo tiene descuento (%), se aplica a estos productos en el carrito.
+      </p>
+      <input
+        list="promo-product-options"
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          if (options.some((o) => o.name === e.target.value)) add(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            add(text);
+          }
+        }}
+        placeholder="Escribí para buscar un producto..."
+        className="w-full rounded-xl border border-ink-200 px-3.5 py-2.5 text-sm outline-none focus:border-brand-500"
+      />
+      <datalist id="promo-product-options">
+        {options.map((o) => (
+          <option key={o._id} value={o.name} />
+        ))}
+      </datalist>
+      {selected.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {selected.map((p) => (
+            <span key={p._id} className="inline-flex items-center gap-1 rounded-full bg-brand-50 py-1 pl-3 pr-1 text-xs font-medium text-brand-600">
+              {p.name}
+              <button
+                type="button"
+                onClick={() => onChange(value.filter((id) => id !== p._id))}
+                aria-label={`Quitar ${p.name}`}
+                className="rounded-full p-0.5 hover:bg-brand-100"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PromotionForm({ editing, categories, productOptions, onSaved, onCancel }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const {
@@ -105,7 +167,7 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
     formData.append("regularPrice", values.regularPrice ?? "");
     formData.append("showInPopup", values.showInPopup);
     formData.append("categories", JSON.stringify(values.categories || []));
-    formData.append("products", JSON.stringify([]));
+    formData.append("products", JSON.stringify(values.products || []));
     if (file) formData.append("banner", file);
 
     try {
@@ -187,6 +249,12 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
           )}
         />
       </div>
+
+      <Controller
+        control={control}
+        name="products"
+        render={({ field }) => <ProductPicker options={productOptions} value={field.value || []} onChange={field.onChange} />}
+      />
 
       <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
@@ -287,14 +355,20 @@ function PopupSwitch() {
 export default function PromocionesAdmin() {
   const [promotions, setPromotions] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
 
   async function load() {
     setLoading(true);
-    const [promosRes, catsRes] = await Promise.all([api.get("/promotions"), api.get("/categories", { params: { all: "true" } })]);
+    const [promosRes, catsRes, productsRes] = await Promise.all([
+      api.get("/promotions"),
+      api.get("/categories", { params: { all: "true" } }),
+      api.get("/products/images/options")
+    ]);
     setPromotions(promosRes.data);
     setCategories(catsRes.data);
+    setProductOptions(productsRes.data);
     setLoading(false);
   }
 
@@ -364,6 +438,7 @@ export default function PromocionesAdmin() {
         <PromotionForm
           editing={editing}
           categories={categories}
+          productOptions={productOptions}
           onSaved={() => { setEditing(null); load(); }}
           onCancel={() => setEditing(null)}
         />

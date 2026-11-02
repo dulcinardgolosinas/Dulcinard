@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { Tag } from "lucide-react";
 import { api } from "../lib/api";
 import { ProductCard } from "../components/product/ProductCard";
 import { PageLoader, Spinner } from "../components/ui/Spinner";
@@ -27,6 +28,21 @@ export default function Catalogo() {
   const featured = searchParams.get("featured") || "";
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
+  // ?promo=<id>: solo los productos de esa promoción (botón "Comprar" de las promos).
+  const promoId = searchParams.get("promo") || "";
+  const [promo, setPromo] = useState(null);
+
+  useEffect(() => {
+    if (!promoId) return setPromo(null);
+    let active = true;
+    api
+      .get(`/promotions/${promoId}`)
+      .then(({ data }) => active && setPromo(data))
+      .catch(() => active && setPromo({ title: "", products: [] }));
+    return () => {
+      active = false;
+    };
+  }, [promoId]);
 
   useEffect(() => {
     api.get("/categories").then(({ data }) => setCategories(data));
@@ -35,10 +51,17 @@ export default function Catalogo() {
 
   const fetchProducts = useCallback(
     async (targetPage, replace) => {
+      if (promoId && !promo) return; // esperando los datos de la promoción
       replace ? setLoading(true) : setLoadingMore(true);
       try {
+        if (promo && !promo.products?.length) {
+          setProducts([]);
+          setPages(1);
+          return;
+        }
+        const ids = promo ? promo.products.map((p) => p._id || p).join(",") : undefined;
         const { data } = await api.get("/products", {
-          params: { q, category, brand, unit, featured, minPrice, maxPrice, page: targetPage, limit: 24 }
+          params: { q, category, brand, unit, featured, minPrice, maxPrice, ids, page: targetPage, limit: 24 }
         });
         setProducts((prev) => (replace ? data.items : [...prev, ...data.items]));
         setPages(data.pages);
@@ -48,7 +71,7 @@ export default function Catalogo() {
         setLoadingMore(false);
       }
     },
-    [q, category, brand, unit, featured, minPrice, maxPrice]
+    [q, category, brand, unit, featured, minPrice, maxPrice, promoId, promo]
   );
 
   useEffect(() => {
@@ -157,6 +180,18 @@ export default function Catalogo() {
           />
         </div>
       </div>
+
+      {promoId && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-brand-600">
+            <Tag className="h-4 w-4" />
+            {promo?.title ? `Productos de la promoción: ${promo.title}` : "Productos de la promoción"}
+          </p>
+          <Link to="/catalogo" className="text-sm font-semibold text-ink-700 hover:text-brand-600 hover:underline">
+            Ver todo el catálogo
+          </Link>
+        </div>
+      )}
 
       <button
         onClick={() => setFiltersOpen((v) => !v)}

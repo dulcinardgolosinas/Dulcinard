@@ -1,4 +1,3 @@
-import { MessageCircle, Tag } from "lucide-react";
 import { api } from "./api";
 
 // Promociones vigentes para la página principal y el cartel de bienvenida.
@@ -55,13 +54,20 @@ export function promoDateRange(promo) {
   return `Del ${dayMonth(promo.startDate)} al ${dayMonth(promo.endDate)}`;
 }
 
-/** Adónde lleva el botón de una promo: a sus productos o a consultar por WhatsApp. */
-export function promoAction(promo, waNumber) {
+/**
+ * Adónde lleva "Comprar": al producto si la promo tiene uno, a la lista de sus
+ * productos si tiene varios, a su categoría, o al catálogo completo.
+ */
+export function promoBuyLink(promo) {
+  const products = promo.products || [];
+  if (products.length === 1 && products[0].slug) return `/producto/${products[0].slug}`;
+  if (products.length > 1) return `/catalogo?promo=${promo._id}`;
   const category = promo.categories?.[0];
-  if (category) return { to: `/catalogo?category=${category._id}`, label: "Ver productos", Icon: Tag };
-  return {
-    href: `https://wa.me/${waNumber}?text=${encodeURIComponent(`¡Hola! Quiero consultar por la promo "${promo.title}"`)}`,
-    label: "Consultar",
-    Icon: MessageCircle
-  };
+  if (category) return `/catalogo?category=${category._id}`;
+  return "/catalogo";
+}
+
+/** Link de WhatsApp para consultar por una promo. */
+export function promoWhatsappHref(promo, waNumber) {
+  return `https://wa.me/${waNumber}?text=${encodeURIComponent(`¡Hola! Quiero consultar por la promo "${promo.title}"`)}`;
 }
