@@ -15,6 +15,7 @@ import { formatCurrency, UNIT_LABELS } from "../lib/format";
 import { alphanumericField, nameField, phoneField } from "../lib/validators";
 import { toastError, toastSuccess } from "../lib/alerts";
 import { BankTransferInfo } from "../components/ui/BankTransferInfo";
+import { Seo } from "../components/Seo";
 
 const hasBankTransfer = (config) => Boolean(config?.bankTransfer?.alias || config?.bankTransfer?.cbu);
 
@@ -163,6 +164,7 @@ export default function Checkout() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-14 md:px-6">
+      <Seo title="Finalizar compra" noIndex />
       <h1 className="font-display text-3xl font-bold text-ink-900">Finalizar pedido</h1>
 
       <div className="mt-8 grid gap-10 md:grid-cols-[1.2fr_1fr]">

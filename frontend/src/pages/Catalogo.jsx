@@ -7,6 +7,7 @@ import { PageLoader, Spinner } from "../components/ui/Spinner";
 import { Select } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { UNIT_LABELS } from "../lib/format";
+import { Seo } from "../components/Seo";
 
 const UNITS = Object.keys(UNIT_LABELS);
 
@@ -164,6 +165,18 @@ export default function Catalogo() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 md:px-6">
+      <Seo
+        title={
+          promo?.title
+            ? `Promoción: ${promo.title}`
+            : category
+              ? `${categories.find((c) => c._id === category)?.name || "Productos"} al por mayor`
+              : q
+                ? `Resultados para "${q}"`
+                : "Catálogo de golosinas al por mayor"
+        }
+        description="Catálogo mayorista de golosinas, chocolates, alfajores y productos alimenticios en Tucumán. Precios por unidad, caja o display. Pedí online."
+      />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-ink-900">Catálogo</h1>
