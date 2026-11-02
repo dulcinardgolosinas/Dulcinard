@@ -5,6 +5,7 @@ import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 import { useSiteContent } from "../lib/siteContent";
+import { Seo } from "../components/Seo";
 
 function Hero({ waHref }) {
   const content = useSiteContent();
@@ -133,6 +134,10 @@ export default function Contacto() {
 
   return (
     <div>
+      <Seo
+        title="Contacto y sucursales"
+        description="Hacé tu pedido por WhatsApp o visitá nuestras sucursales de Dulcinard en San Miguel de Tucumán y Concepción. Direcciones y horarios."
+      />
       <Hero waHref={waHref} />
       <Branches branches={branches} />
     </div>

@@ -12,6 +12,7 @@ import { HeroCarousel } from "../components/home/HeroCarousel";
 import { scrollToProducts } from "../lib/navigation";
 import { HomePromotions } from "../components/home/HomePromotions";
 import { PromoPopup } from "../components/home/PromoPopup";
+import { Seo } from "../components/Seo";
 
 const valueIcons = {
   truck: (
@@ -328,6 +329,30 @@ function QuickCategoryPills({ categories, activeCategory, onSelect }) {
   );
 }
 
+// Datos del negocio para Google: nombre, logo, redes y cada sucursal.
+function businessJsonLd(config) {
+  const origin = window.location.origin;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Dulcinard Tucumán",
+    url: origin,
+    logo: config?.logo?.url || undefined,
+    description: "Distribuidora mayorista de golosinas y productos alimenticios en Tucumán.",
+    sameAs: [config?.instagram, config?.facebook].filter(Boolean),
+    department: (config?.branches || [])
+      .filter((b) => b.active !== false)
+      .map((b) => ({
+        "@type": "Store",
+        name: `Dulcinard ${b.name}`,
+        image: b.image?.url || config?.logo?.url || undefined,
+        telephone: b.phone || undefined,
+        address: { "@type": "PostalAddress", streetAddress: b.address, addressRegion: "Tucumán", addressCountry: "AR" },
+        hasMap: b.mapUrl || undefined
+      }))
+  };
+}
+
 export default function Home() {
   const config = useSiteConfigStore((s) => s.config);
   const [categories, setCategories] = useState(null); // null = cargando
@@ -396,6 +421,7 @@ export default function Home() {
 
   return (
     <div>
+      <Seo jsonLd={businessJsonLd(config)} />
       <PromoPopup />
       <HeroCarousel />
       <ValueProps />
