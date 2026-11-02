@@ -29,7 +29,8 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
     "defaultShippingCost",
     "freeShippingFrom",
     "deliveryEtaHours",
-    "deliveryEtaMaxHours"
+    "deliveryEtaMaxHours",
+    "promoPopupEnabled"
   ];
   for (const field of fields) {
     if (req.body[field] !== undefined) config[field] = req.body[field];
