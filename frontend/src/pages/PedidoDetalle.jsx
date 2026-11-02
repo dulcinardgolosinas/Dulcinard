@@ -11,6 +11,7 @@ import { useSiteConfigStore } from "../store/siteConfigStore";
 import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
 import { WhatsappIcon } from "../components/ui/WhatsappIcon";
 import { BankTransferInfo } from "../components/ui/BankTransferInfo";
+import { Seo } from "../components/Seo";
 
 const STEPS = ["pendiente", "confirmado", "en_preparacion", "enviado", "entregado"];
 
@@ -103,6 +104,7 @@ export default function PedidoDetalle() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-14 md:px-6">
+      <Seo title="Detalle del pedido" noIndex />
       <Link to="/pedidos" className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-500 hover:text-brand-600">
         <ArrowLeft className="h-4 w-4" strokeWidth={2} />
         Mis pedidos

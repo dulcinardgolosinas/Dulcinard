@@ -7,6 +7,7 @@ import { formatCurrency } from "../lib/format";
 import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
 import { WhatsappIcon } from "../components/ui/WhatsappIcon";
 import { useSiteConfigStore } from "../store/siteConfigStore";
+import { Seo } from "../components/Seo";
 
 export default function Pedidos() {
   const [orders, setOrders] = useState([]);
@@ -24,6 +25,7 @@ export default function Pedidos() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-14 md:px-6">
+      <Seo title="Mis pedidos" noIndex />
       <h1 className="font-display text-3xl font-bold text-ink-900">Mis pedidos</h1>
 
       {orders.length === 0 ? (
