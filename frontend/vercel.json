@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "https://dulcinard-golosinas-hquo.vercel.app/api/sitemap.xml" },
+    { "source": "/sitemap.xml", "destination": "https://dulcinard-tdnx.vercel.app/api/sitemap.xml" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
