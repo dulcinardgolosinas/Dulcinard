@@ -14,6 +14,10 @@ export const listHomeHeroImages = asyncHandler(async (req, res) => {
     .populate("product", "name slug active")
     .populate("category", "name slug active")
     .lean();
+  // La lista pública la guarda la red de Vercel un minuto (y la sigue dando
+  // mientras la actualiza): así casi ninguna visita espera a que el servidor
+  // "despierte". La del panel (?all=true) siempre va al día.
+  if (req.query.all !== "true") res.set("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=600");
   res.json(images);
 });
 

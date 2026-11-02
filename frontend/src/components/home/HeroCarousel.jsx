@@ -16,12 +16,31 @@ const AUTOPLAY_MS = 6000;
 const SLIDE_WIDTHS = [640, 960, 1280, 1600, 2000];
 const SWIPE_DISTANCE = 60;
 
+// Las fotos del carrusel se recuerdan en el navegador: en las visitas
+// siguientes aparecen al instante y después se actualizan con las del servidor.
+const SLIDES_KEY = "carrusel-inicio";
+function readSavedSlides() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SLIDES_KEY) || "null");
+    return Array.isArray(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+function saveSlides(slides) {
+  try {
+    localStorage.setItem(SLIDES_KEY, JSON.stringify(slides));
+  } catch {
+    // sin almacenamiento: se piden de nuevo la próxima vez
+  }
+}
+
 export function HeroCarousel() {
   const config = useSiteConfigStore((s) => s.config);
   const content = useSiteContent();
   const reduceMotion = useReducedMotion();
-  const [slides, setSlides] = useState([]);
-  const [loaded, setLoaded] = useState(false);
+  const [slides, setSlides] = useState(() => readSavedSlides() || []);
+  const [loaded, setLoaded] = useState(() => readSavedSlides() !== null);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -29,7 +48,10 @@ export function HeroCarousel() {
     let active = true;
     api
       .get("/home-hero-images")
-      .then(({ data }) => active && setSlides(data))
+      .then(({ data }) => {
+        saveSlides(data);
+        if (active) setSlides(data);
+      })
       .catch(() => {})
       .finally(() => active && setLoaded(true));
     return () => {
@@ -38,6 +60,10 @@ export function HeroCarousel() {
   }, []);
 
   const count = slides.length;
+  // Si cambió la cantidad de fotos (ej: se borró una), se vuelve a la primera.
+  useEffect(() => {
+    if (index >= count) setIndex(0);
+  }, [index, count]);
   const go = useCallback((step) => setIndex((i) => (i + step + count) % count), [count]);
 
   // Autoplay: se pausa con el mouse encima, con la pestaña oculta o si la
