@@ -10,12 +10,22 @@ import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { futureDateField, numberField } from "../../lib/validators";
+import { formatCurrency } from "../../lib/format";
+import { useSiteConfigStore } from "../../store/siteConfigStore";
 
+// Día en hora de Argentina (aaaa-mm-dd), para los campos de fecha.
 function toInputDate(d) {
-  return d ? new Date(d).toISOString().slice(0, 10) : "";
+  return d ? new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }) : "";
 }
+const showDay = (d) => new Date(d).toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
 
-const schema = z
+const optionalPrice = (label) =>
+  z
+    .union([z.literal(""), z.coerce.number({ message: `${label} tiene que ser un número` }).positive(`${label} tiene que ser mayor a 0`).max(100000000)])
+    .optional();
+
+const makeSchema = (editing) =>
+  z
   .object({
     title: z
       .string()
@@ -26,14 +36,34 @@ const schema = z
     description: z.string().trim().max(500, "La descripción no puede superar los 500 caracteres").optional(),
     discountPercent: numberField("El descuento", { min: 0, max: 100 }),
     categories: z.array(z.string()).optional(),
-    startDate: futureDateField("La fecha de inicio"),
+    startDate: editing ? z.string().min(1, "Elegí la fecha de inicio") : futureDateField("La fecha de inicio"),
     endDate: futureDateField("La fecha de fin"),
-    active: z.boolean().optional()
+    active: z.boolean().optional(),
+    price: optionalPrice("El precio de la promo"),
+    regularPrice: optionalPrice("El precio normal"),
+    showInPopup: z.boolean().optional()
   })
   .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
     message: "La fecha de fin debe ser posterior o igual a la fecha de inicio",
     path: ["endDate"]
+  })
+  .refine((data) => !data.price || !data.regularPrice || Number(data.regularPrice) > Number(data.price), {
+    message: "El precio normal tiene que ser mayor al precio de la promo",
+    path: ["regularPrice"]
   });
+
+const formValues = (editing) => ({
+  title: editing?.title || "",
+  description: editing?.description || "",
+  discountPercent: editing?.discountPercent || 0,
+  categories: editing?.categories?.map((c) => c._id || c) || [],
+  startDate: toInputDate(editing?.startDate) || toInputDate(new Date()),
+  endDate: toInputDate(editing?.endDate),
+  active: editing?.active ?? true,
+  price: editing?.price ?? "",
+  regularPrice: editing?.regularPrice ?? "",
+  showInPopup: editing?.showInPopup ?? true
+});
 
 function PromotionForm({ editing, categories, onSaved, onCancel }) {
   const [file, setFile] = useState(null);
@@ -45,41 +75,23 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
     reset,
     formState: { errors, isSubmitting }
   } = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: {
-      title: editing?.title || "",
-      description: editing?.description || "",
-      discountPercent: editing?.discountPercent || 0,
-      categories: editing?.categories?.map((c) => c._id || c) || [],
-      startDate: toInputDate(editing?.startDate) || toInputDate(new Date()),
-      endDate: toInputDate(editing?.endDate),
-      active: editing?.active ?? true
-    }
+    resolver: zodResolver(makeSchema(Boolean(editing))),
+    defaultValues: formValues(editing)
   });
 
   useEffect(() => {
-    reset({
-      title: editing?.title || "",
-      description: editing?.description || "",
-      discountPercent: editing?.discountPercent || 0,
-      categories: editing?.categories?.map((c) => c._id || c) || [],
-      startDate: toInputDate(editing?.startDate) || toInputDate(new Date()),
-      endDate: toInputDate(editing?.endDate),
-      active: editing?.active ?? true
-    });
+    reset(formValues(editing));
     setFile(null);
   }, [editing, reset]);
 
   async function onSubmit(values) {
-    if (editing) {
-      const confirmed = await confirmAction({
-        title: "¿Guardar cambios?",
-        text: "Vas a actualizar esta promoción.",
-        confirmText: "Sí, guardar",
-        icon: "question"
-      });
-      if (!confirmed) return;
-    }
+    const confirmed = await confirmAction({
+      title: editing ? "¿Guardar cambios?" : "¿Crear esta promoción?",
+      text: editing ? "Vas a actualizar esta promoción." : "Se publica en la tienda en las fechas que elegiste.",
+      confirmText: editing ? "Sí, guardar" : "Sí, crear",
+      icon: "question"
+    });
+    if (!confirmed) return;
 
     setError("");
     const formData = new FormData();
@@ -89,6 +101,9 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
     formData.append("startDate", values.startDate);
     formData.append("endDate", values.endDate);
     formData.append("active", values.active);
+    formData.append("price", values.price ?? "");
+    formData.append("regularPrice", values.regularPrice ?? "");
+    formData.append("showInPopup", values.showInPopup);
     formData.append("categories", JSON.stringify(values.categories || []));
     formData.append("products", JSON.stringify([]));
     if (file) formData.append("banner", file);
@@ -116,14 +131,18 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
       <p className="font-semibold text-ink-900">{editing ? `Editando: ${editing.title}` : "Nueva promoción"}</p>
       <Input label="Título" {...register("title")} error={errors.title?.message} />
-      <Textarea label="Descripción" rows={2} {...register("description")} error={errors.description?.message} />
+      <Textarea label="Descripción" rows={3} placeholder="Qué incluye, condiciones, etc." {...register("description")} error={errors.description?.message} />
+      <div className="grid grid-cols-2 gap-3">
+        <Input label="Precio de la promo ($)" type="number" min="0" placeholder="Opcional" {...register("price")} error={errors.price?.message} />
+        <Input label="Precio normal ($)" type="number" min="0" placeholder="Se muestra tachado" {...register("regularPrice")} error={errors.regularPrice?.message} />
+      </div>
       <Input label="Descuento (%)" type="number" min="0" max="100" {...register("discountPercent")} error={errors.discountPercent?.message} />
 
       <div className="grid grid-cols-2 gap-3">
         <Input
           label="Desde"
           type="date"
-          min={toInputDate(new Date())}
+          min={editing ? undefined : toInputDate(new Date())}
           {...register("startDate")}
           error={errors.startDate?.message}
         />
@@ -173,10 +192,17 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
         <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
         Publicada
       </label>
+      <label className="flex items-start gap-2 text-sm font-medium text-ink-700">
+        <input type="checkbox" {...register("showInPopup")} className="mt-0.5 h-4 w-4 rounded border-ink-300 accent-brand-600" />
+        <span>
+          Mostrar en el cartel al entrar a la tienda
+          <span className="block text-xs font-normal text-ink-500">Igual se ve en la sección Promociones de la página principal.</span>
+        </span>
+      </label>
 
       <div>
         {editing?.banner?.url && !file && <img src={editing.banner.url} alt="" className="mb-2 h-20 w-full rounded-lg object-cover" />}
-        <FileInput label="Imagen de la promoción" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        <FileInput label="Foto de la promoción" onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
 
       {error && <p className="text-sm text-danger-600">{error}</p>}
@@ -191,6 +217,70 @@ function PromotionForm({ editing, categories, onSaved, onCancel }) {
         )}
       </div>
     </form>
+  );
+}
+
+// Prende o apaga el cartel de promociones que se abre al entrar a la tienda.
+// Apagarlo no saca las promociones de la página principal.
+function PopupSwitch() {
+  const setGlobalConfig = useSiteConfigStore((st) => st.setConfig);
+  const [enabled, setEnabled] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/site-config")
+      .then(({ data }) => setEnabled(data.promoPopupEnabled !== false))
+      .catch(() => setEnabled(true));
+  }, []);
+
+  async function toggle() {
+    const next = !enabled;
+    const confirmed = await confirmAction({
+      title: next ? "¿Mostrar el cartel de promociones?" : "¿Sacar el cartel de promociones?",
+      text: next
+        ? "Al entrar a la tienda se va a abrir un cartel con las promociones vigentes."
+        : "Ya no se va a abrir el cartel al entrar. Las promociones siguen apareciendo en la página principal.",
+      confirmText: next ? "Sí, mostrar" : "Sí, sacar",
+      icon: "question"
+    });
+    if (!confirmed) return;
+    setSaving(true);
+    try {
+      const { data } = await api.put("/site-config", { promoPopupEnabled: next });
+      setEnabled(data.promoPopupEnabled !== false);
+      setGlobalConfig(data);
+      toastSuccess(next ? "El cartel de promociones está activado" : "El cartel de promociones está desactivado");
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos cambiar el cartel"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (enabled === null) return null;
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
+      <div>
+        <p className="text-sm font-semibold text-ink-900">Cartel al entrar a la tienda</p>
+        <p className="text-xs text-ink-500">
+          {enabled
+            ? "Activado: al entrar se abre un cartel con las promociones vigentes."
+            : "Desactivado: las promociones solo se ven en la página principal."}
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={enabled}
+        onClick={toggle}
+        disabled={saving}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${enabled ? "bg-brand-600" : "bg-ink-200"}`}
+      >
+        <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all ${enabled ? "left-6" : "left-1"}`} />
+        <span className="sr-only">{enabled ? "Desactivar el cartel" : "Activar el cartel"}</span>
+      </button>
+    </div>
   );
 }
 
@@ -227,6 +317,7 @@ export default function PromocionesAdmin() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-ink-900">Promociones</h1>
+      <PopupSwitch />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="min-w-0">
@@ -242,9 +333,12 @@ export default function PromocionesAdmin() {
                     </div>
                     <div className="min-w-0">
                       <p className="truncate font-semibold text-ink-900">{p.title}</p>
-                      <p className="text-xs text-ink-400">
-                        {new Date(p.startDate).toLocaleDateString("es-AR")} - {new Date(p.endDate).toLocaleDateString("es-AR")}
+                      <p className="text-xs text-ink-500">
+                        {showDay(p.startDate)} al {showDay(p.endDate)}
+                        {p.price > 0 && <span className="ml-2 font-semibold text-brand-600">{formatCurrency(p.price)}</span>}
+                        {p.discountPercent > 0 && <span className="ml-2 font-semibold text-brand-600">{p.discountPercent}% OFF</span>}
                       </p>
+                      {p.showInPopup !== false && <p className="text-xs text-ink-400">Sale en el cartel al entrar</p>}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">

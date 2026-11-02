@@ -11,6 +11,7 @@ import { cldUrl } from "../lib/cloudinary";
 import { HeroCarousel } from "../components/home/HeroCarousel";
 import { scrollToProducts } from "../lib/navigation";
 import { HomePromotions } from "../components/home/HomePromotions";
+import { PromoPopup } from "../components/home/PromoPopup";
 
 const valueIcons = {
   truck: (
@@ -395,6 +396,7 @@ export default function Home() {
 
   return (
     <div>
+      <PromoPopup />
       <HeroCarousel />
       <ValueProps />
       <QuickCategoryPills categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} />
