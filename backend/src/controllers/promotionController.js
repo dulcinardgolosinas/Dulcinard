@@ -3,6 +3,20 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
 
+// Las fechas llegan como día ("2026-11-30"): la promo arranca a las 00:00 y
+// termina a las 23:59 de ese día en hora de Argentina (no en UTC, que
+// cortaría la promo a las 21 hs del día anterior).
+const AR_OFFSET = "-03:00";
+function dayStart(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00.000${AR_OFFSET}`) : value;
+}
+function dayEnd(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T23:59:59.999${AR_OFFSET}`) : value;
+}
+
+// Precio que llega del formulario: vacío = sin precio propio (null).
+const toPrice = (value) => (value === undefined ? undefined : value === "" || value === null ? null : Number(value));
+
 // Lista de IDs enviada como JSON desde el form. Lanza 400 (no 500) si viene malformada.
 function parseIdList(raw) {
   let list;
@@ -38,8 +52,9 @@ export const listPromotions = asyncHandler(async (req, res) => {
 export const listHomePromotions = asyncHandler(async (req, res) => {
   const now = new Date();
   const promotions = await Promotion.find({ active: true, startDate: { $lte: now }, endDate: { $gte: now } })
-    .select("title description discountPercent banner.url endDate categories")
+    .select("title description discountPercent price regularPrice showInPopup banner.url startDate endDate categories products")
     .populate("categories", "name slug")
+    .populate({ path: "products", select: "name slug", match: { active: true } })
     .sort({ discountPercent: -1, endDate: 1 })
     .limit(8)
     .lean();
@@ -55,16 +70,19 @@ export const getPromotion = asyncHandler(async (req, res) => {
 });
 
 export const createPromotion = asyncHandler(async (req, res) => {
-  const { title, description, discountPercent, products, categories, startDate, endDate, active } = req.body;
+  const { title, description, discountPercent, products, categories, startDate, endDate, active, price, regularPrice, showInPopup } = req.body;
 
   const promotion = new Promotion({
     title,
     description,
     discountPercent,
+    price: toPrice(price) ?? null,
+    regularPrice: toPrice(regularPrice) ?? null,
+    showInPopup: showInPopup ?? true,
     products: products ? parseIdList(products) : [],
     categories: categories ? parseIdList(categories) : [],
-    startDate,
-    endDate,
+    startDate: dayStart(startDate),
+    endDate: dayEnd(endDate),
     active
   });
 
@@ -80,14 +98,17 @@ export const updatePromotion = asyncHandler(async (req, res) => {
   const promotion = await Promotion.findById(req.params.id);
   if (!promotion) return res.status(404).json({ message: "Promoción no encontrada" });
 
-  const { title, description, discountPercent, products, categories, startDate, endDate, active } = req.body;
+  const { title, description, discountPercent, products, categories, startDate, endDate, active, price, regularPrice, showInPopup } = req.body;
   if (title !== undefined) promotion.title = title;
+  if (price !== undefined) promotion.price = toPrice(price);
+  if (regularPrice !== undefined) promotion.regularPrice = toPrice(regularPrice);
+  if (showInPopup !== undefined) promotion.showInPopup = showInPopup;
   if (description !== undefined) promotion.description = description;
   if (discountPercent !== undefined) promotion.discountPercent = discountPercent;
   if (products !== undefined) promotion.products = parseIdList(products);
   if (categories !== undefined) promotion.categories = parseIdList(categories);
-  if (startDate !== undefined) promotion.startDate = startDate;
-  if (endDate !== undefined) promotion.endDate = endDate;
+  if (startDate !== undefined) promotion.startDate = dayStart(startDate);
+  if (endDate !== undefined) promotion.endDate = dayEnd(endDate);
   if (active !== undefined) promotion.active = active;
 
   if (req.file) {

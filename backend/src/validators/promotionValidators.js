@@ -1,17 +1,22 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
 
-// Compara solo por día (no por hora) para no rechazar "hoy" por unos minutos
-// de diferencia entre el reloj del navegador y el del servidor.
+// Compara solo el día, en hora de Argentina, sin depender del huso horario del
+// servidor (si no, "hoy" podía tomarse como "ayer" y rechazarse).
+const arDay = (date) => date.toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" });
 function isPastDate(value) {
-  const date = new Date(value);
-  const today = new Date();
-  date.setHours(0, 0, 0, 0);
-  today.setHours(0, 0, 0, 0);
-  return date < today;
+  const day = /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : arDay(new Date(value));
+  return day < arDay(new Date());
 }
 
-const baseRules = [
+// Precio opcional: vacío = la promo no tiene precio propio.
+const optionalPrice = (field, label) =>
+  body(field)
+    .optional({ values: "falsy" })
+    .isFloat({ min: 1, max: 100000000 })
+    .withMessage(`${label} debe ser un número mayor a 0`);
+
+const commonRules = [
   body("title")
     .trim()
     .notEmpty()
@@ -23,13 +28,13 @@ const baseRules = [
     .optional({ checkFalsy: true })
     .isFloat({ min: 0, max: 100 })
     .withMessage("El descuento debe ser un número entre 0 y 100"),
-  body("startDate")
-    .notEmpty()
-    .withMessage("Elegí la fecha de inicio")
-    .isISO8601()
-    .withMessage("Fecha de inicio inválida")
-    .custom((value) => !isPastDate(value))
-    .withMessage("La fecha de inicio no puede ser una fecha pasada"),
+  optionalPrice("price", "El precio de la promo"),
+  optionalPrice("regularPrice", "El precio normal"),
+  body("regularPrice")
+    .optional({ values: "falsy" })
+    .custom((value, { req }) => !req.body.price || Number(value) > Number(req.body.price))
+    .withMessage("El precio normal tiene que ser mayor al precio de la promo"),
+  body("showInPopup").optional().isBoolean().withMessage("Valor inválido para el cartel").toBoolean(),
   body("endDate")
     .notEmpty()
     .withMessage("Elegí la fecha de fin")
@@ -38,9 +43,21 @@ const baseRules = [
     .custom((value) => !isPastDate(value))
     .withMessage("La fecha de fin no puede ser una fecha pasada")
     .custom((value, { req }) => new Date(value) >= new Date(req.body.startDate))
-    .withMessage("La fecha de fin debe ser posterior o igual a la fecha de inicio"),
+    .withMessage("La fecha de fin debe ser posterior o igual a la fecha de inicio")
+];
+
+const startDate = body("startDate").notEmpty().withMessage("Elegí la fecha de inicio").isISO8601().withMessage("Fecha de inicio inválida");
+
+// Al crear, la promo no puede empezar en el pasado.
+export const createPromotionValidator = [
+  startDate.custom((value) => !isPastDate(value)).withMessage("La fecha de inicio no puede ser una fecha pasada"),
+  ...commonRules,
   validate
 ];
 
-export const createPromotionValidator = baseRules;
-export const updatePromotionValidator = baseRules;
+// Al editar sí: una promo que ya empezó conserva su fecha de inicio.
+export const updatePromotionValidator = [
+  body("startDate").notEmpty().withMessage("Elegí la fecha de inicio").isISO8601().withMessage("Fecha de inicio inválida"),
+  ...commonRules,
+  validate
+];

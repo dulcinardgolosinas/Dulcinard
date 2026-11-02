@@ -58,6 +58,9 @@ const siteConfigSchema = new mongoose.Schema(
 
     branches: { type: [branchSchema], default: [] },
 
+    // Cartel de promociones que se abre al entrar a la tienda (se prende y apaga desde Promociones).
+    promoPopupEnabled: { type: Boolean, default: true },
+
     // Datos que ve el cliente cuando elige pagar por transferencia. Sin alias
     // ni CBU, la transferencia no se ofrece en el checkout.
     bankTransfer: {
