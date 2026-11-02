@@ -4,6 +4,7 @@ import { ExternalLink } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { confirmLogout, toastSuccess } from "../../lib/alerts";
+import { Seo } from "../../components/Seo";
 
 function ViewSiteLink({ className = "" }) {
   return (
@@ -85,6 +86,7 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-ink-50">
+      <Seo title="Panel" noIndex />
       <aside className="hidden w-60 shrink-0 flex-col border-r border-ink-100 bg-white lg:flex">
         <div className="border-b border-ink-100 px-5 py-5">
           <Link to="/">

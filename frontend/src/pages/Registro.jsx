@@ -9,6 +9,7 @@ import { Input, PasswordInput } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { toastSuccess, toastError } from "../lib/alerts";
 import { nameField, alphanumericField, emailField, phoneField, passwordField } from "../lib/validators";
+import { Seo } from "../components/Seo";
 
 const schema = z
   .object({
@@ -62,6 +63,7 @@ export default function Registro() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-3.5">
+      <Seo title="Crear cuenta" noIndex />
       <div className="grid grid-cols-2 gap-3">
         <Input label="Nombre" {...register("firstName")} error={errors.firstName?.message} />
         <Input label="Apellido" {...register("lastName")} error={errors.lastName?.message} />
