@@ -12,6 +12,7 @@ import { HeroCarousel } from "../components/home/HeroCarousel";
 import { scrollToProducts } from "../lib/navigation";
 import { HomePromotions } from "../components/home/HomePromotions";
 import { PromoPopup } from "../components/home/PromoPopup";
+import { FeaturedProducts } from "../components/home/FeaturedProducts";
 import { Seo } from "../components/Seo";
 
 const valueIcons = {
@@ -426,6 +427,7 @@ export default function Home() {
       <HeroCarousel />
       <ValueProps />
       <QuickCategoryPills categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} />
+      <FeaturedProducts />
       <ProvidersCarousel providers={providers} />
       <HomePromotions />
       <CategoriesSection
