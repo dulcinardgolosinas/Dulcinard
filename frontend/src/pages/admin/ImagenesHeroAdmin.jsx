@@ -5,6 +5,9 @@ import { Button } from "../../components/ui/Button";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { usePageHeroStore } from "../../store/pageHeroStore";
+import { useSiteConfigStore } from "../../store/siteConfigStore";
+import { Film } from "lucide-react";
+import { MAX_PHOTO_BYTES, checkHeroFile, formatMB, isVideoFile, uploadHeroMedia } from "../../lib/heroMedia";
 
 const PAGE_LABELS = {
   "quienes-somos": "Quiénes somos",
@@ -110,30 +113,58 @@ function HeroCard({ hero, onChanged }) {
 
 const LINK_LABELS = { catalog: "Todos los productos", product: "Un producto", category: "Una categoría" };
 
-// Cada foto del carrusel: texto opcional, texto del botón y adónde lleva "Comprar".
-function HomeHeroImageCard({ image, position, total, products, categories, onChanged, onDeleted, onMove }) {
+/** Vista previa de un slide: la foto, o el video sin sonido con su miniatura. */
+function SlidePreview({ slide }) {
+  if (slide.mediaType === "video" && slide.video?.url) {
+    return (
+      <>
+        <video src={slide.video.url} poster={slide.image?.url} muted loop playsInline autoPlay className="h-full w-full object-cover" />
+        <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-ink-900/80 px-2 py-0.5 text-xs font-semibold text-white">
+          <Film className="h-3.5 w-3.5" /> Video{slide.video.duration ? ` · ${slide.video.duration} s` : ""}
+        </span>
+      </>
+    );
+  }
+  return <img src={slide.image.url} alt="" className="h-full w-full object-cover" />;
+}
+
+/** Barra de progreso mientras se sube un archivo. */
+function UploadProgress({ value }) {
+  if (value == null) return null;
+  return (
+    <div className="w-full">
+      <div className="h-2 overflow-hidden rounded-full bg-ink-100">
+        <div className="h-full rounded-full bg-brand-600 transition-all" style={{ width: `${value}%` }} />
+      </div>
+      <p className="mt-1 text-xs text-ink-500">{value < 100 ? `Subiendo... ${value}%` : "Procesando..."}</p>
+    </div>
+  );
+}
+
+// Cada slide del carrusel: su foto o video, adónde lleva al tocarlo, y las
+// opciones de reemplazar, mover, ocultar y eliminar.
+function HomeHeroSlideCard({ slide, position, total, products, categories, onChanged, onDeleted, onMove }) {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [fileKey, setFileKey] = useState(0);
   const [form, setForm] = useState(() => ({
-    title: image.title || "",
-    buttonText: image.buttonText || "Comprar",
-    linkType: image.linkType || "catalog",
-    productName: image.product?.name || "",
-    category: image.category?._id || ""
+    linkType: slide.linkType || "catalog",
+    productName: slide.product?.name || "",
+    category: slide.category?._id || ""
   }));
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
-  const listId = `productos-${image._id}`;
+  const listId = `productos-${slide._id}`;
+  const what = slide.mediaType === "video" ? "este video" : "esta foto";
 
-  async function handleSave() {
-    if (form.title.length > 80) return toastError("El texto sobre la foto puede tener hasta 80 caracteres");
-    if (form.buttonText.trim().length > 24) return toastError("El texto del botón puede tener hasta 24 caracteres");
+  async function handleSaveLink() {
     const product = products.find((p) => p.name.toLowerCase() === form.productName.trim().toLowerCase());
     if (form.linkType === "product" && !product) return toastError("Elegí un producto de la lista");
     if (form.linkType === "category" && !form.category) return toastError("Elegí una categoría");
 
     const confirmed = await confirmAction({
-      title: "¿Guardar los cambios de esta foto?",
-      text: "Se ven en la página principal apenas los guardes.",
+      title: "¿Guardar a dónde lleva?",
+      text: `Al tocar ${what} en la página principal, va a llevar a: ${LINK_LABELS[form.linkType].toLowerCase()}.`,
       confirmText: "Sí, guardar",
       icon: "question"
     });
@@ -141,15 +172,13 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
 
     setSaving(true);
     try {
-      const { data } = await api.put(`/home-hero-images/${image._id}`, {
-        title: form.title.trim(),
-        buttonText: form.buttonText.trim() || "Comprar",
+      const { data } = await api.put(`/home-hero-images/${slide._id}`, {
         linkType: form.linkType,
         product: form.linkType === "product" ? product._id : undefined,
         category: form.linkType === "category" ? form.category : undefined
       });
       onChanged(data);
-      toastSuccess("Foto actualizada");
+      toastSuccess("Cambios guardados");
     } catch (err) {
       toastError(apiErrorMessage(err, "No pudimos guardar los cambios"));
     } finally {
@@ -157,34 +186,59 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
     }
   }
 
+  async function handleReplace(e) {
+    const file = e.target.files?.[0];
+    setFileKey((k) => k + 1);
+    if (!file) return;
+    const problem = checkHeroFile(file);
+    if (problem) return toastError(problem);
+    const confirmed = await confirmAction({
+      title: `¿Reemplazar ${what}?`,
+      text: `Se cambia por ${isVideoFile(file) ? "el video" : "la foto"} que elegiste (${formatMB(file.size)}). Lo anterior se borra.`,
+      confirmText: "Sí, reemplazar",
+      icon: "question"
+    });
+    if (!confirmed) return;
+    setProgress(0);
+    try {
+      const data = await uploadHeroMedia(file, { slideId: slide._id, onProgress: setProgress });
+      onChanged(data);
+      toastSuccess("Reemplazado");
+    } catch (err) {
+      toastError(err.response ? apiErrorMessage(err, "No pudimos reemplazarlo") : err.message);
+    } finally {
+      setProgress(null);
+    }
+  }
+
   async function toggleActive() {
     const confirmed = await confirmAction({
-      title: image.active ? "¿Ocultar esta foto?" : "¿Mostrar esta foto?",
-      text: image.active ? "Deja de verse en el carrusel, pero no se borra." : "Vuelve a verse en el carrusel.",
-      confirmText: image.active ? "Sí, ocultar" : "Sí, mostrar",
+      title: slide.active ? `¿Ocultar ${what}?` : `¿Mostrar ${what}?`,
+      text: slide.active ? "Deja de verse en el carrusel, pero no se borra." : "Vuelve a verse en el carrusel.",
+      confirmText: slide.active ? "Sí, ocultar" : "Sí, mostrar",
       icon: "question"
     });
     if (!confirmed) return;
     try {
-      const { data } = await api.put(`/home-hero-images/${image._id}`, { active: !image.active });
+      const { data } = await api.put(`/home-hero-images/${slide._id}`, { active: !slide.active });
       onChanged(data);
-      toastSuccess(data.active ? "La foto se muestra en el carrusel" : "Foto oculta");
+      toastSuccess(data.active ? "Se muestra en el carrusel" : "Oculto");
     } catch (err) {
-      toastError(apiErrorMessage(err, "No pudimos cambiar la foto"));
+      toastError(apiErrorMessage(err, "No pudimos cambiarlo"));
     }
   }
 
   async function handleDelete() {
-    const confirmed = await confirmDelete("esta foto del carrusel de la página principal");
+    const confirmed = await confirmDelete(`${what} del carrusel de la página principal`);
     if (!confirmed) return;
 
     setDeleting(true);
     try {
-      await api.delete(`/home-hero-images/${image._id}`);
-      toastSuccess("Foto eliminada del carrusel de la página principal");
-      onDeleted(image._id);
+      await api.delete(`/home-hero-images/${slide._id}`);
+      toastSuccess("Eliminado del carrusel");
+      onDeleted(slide._id);
     } catch (err) {
-      toastError(apiErrorMessage(err, "No pudimos eliminar la foto"));
+      toastError(apiErrorMessage(err, "No pudimos eliminarlo"));
     } finally {
       setDeleting(false);
     }
@@ -193,27 +247,25 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
   const fieldClass = "w-full rounded-xl border border-ink-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
   return (
-    <div className={`flex flex-col gap-3 rounded-2xl border bg-white p-3 ${image.active ? "border-ink-100" : "border-dashed border-ink-300 opacity-75"}`}>
-      <div className="relative h-32 overflow-hidden rounded-xl bg-ink-950">
-        <img src={image.image.url} alt="" className="h-full w-full object-cover" />
+    <div className={`flex flex-col gap-3 rounded-2xl border bg-white p-3 ${slide.active ? "border-ink-100" : "border-dashed border-ink-300 opacity-75"}`}>
+      <div className="relative aspect-video overflow-hidden rounded-xl bg-ink-950">
+        <SlidePreview slide={slide} />
         <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-bold text-ink-800">
           {position} de {total}
         </span>
-        {!image.active && (
-          <span className="absolute right-2 top-2 rounded-full bg-ink-900/80 px-2 py-0.5 text-xs font-semibold text-white">Oculta</span>
+        {!slide.active && (
+          <span className="absolute right-2 top-2 rounded-full bg-ink-900/80 px-2 py-0.5 text-xs font-semibold text-white">Oculto</span>
         )}
       </div>
 
+      {progress != null ? (
+        <UploadProgress value={progress} />
+      ) : (
+        <FileInput key={fileKey} accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" buttonLabel="Reemplazar foto o video" onChange={handleReplace} />
+      )}
+
       <label className="block text-xs font-medium text-ink-600">
-        Texto sobre la foto (opcional)
-        <input value={form.title} onChange={set("title")} maxLength={80} placeholder="Ej: Nuevos alfajores Tofi" className={`mt-1 ${fieldClass}`} />
-      </label>
-      <label className="block text-xs font-medium text-ink-600">
-        Texto del botón
-        <input value={form.buttonText} onChange={set("buttonText")} maxLength={24} className={`mt-1 ${fieldClass}`} />
-      </label>
-      <label className="block text-xs font-medium text-ink-600">
-        El botón lleva a
+        Al tocarlo, lleva a
         <select value={form.linkType} onChange={set("linkType")} className={`mt-1 ${fieldClass}`}>
           {Object.entries(LINK_LABELS).map(([value, label]) => (
             <option key={value} value={value}>
@@ -247,8 +299,8 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
         </label>
       )}
 
-      <Button type="button" size="sm" onClick={handleSave} disabled={saving}>
-        {saving ? <Spinner className="h-4 w-4" /> : "Guardar cambios"}
+      <Button type="button" size="sm" onClick={handleSaveLink} disabled={saving}>
+        {saving ? <Spinner className="h-4 w-4" /> : "Guardar a dónde lleva"}
       </Button>
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-ink-50 pt-2 text-sm">
@@ -261,14 +313,9 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
           </button>
         </div>
         <button type="button" onClick={toggleActive} className="text-xs font-semibold text-brand-600 hover:underline">
-          {image.active ? "Ocultar" : "Mostrar"}
+          {slide.active ? "Ocultar" : "Mostrar"}
         </button>
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={deleting}
-          className="text-xs font-semibold text-danger-600 hover:underline disabled:opacity-50"
-        >
+        <button type="button" onClick={handleDelete} disabled={deleting} className="text-xs font-semibold text-brand-600 hover:underline disabled:opacity-50">
           {deleting ? "Eliminando..." : "Eliminar"}
         </button>
       </div>
@@ -276,12 +323,71 @@ function HomeHeroImageCard({ image, position, total, products, categories, onCha
   );
 }
 
+// Tiempo máximo que se muestra cada video antes de pasar al siguiente slide.
+function VideoMaxSeconds() {
+  const setGlobalConfig = useSiteConfigStore((st) => st.setConfig);
+  const [value, setValue] = useState("");
+  const [saved, setSaved] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    api.get("/site-config").then(({ data }) => {
+      setValue(String(data.heroVideoMaxSeconds || 20));
+      setSaved(String(data.heroVideoMaxSeconds || 20));
+    });
+  }, []);
+
+  async function save() {
+    const seconds = Number(value);
+    if (!Number.isInteger(seconds) || seconds < 5 || seconds > 120) return toastError("Poné un número de segundos entre 5 y 120");
+    const confirmed = await confirmAction({
+      title: "¿Guardar el tiempo máximo?",
+      text: `Cada video se va a mostrar hasta ${seconds} segundos (o menos, si termina antes).`,
+      confirmText: "Sí, guardar",
+      icon: "question"
+    });
+    if (!confirmed) return;
+    setSaving(true);
+    try {
+      const { data } = await api.put("/site-config", { heroVideoMaxSeconds: seconds });
+      setSaved(String(data.heroVideoMaxSeconds));
+      setGlobalConfig(data);
+      toastSuccess("Tiempo máximo guardado");
+    } catch (err) {
+      toastError(apiErrorMessage(err, "No pudimos guardar el tiempo"));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <label className="block text-xs font-medium text-ink-600">
+        Tiempo máximo de cada video (segundos)
+        <input
+          type="number"
+          min="5"
+          max="120"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="mt-1 block w-28 rounded-xl border border-ink-200 px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+      </label>
+      <Button type="button" size="sm" variant="outline" onClick={save} disabled={saving || value === saved}>
+        {saving ? <Spinner className="h-4 w-4" /> : "Guardar"}
+      </Button>
+      <p className="w-full text-xs text-ink-500">Si el video es más corto, pasa al siguiente apenas termina.</p>
+    </div>
+  );
+}
+
 function HomeHeroGallery() {
-  const [images, setImages] = useState([]);
+  const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
-  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [fileKey, setFileKey] = useState(0);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
 
@@ -291,35 +397,37 @@ function HomeHeroGallery() {
       api.get("/products/images/options"),
       api.get("/categories", { params: { all: "true" } })
     ])
-      .then(([imagesRes, productsRes, categoriesRes]) => {
-        setImages(imagesRes.data);
+      .then(([slidesRes, productsRes, categoriesRes]) => {
+        setSlides(slidesRes.data);
         setProducts(productsRes.data);
         setCategories(categoriesRes.data);
       })
-      .catch((err) => toastError(apiErrorMessage(err, "No pudimos cargar las fotos")))
+      .catch((err) => toastError(apiErrorMessage(err, "No pudimos cargar el carrusel")))
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => () => preview && URL.revokeObjectURL(preview), [preview]);
+
   function handleChanged(updated) {
-    setImages((prev) => prev.map((img) => (img._id === updated._id ? updated : img)));
+    setSlides((prev) => prev.map((s) => (s._id === updated._id ? updated : s)));
   }
 
-  // Cambia el orden intercambiando la posición con la foto de al lado.
+  // Cambia el orden intercambiando la posición con el slide de al lado.
   async function handleMove(index, step) {
-    const other = images[index + step];
+    const other = slides[index + step];
     if (!other) return;
     const confirmed = await confirmAction({
       title: "¿Cambiar el orden?",
-      text: `La foto ${index + 1} pasa a ser la ${index + step + 1}.`,
+      text: `El slide ${index + 1} pasa a ser el ${index + step + 1}.`,
       confirmText: "Sí, mover",
       icon: "question"
     });
     if (!confirmed) return;
-    const reordered = [...images];
+    const reordered = [...slides];
     [reordered[index], reordered[index + step]] = [reordered[index + step], reordered[index]];
     try {
-      await Promise.all(reordered.map((img, i) => (img.order === i ? null : api.put(`/home-hero-images/${img._id}`, { order: i }))));
-      setImages(reordered.map((img, i) => ({ ...img, order: i })));
+      await Promise.all(reordered.map((s, i) => (s.order === i ? null : api.put(`/home-hero-images/${s._id}`, { order: i }))));
+      setSlides(reordered.map((s, i) => ({ ...s, order: i })));
       toastSuccess("Orden actualizado");
     } catch (err) {
       toastError(apiErrorMessage(err, "No pudimos cambiar el orden"));
@@ -328,38 +436,48 @@ function HomeHeroGallery() {
 
   function handleFile(e) {
     const f = e.target.files?.[0] || null;
+    if (f) {
+      const problem = checkHeroFile(f);
+      if (problem) {
+        setFileKey((k) => k + 1);
+        return toastError(problem);
+      }
+    }
     setFile(f);
     setPreview(f ? URL.createObjectURL(f) : null);
+  }
+
+  function clearFile() {
+    setFile(null);
+    setPreview(null);
+    setFileKey((k) => k + 1);
   }
 
   async function handleAdd() {
     if (!file) return;
     const confirmed = await confirmAction({
-      title: "¿Agregar foto?",
-      text: "Se va a sumar al carrusel de fotos de la página principal.",
+      title: isVideoFile(file) ? "¿Agregar este video?" : "¿Agregar esta foto?",
+      text: `Se suma al final del carrusel de la página principal (${formatMB(file.size)}).`,
       confirmText: "Sí, agregar",
       icon: "question"
     });
     if (!confirmed) return;
 
-    setUploading(true);
+    setProgress(0);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-      const { data } = await api.post("/home-hero-images", formData, { headers: { "Content-Type": "multipart/form-data" } });
-      toastSuccess("Foto agregada a la página principal");
-      setFile(null);
-      setPreview(null);
-      setImages((prev) => [...prev, data]);
+      const data = await uploadHeroMedia(file, { onProgress: setProgress });
+      toastSuccess(isVideoFile(file) ? "Video agregado al carrusel" : "Foto agregada al carrusel");
+      setSlides((prev) => [...prev, data]);
+      clearFile();
     } catch (err) {
-      toastError(apiErrorMessage(err, "No pudimos subir la foto"));
+      toastError(err.response ? apiErrorMessage(err, "No pudimos subirlo") : err.message);
     } finally {
-      setUploading(false);
+      setProgress(null);
     }
   }
 
   function handleDeleted(id) {
-    setImages((prev) => prev.filter((img) => img._id !== id));
+    setSlides((prev) => prev.filter((s) => s._id !== id));
   }
 
   if (loading) return <PageLoader />;
@@ -368,19 +486,26 @@ function HomeHeroGallery() {
     <div className="rounded-2xl border border-ink-100 bg-white p-4">
       <p className="font-semibold text-ink-900">Carrusel de la página principal</p>
       <p className="mt-1 text-xs text-ink-500">
-        Las fotos grandes que van pasando arriba de todo en la página principal, con el botón "Comprar". En cada foto podés
-        elegir adónde lleva ese botón. Si no cargás ninguna, se muestra el video. Usá fotos horizontales y grandes (de 1600 px de
-        ancho o más).
+        Las fotos y videos que van pasando arriba de todo en la página principal, sin texto encima. En cada uno podés elegir
+        adónde lleva al tocarlo. Si no cargás ninguno, se muestra el video de siempre.
       </p>
+      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink-500">
+        <li>Fotos: JPG, PNG o WEBP, horizontales y de 1600 px de ancho o más. Hasta {formatMB(MAX_PHOTO_BYTES)}.</li>
+        <li>Videos: MP4, WEBM o MOV, horizontales y cortos. Hasta 40 MB. Se ven sin sonido.</li>
+      </ul>
 
-      {images.length > 0 && (
+      <div className="mt-4 rounded-xl bg-ink-50 p-3">
+        <VideoMaxSeconds />
+      </div>
+
+      {slides.length > 0 && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {images.map((img, i) => (
-            <HomeHeroImageCard
-              key={img._id}
-              image={img}
+          {slides.map((s, i) => (
+            <HomeHeroSlideCard
+              key={s._id}
+              slide={s}
               position={i + 1}
-              total={images.length}
+              total={slides.length}
               products={products}
               categories={categories}
               onChanged={handleChanged}
@@ -391,20 +516,34 @@ function HomeHeroGallery() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-ink-50 pt-4">
-        {preview && <img src={preview} alt="" className="h-16 w-16 rounded-lg object-cover" />}
-        <FileInput onChange={handleFile} />
-        {file && (
-          <Button type="button" size="sm" variant="outline" onClick={handleAdd} disabled={uploading}>
-            {uploading ? (
-              <>
-                <Spinner className="h-4 w-4" /> Subiendo...
-              </>
-            ) : (
-              "Agregar foto"
-            )}
-          </Button>
-        )}
+      <div className="mt-4 border-t border-ink-50 pt-4">
+        <p className="mb-2 text-sm font-semibold text-ink-900">Agregar una foto o un video</p>
+        <div className="flex flex-wrap items-center gap-3">
+          {preview && (
+            <div className="relative h-20 w-32 overflow-hidden rounded-lg bg-ink-950">
+              {isVideoFile(file) ? (
+                <video src={preview} muted playsInline autoPlay loop className="h-full w-full object-cover" />
+              ) : (
+                <img src={preview} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
+          )}
+          {progress == null && (
+            <FileInput key={fileKey} accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" buttonLabel="Elegir foto o video" onChange={handleFile} />
+          )}
+          {file && progress == null && (
+            <>
+              <span className="text-xs text-ink-500">{formatMB(file.size)}</span>
+              <Button type="button" size="sm" onClick={handleAdd}>
+                Agregar al carrusel
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={clearFile}>
+                Cancelar
+              </Button>
+            </>
+          )}
+          {progress != null && <UploadProgress value={progress} />}
+        </div>
       </div>
     </div>
   );

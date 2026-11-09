@@ -5,11 +5,11 @@ import { z } from "zod";
 import { api, apiErrorMessage } from "../../lib/api";
 import { Input, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
-import { FileInput } from "../../components/ui/FileInput";
-import { PageLoader, Spinner } from "../../components/ui/Spinner";
+import { PageLoader } from "../../components/ui/Spinner";
 import { toastSuccess, toastError, confirmAction } from "../../lib/alerts";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { ThemeColorsSection } from "./ThemeColorsSection";
+import { LogosSection } from "./LogosSection";
 import { nameField, urlField, numberField, intField, DIGITS_ONLY_REGEX } from "../../lib/validators";
 
 const schema = z.object({
@@ -49,8 +49,6 @@ export default function ConfiguracionAdmin() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [logoFile, setLogoFile] = useState(null);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) });
 
@@ -106,31 +104,6 @@ export default function ConfiguracionAdmin() {
     toastError("Completá los campos obligatorios antes de guardar");
   }
 
-  async function uploadLogo() {
-    if (!logoFile) return;
-    const confirmed = await confirmAction({
-      title: "¿Cambiar el logo?",
-      text: "El logo nuevo reemplaza al actual en toda la tienda.",
-      confirmText: "Sí, cambiar",
-      icon: "question"
-    });
-    if (!confirmed) return;
-    setUploadingLogo(true);
-    try {
-      const formData = new FormData();
-      formData.append("logo", logoFile);
-      const { data } = await api.put("/site-config/logo", formData, { headers: { "Content-Type": "multipart/form-data" } });
-      setConfig(data);
-      setGlobalConfig(data);
-      setLogoFile(null);
-      toastSuccess("Logo actualizado");
-    } catch (err) {
-      toastError(apiErrorMessage(err, "No pudimos subir el logo"));
-    } finally {
-      setUploadingLogo(false);
-    }
-  }
-
   if (loading) return <PageLoader />;
 
   return (
@@ -142,22 +115,7 @@ export default function ConfiguracionAdmin() {
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-ink-400">Marca</p>
-          <div className="mt-2 rounded-2xl border border-ink-100 bg-white p-5">
-            <p className="mb-3 text-sm font-semibold text-ink-900">Logo de la marca</p>
-            <div className="flex flex-wrap items-center gap-4">
-              {config?.logo?.url && <img src={config.logo.url} alt="Logo" className="h-14 w-auto rounded-lg border border-ink-100 p-1" />}
-              <FileInput onChange={(e) => setLogoFile(e.target.files?.[0] || null)} />
-              <Button type="button" size="sm" variant="outline" onClick={uploadLogo} disabled={!logoFile || uploadingLogo}>
-                {uploadingLogo ? (
-                  <>
-                    <Spinner className="h-4 w-4" /> Subiendo...
-                  </>
-                ) : (
-                  "Subir logo"
-                )}
-              </Button>
-            </div>
-          </div>
+          <LogosSection config={config} onSaved={setConfig} />
 
           <ThemeColorsSection config={config} onSaved={setConfig} />
         </div>

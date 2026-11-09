@@ -136,7 +136,7 @@ export default function Contacto() {
     <div>
       <Seo
         title="Contacto y sucursales"
-        description="Hacé tu pedido por WhatsApp o visitá nuestras sucursales de Dulcinard en San Miguel de Tucumán y Concepción. Direcciones y horarios."
+        description="Hacé tu pedido por WhatsApp o visitá nuestras sucursales de Dulcinard en San Miguel de Tucumán, Yerba Buena y Concepción. Direcciones y horarios."
       />
       <Hero waHref={waHref} />
       <Branches branches={branches} />
