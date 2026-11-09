@@ -9,6 +9,7 @@ import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 import { Seo } from "../components/Seo";
+import { LoadError } from "../components/ui/LoadError";
 
 function Hero() {
   const config = useSiteConfigStore((s) => s.config);
@@ -128,7 +129,7 @@ function ZonesGrid({ zones, loading }) {
               viewport={{ once: true, margin: "-40px" }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
               whileHover={{ y: -6 }}
-              className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
+              className="group relative overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(200,2,25,0.3)]"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
                 <ZoneIcon className="h-5 w-5" strokeWidth={1.8} />
@@ -162,11 +163,13 @@ function ZonesGrid({ zones, loading }) {
 export default function ZonasEnvio() {
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     api
       .get("/shipping-zones")
       .then(({ data }) => setZones(data))
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -178,7 +181,11 @@ export default function ZonasEnvio() {
       />
       <Hero />
       <ProcessSteps />
-      <ZonesGrid zones={zones} loading={loading} />
+      {loadError ? (
+        <LoadError className="my-12" message="No pudimos cargar las zonas de envío." onRetry={() => window.location.reload()} />
+      ) : (
+        <ZonesGrid zones={zones} loading={loading} />
+      )}
     </div>
   );
 }

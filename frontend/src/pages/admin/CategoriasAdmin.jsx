@@ -10,6 +10,7 @@ import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField } from "../../lib/validators";
+import { LoadError } from "../../components/ui/LoadError";
 
 const schema = z.object({
   name: nameField("El nombre de la categoría", { min: 2, max: 60 }),
@@ -98,13 +99,20 @@ function CategoryForm({ editing, onSaved, onCancel }) {
 export default function CategoriasAdmin() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState(null);
 
   async function load() {
     setLoading(true);
-    const { data } = await api.get("/categories", { params: { all: "true" } });
-    setCategories(data);
-    setLoading(false);
+    try {
+      const { data } = await api.get("/categories", { params: { all: "true" } });
+      setCategories(data);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -129,7 +137,9 @@ export default function CategoriasAdmin() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
-          {loading ? (
+          {loadError ? (
+            <LoadError message="No pudimos cargar las categorías." onRetry={load} />
+          ) : loading ? (
             <PageLoader />
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white">

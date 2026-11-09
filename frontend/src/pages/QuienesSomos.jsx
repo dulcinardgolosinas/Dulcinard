@@ -71,7 +71,7 @@ function StatsFloat({ branchCount }) {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
             whileHover={{ y: -4 }}
-            className="group flex cursor-default items-center gap-4 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-brand-100 hover:bg-brand-50/60 hover:shadow-[0_12px_30px_-12px_rgba(184,24,48,0.35)]"
+            className="group flex cursor-default items-center gap-4 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-brand-100 hover:bg-brand-50/60 hover:shadow-[0_12px_30px_-12px_rgba(200,2,25,0.35)]"
           >
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -164,7 +164,7 @@ function Values() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.1 }}
             whileHover={{ y: -6 }}
-            className="group rounded-3xl border border-ink-100 bg-white p-7 text-center transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)]"
+            className="group rounded-3xl border border-ink-100 bg-white p-7 text-center transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(200,2,25,0.3)]"
           >
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <v.icon className="h-6 w-6" strokeWidth={1.8} />
