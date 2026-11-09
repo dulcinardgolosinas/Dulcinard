@@ -109,10 +109,11 @@ export const createOrder = asyncHandler(async (req, res) => {
   });
 
   // El stock no se descuenta acá sino cuando se confirma el pago: el pedido
-  // queda "pendiente de pago". Se avisa al dueño de todos los pedidos nuevos;
-  // si el mail falla, el pedido igual queda guardado (sendOrderNotification no lanza).
+  // queda "pendiente de pago". Con Mercado Pago no se avisa ahora: el mail llega
+  // recién cuando el pago se aprueba (muchos clientes abren el pago y no lo terminan).
+  // Si el mail falla, el pedido igual queda guardado (sendOrderNotification no lanza).
   await order.populate("shippingAddress.zone");
-  sendOrderNotification(order, req.user, { isNew: true });
+  if (order.paymentMethod !== "mercado_pago") sendOrderNotification(order, req.user, { isNew: true });
 
   res.status(201).json(order);
 });

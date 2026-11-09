@@ -24,7 +24,8 @@ async function verifiedVideo(publicId) {
   }
   let info;
   try {
-    info = await cloudinary.api.resource(publicId, { resource_type: "video" });
+    // media_metadata: sin esto Cloudinary no devuelve la duración del video.
+    info = await cloudinary.api.resource(publicId, { resource_type: "video", media_metadata: true });
   } catch {
     throw Object.assign(new Error("No encontramos el video subido. Probá subirlo de nuevo"), { status: 400 });
   }
@@ -100,7 +101,7 @@ export const listHomeHeroImages = asyncHandler(async (req, res) => {
   // La lista pública la guarda la red de Vercel un minuto (y la sigue dando
   // mientras la actualiza): así casi ninguna visita espera a que el servidor
   // "despierte". La del panel (?all=true) siempre va al día.
-  if (req.query.all !== "true") res.set("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=600");
+  if (req.query.all !== "true") res.set("Cache-Control", "public, max-age=60, s-maxage=60, stale-while-revalidate=86400");
   res.json(images);
 });
 
