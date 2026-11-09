@@ -59,7 +59,7 @@ export const listHomePromotions = asyncHandler(async (req, res) => {
     .limit(8)
     .lean();
   // El navegador puede reusar la respuesta un minuto: las promos no cambian tan seguido.
-  res.set("Cache-Control", "public, max-age=60");
+  res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=86400");
   res.json(promotions);
 });
 

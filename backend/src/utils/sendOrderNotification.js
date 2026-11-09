@@ -17,7 +17,6 @@ const PAYMENT_METHOD_LABELS = {
 
 // Qué tiene que hacer el dueño con un pedido nuevo, según cómo paga el cliente.
 const NEW_ORDER_NEXT_STEP = {
-  mercado_pago: "El cliente está pagando con Mercado Pago. Te llega otro mail cuando el pago se apruebe.",
   efectivo: "Coordiná el cobro con el cliente y marcá el pedido como pagado desde el panel.",
   transferencia: "Esperá el comprobante de la transferencia y marcá el pedido como pagado desde el panel."
 };
