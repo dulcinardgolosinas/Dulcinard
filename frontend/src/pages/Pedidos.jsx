@@ -8,20 +8,25 @@ import { buildCustomerOrderWhatsappHref } from "../lib/whatsapp";
 import { WhatsappIcon } from "../components/ui/WhatsappIcon";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { Seo } from "../components/Seo";
+import { LoadError } from "../components/ui/LoadError";
 
 export default function Pedidos() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const config = useSiteConfigStore((s) => s.config);
 
   useEffect(() => {
     api
       .get("/orders/mine")
       .then(({ data }) => setOrders(data))
+      // Si falla, se avisa: no hay que mostrar "no tenés pedidos" cuando no se pudieron cargar.
+      .catch(() => setLoadError(true))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <PageLoader />;
+  if (loadError) return <LoadError className="my-14" message="No pudimos cargar tus pedidos." onRetry={() => window.location.reload()} />;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-14 md:px-6">
