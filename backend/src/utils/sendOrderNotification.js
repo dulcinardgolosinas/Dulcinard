@@ -6,7 +6,7 @@ const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || "dulcinardgolosinas@
 // Los clientes de mail no soportan variables CSS: se usa el color primario
 // elegido en el admin (SiteConfig.theme.primary) o estos valores por defecto,
 // que replican --color-brand-600 y --color-ink-50 de frontend/src/index.css.
-const DEFAULT_BRAND_COLOR = "#b81830";
+const DEFAULT_BRAND_COLOR = "#c80219";
 const MUTED_BG = "#f6f5f5";
 
 const PAYMENT_METHOD_LABELS = {
@@ -149,6 +149,8 @@ export async function sendOrderNotification(order, user, options = {}) {
     await transporter.sendMail({
       from: process.env.SMTP_FROM || `"Dulcinard" <${process.env.SMTP_USER}>`,
       to: OWNER_EMAIL,
+      // "Responder" en el mail le escribe directo al cliente que hizo el pedido.
+      replyTo: user?.email || undefined,
       subject: `${prefix} #${orderCode(order)} - ${formatCurrency(order.total)}`,
       html: buildEmailHtml(order, user, { ...options, brandColor })
     });

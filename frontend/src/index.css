@@ -20,22 +20,22 @@
      Error/alerta   danger-* = brand-*      errores de formularios, "Reponer stock"
 
      Fuera de este archivo, el mail de pedidos (backend) usa el color primario
-     guardado en la configuración, con #b81830 como valor por defecto.
+     guardado en la configuración, con #c80219 como valor por defecto.
      ========================================================================== */
 
-  /* Primario — rojo de la marca. El sitio usa un solo rojo (brand-600, el del
+  /* Primario — rojo del logo de Dulcinard (#c80219). El sitio usa un solo rojo (brand-600, el del
      marcador del menú): accent y danger son alias de esta escala. */
   --color-brand-50: #fdf2f3;
   --color-brand-100: #fce3e5;
   --color-brand-200: #f9c6cb;
-  --color-brand-300: #f29aa3;
-  --color-brand-400: #e75d6c;
-  --color-brand-500: #d42a3d;
-  --color-brand-600: #b81830;
-  --color-brand-700: #98122a;
-  --color-brand-800: #7c1227;
-  --color-brand-900: #691225;
-  --color-brand-950: #3a0710;
+  --color-brand-300: #e27a86;
+  --color-brand-400: #d95262;
+  --color-brand-500: #d12a3d;
+  --color-brand-600: #c80219;
+  --color-brand-700: #a30214;
+  --color-brand-800: #7d0110;
+  --color-brand-900: #58010b;
+  --color-brand-950: #320106;
 
   /* Acento */
   --color-accent-50: var(--color-brand-50);
@@ -82,7 +82,7 @@
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 
   --shadow-card: 0 1px 2px rgba(32, 28, 27, 0.06), 0 8px 24px -12px rgba(32, 28, 27, 0.18);
-  --shadow-pop: 0 20px 45px -15px rgba(184, 24, 48, 0.35);
+  --shadow-pop: 0 20px 45px -15px rgba(200,2,25, 0.35);
 }
 
 @layer base {
