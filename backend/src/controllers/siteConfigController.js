@@ -30,7 +30,8 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
     "freeShippingFrom",
     "deliveryEtaHours",
     "deliveryEtaMaxHours",
-    "promoPopupEnabled"
+    "promoPopupEnabled",
+    "heroVideoMaxSeconds"
   ];
   for (const field of fields) {
     if (req.body[field] !== undefined) config[field] = req.body[field];
@@ -60,6 +61,26 @@ export const updateLogo = asyncHandler(async (req, res) => {
   if (config.logo?.publicId) await deleteImage(config.logo.publicId);
   config.logo = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.branding);
 
+  await config.save();
+  res.json(config);
+});
+
+// Logo de la franja blanca del menú (si no hay, la tienda usa el principal).
+export const updateSecondaryLogo = asyncHandler(async (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "Falta el archivo del logo" });
+  const config = await getOrCreateConfig();
+
+  if (config.secondaryLogo?.publicId) await deleteImage(config.secondaryLogo.publicId);
+  config.secondaryLogo = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.branding);
+
+  await config.save();
+  res.json(config);
+});
+
+export const deleteSecondaryLogo = asyncHandler(async (req, res) => {
+  const config = await getOrCreateConfig();
+  if (config.secondaryLogo?.publicId) await deleteImage(config.secondaryLogo.publicId);
+  config.secondaryLogo = { url: "", publicId: "" };
   await config.save();
   res.json(config);
 });
