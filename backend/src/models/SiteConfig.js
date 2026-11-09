@@ -37,6 +37,11 @@ const siteConfigSchema = new mongoose.Schema(
       url: { type: String, default: "" },
       publicId: { type: String, default: "" }
     },
+    // Logo de la franja blanca de arriba del menú. Vacío = se usa el logo principal.
+    secondaryLogo: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" }
+    },
     favicon: {
       url: { type: String, default: "" },
       publicId: { type: String, default: "" }
@@ -60,6 +65,10 @@ const siteConfigSchema = new mongoose.Schema(
 
     // Cartel de promociones que se abre al entrar a la tienda (se prende y apaga desde Promociones).
     promoPopupEnabled: { type: Boolean, default: true },
+
+    // Carrusel: segundos máximos que se muestra un video antes de pasar al siguiente
+    // (si el video es más corto, pasa cuando termina).
+    heroVideoMaxSeconds: { type: Number, default: 20, min: 5, max: 120 },
 
     // Datos que ve el cliente cuando elige pagar por transferencia. Sin alias
     // ni CBU, la transferencia no se ofrece en el checkout.
