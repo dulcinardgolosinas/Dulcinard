@@ -6,6 +6,7 @@ import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 import { useSiteContent } from "../lib/siteContent";
 import { Seo } from "../components/Seo";
+import { branchMapUrl } from "../lib/branches";
 
 function Hero({ waHref }) {
   const content = useSiteContent();
@@ -34,7 +35,7 @@ function Hero({ waHref }) {
 
           <motion.div custom={3} variants={fadeUp} className="mt-8">
             <a href={waHref} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3">
-              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 shadow-[0_8px_30px_-8px_rgba(184,24,48,0.7)] transition-transform group-hover:scale-110">
+              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-600 shadow-[0_8px_30px_-8px_rgba(200,2,25,0.7)] transition-transform group-hover:scale-110">
                 <span className="absolute inset-0 animate-ping rounded-full bg-brand-600 opacity-60" />
                 <svg className="relative h-7 w-7 text-white" viewBox="0 0 32 32" fill="currentColor">
                   <path d="M16.004 3C9.376 3 4 8.373 4 15c0 2.386.694 4.61 1.897 6.484L4 29l7.72-1.858A11.9 11.9 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Z" />
@@ -55,8 +56,6 @@ function Hero({ waHref }) {
     </section>
   );
 }
-
-const branchIcons = ["01", "02", "03", "04", "05"];
 
 function Branches({ branches }) {
   return (
@@ -79,10 +78,11 @@ function Branches({ branches }) {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
             whileHover={{ y: -6 }}
-            className="group relative w-full overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(184,24,48,0.3)] sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
+            className="group relative w-full overflow-hidden rounded-3xl border border-ink-100 bg-white p-6 transition-shadow duration-300 hover:border-brand-200 hover:shadow-[0_20px_45px_-20px_rgba(200,2,25,0.3)] sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.834rem)]"
           >
-            <span className="pointer-events-none absolute -right-3 -top-3 font-display text-6xl font-bold text-ink-50 transition-colors duration-300 group-hover:text-brand-50">
-              {branchIcons[i % branchIcons.length]}
+            {/* Número de la sucursal (01, 02...), entero dentro de la tarjeta. */}
+            <span className="pointer-events-none absolute right-5 top-4 font-display text-5xl font-bold leading-none text-ink-100 transition-colors duration-300 group-hover:text-brand-100">
+              {String(i + 1).padStart(2, "0")}
             </span>
 
             <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
@@ -106,9 +106,9 @@ function Branches({ branches }) {
               </p>
             </div>
 
-            {b.mapUrl && (
+            {branchMapUrl(b) && (
               <a
-                href={b.mapUrl}
+                href={branchMapUrl(b)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="relative mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
