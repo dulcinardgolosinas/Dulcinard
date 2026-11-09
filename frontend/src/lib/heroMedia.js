@@ -6,6 +6,16 @@ import { api } from "./api";
 //   servidor, porque Vercel no deja pasar archivos de más de ~4,5 MB.
 
 export const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+
+// Medida del carrusel de la página principal: todos los slides se ven de este
+// tamaño (2,4 veces más ancho que alto). Las fotos y videos con otra forma se
+// recortan un poco en los bordes para llenar el espacio.
+export const HERO_WIDTH = 1920;
+export const HERO_HEIGHT = 800;
+export const HERO_RATIO = HERO_WIDTH / HERO_HEIGHT;
+
+/** true si una foto o video de ancho x alto tiene (casi) la medida del carrusel. */
+export const fitsHero = (width, height) => Math.abs(width / height - HERO_RATIO) / HERO_RATIO < 0.05;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 

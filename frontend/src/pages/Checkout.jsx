@@ -72,7 +72,10 @@ export default function Checkout() {
   const paymentMethod = watch("paymentMethod");
 
   useEffect(() => {
-    api.get("/shipping-zones").then(({ data }) => setZones(data));
+    api
+      .get("/shipping-zones")
+      .then(({ data }) => setZones(data))
+      .catch(() => toastError("No pudimos cargar las zonas de envío. Recargá la página para poder finalizar la compra."));
   }, []);
 
   // Precios y stock reales del servidor: el carrito guardado en el navegador
