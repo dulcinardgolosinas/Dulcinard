@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, LayoutGrid, Search, ShoppingCart, Tag, UserRound } from "lucide-react";
+import { ChevronDown, LayoutGrid, Search, ShoppingCart, Tag, UserRound, X } from "lucide-react";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { useCartStore } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
@@ -152,6 +152,18 @@ function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
       className="pointer-events-auto w-full overflow-y-auto overscroll-contain rounded-b-[20px] bg-white px-4 pb-4 pt-9 shadow-2xl sm:w-[26rem]"
     >
+      {/* X para cerrar: queda fija arriba aunque se scrollee dentro del menú. */}
+      <div className="sticky top-0 z-10 -mb-9 flex justify-end">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cerrar menú"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-ink-100 text-ink-700 shadow-sm transition-colors hover:bg-brand-50 hover:text-brand-600"
+        >
+          <X className="h-5 w-5" strokeWidth={2.2} />
+        </button>
+      </div>
+
       <Link to="/" onClick={onClose} className="flex justify-center">
         <SecondaryLogo config={config} className="h-12" />
       </Link>

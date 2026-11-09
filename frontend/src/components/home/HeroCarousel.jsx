@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "../../lib/api";
 import { cldSrcSet, cldUrl } from "../../lib/cloudinary";
 import { slideHref } from "../../lib/navigation";
+import { HERO_RATIO } from "../../lib/heroMedia";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 
 const FALLBACK_VIDEO_URL = "https://res.cloudinary.com/nu4m5rh8/video/upload/v1793559589/video_golosinas_de71fs.mp4";
@@ -34,36 +35,53 @@ function saveSlides(slides) {
 
 const isVideo = (slide) => slide?.mediaType === "video" && slide.video?.url;
 
-/** Foto o video de un slide, a todo el ancho y alto del carrusel. */
+/**
+ * Foto o video de un slide, entero (sin recortar). Detrás va la misma imagen
+ * borrosa para que, si sobra lugar a los costados, no queden franjas vacías.
+ */
 function SlideMedia({ slide, eager, loop, onVideoEnd }) {
+  const backdrop = (
+    <img
+      src={cldUrl(slide.image?.url, { width: 64 })}
+      alt=""
+      aria-hidden="true"
+      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl"
+    />
+  );
   if (isVideo(slide)) {
     return (
-      <video
-        key={slide.video.url}
-        src={slide.video.url}
-        poster={cldUrl(slide.image?.url, { width: 1280 })}
-        autoPlay
-        muted
-        loop={loop}
-        playsInline
-        preload="auto"
-        onEnded={onVideoEnd}
-        className="h-full w-full object-cover"
-      />
+      <>
+        {backdrop}
+        <video
+          key={slide.video.url}
+          src={slide.video.url}
+          poster={cldUrl(slide.image?.url, { width: 1280 })}
+          autoPlay
+          muted
+          loop={loop}
+          playsInline
+          preload="auto"
+          onEnded={onVideoEnd}
+          className="relative h-full w-full object-cover"
+        />
+      </>
     );
   }
   return (
-    <img
-      src={cldUrl(slide.image.url, { width: 1600 })}
-      srcSet={cldSrcSet(slide.image.url, SLIDE_WIDTHS)}
-      sizes="100vw"
-      alt={slide.title || "Dulcinard"}
-      draggable={false}
-      loading={eager ? "eager" : "lazy"}
-      fetchPriority={eager ? "high" : "auto"}
-      decoding="async"
-      className="h-full w-full select-none object-cover"
-    />
+    <>
+      {backdrop}
+      <img
+        src={cldUrl(slide.image.url, { width: 1600 })}
+        srcSet={cldSrcSet(slide.image.url, SLIDE_WIDTHS)}
+        sizes="100vw"
+        alt={slide.title || "Dulcinard"}
+        draggable={false}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        decoding="async"
+        className="relative h-full w-full select-none object-cover"
+      />
+    </>
   );
 }
 
@@ -119,7 +137,9 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative h-[56svh] overflow-hidden bg-brand-950 md:h-[50vh] lg:h-[62vh]"
+      className="relative w-full overflow-hidden bg-brand-950"
+      // Todos los slides del mismo tamaño: la medida del carrusel (1920 x 800).
+      style={{ aspectRatio: HERO_RATIO }}
       aria-roledescription="carrusel"
       aria-label="Carrusel de la página principal"
       onMouseEnter={() => setPaused(true)}
@@ -176,7 +196,7 @@ export function HeroCarousel() {
       ) : null}
 
       {/* Sombra suave abajo para que se vean los puntitos. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink-950/50 to-transparent" />
+      {count > 1 && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ink-950/40 to-transparent" />}
 
       {count > 1 && (
         <>
@@ -184,19 +204,19 @@ export function HeroCarousel() {
             type="button"
             onClick={() => go(-1)}
             aria-label="Anterior"
-            className="absolute left-3 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/40 md:flex"
+            className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-ink-950/40 text-white shadow-lg backdrop-blur-sm transition hover:bg-ink-950/60 md:left-3 md:h-12 md:w-12"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" />
           </button>
           <button
             type="button"
             onClick={() => go(1)}
             aria-label="Siguiente"
-            className="absolute right-3 top-1/2 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition hover:bg-white/40 md:flex"
+            className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-ink-950/40 text-white shadow-lg backdrop-blur-sm transition hover:bg-ink-950/60 md:right-3 md:h-12 md:w-12"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 md:h-6 md:w-6" />
           </button>
-          <div className="absolute inset-x-0 bottom-20 flex justify-center gap-2">
+          <div className="absolute inset-x-0 bottom-3 flex justify-center gap-2">
             {slides.map((s, i) => (
               <button
                 key={s._id}
