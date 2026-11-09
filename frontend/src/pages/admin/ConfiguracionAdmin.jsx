@@ -11,6 +11,7 @@ import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { ThemeColorsSection } from "./ThemeColorsSection";
 import { LogosSection } from "./LogosSection";
 import { nameField, urlField, numberField, intField, DIGITS_ONLY_REGEX } from "../../lib/validators";
+import { LoadError } from "../../components/ui/LoadError";
 
 const schema = z.object({
   brandName: nameField("El nombre de la marca", { min: 2, max: 100 }),
@@ -47,6 +48,7 @@ export default function ConfiguracionAdmin() {
   const setGlobalConfig = useSiteConfigStore((s) => s.setConfig);
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -73,6 +75,9 @@ export default function ConfiguracionAdmin() {
           bankName: data.bankTransfer?.bankName || ""
         }
       });
+      setLoading(false);
+    }).catch(() => {
+      setLoadError(true);
       setLoading(false);
     });
   }, [reset]);
@@ -104,6 +109,7 @@ export default function ConfiguracionAdmin() {
     toastError("Completá los campos obligatorios antes de guardar");
   }
 
+  if (loadError) return <LoadError message="No pudimos cargar la configuración." onRetry={() => window.location.reload()} />;
   if (loading) return <PageLoader />;
 
   return (
