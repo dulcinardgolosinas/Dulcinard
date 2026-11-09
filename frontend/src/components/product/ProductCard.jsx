@@ -9,7 +9,7 @@ export function ProductCard({ product }) {
   const outOfStock = product.stock <= 0;
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(184,24,48,0.25)]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-100 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-brand-200 hover:shadow-[0_20px_40px_-16px_rgba(200,2,25,0.25)]">
       <Link to={`/producto/${product.slug}`} className="relative block aspect-square overflow-hidden bg-white">
         {image ? (
           <img
