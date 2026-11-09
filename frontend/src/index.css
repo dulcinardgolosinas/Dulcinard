@@ -92,14 +92,15 @@
     /* Red de seguridad: con tantos elementos decorativos (blobs, marcas de
        agua) posicionados con offsets negativos, si a alguno se le olvida el
        overflow-hidden en su contenedor esto evita que aparezca scroll
-       lateral en toda la página. */
-    overflow-x: hidden;
+       lateral en toda la página. Es "clip" y no "hidden": "hidden" convierte a
+       la página en su propia caja de scroll y rompe el menú fijo (sticky). */
+    overflow-x: clip;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   h1, h2, h3, h4 {
@@ -118,6 +119,13 @@
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply bg-ink-200 rounded-full;
+  }
+  /* Se puede deslizar, pero sin barra visible (ej: la barra de categorías del menú). */
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
   }
 }
 
