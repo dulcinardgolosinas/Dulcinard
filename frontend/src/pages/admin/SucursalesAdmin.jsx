@@ -206,7 +206,7 @@ export default function SucursalesAdmin() {
 
   async function load() {
     try {
-      const { data } = await api.get("/site-config");
+      const { data } = await api.get("/site-config", { params: { fresh: "1" } });
       reset({ branches: data.branches?.length ? data.branches : [] });
       setLoaded(true);
     } catch {

@@ -368,7 +368,7 @@ function VideoMaxSeconds() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get("/site-config").then(({ data }) => {
+    api.get("/site-config", { params: { fresh: "1" } }).then(({ data }) => {
       setValue(String(data.heroVideoMaxSeconds || 20));
       setSaved(String(data.heroVideoMaxSeconds || 20));
     });

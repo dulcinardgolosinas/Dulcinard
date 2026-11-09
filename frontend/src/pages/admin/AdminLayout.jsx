@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { NavLink, Outlet, Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { confirmLogout, toastSuccess } from "../../lib/alerts";
 import { Seo } from "../../components/Seo";
+import { PageLoader } from "../../components/ui/Spinner";
 
 function ViewSiteLink({ className = "" }) {
   return (
@@ -149,7 +150,9 @@ export default function AdminLayout() {
         )}
 
         <main className="p-4 sm:p-5 md:p-8">
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>

@@ -55,7 +55,7 @@ export default function ConfiguracionAdmin() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({ resolver: zodResolver(schema) });
 
   useEffect(() => {
-    api.get("/site-config").then(({ data }) => {
+    api.get("/site-config", { params: { fresh: "1" } }).then(({ data }) => {
       setConfig(data);
       reset({
         brandName: data.brandName,
