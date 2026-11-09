@@ -12,6 +12,7 @@ import { Spinner, PageLoader } from "../../components/ui/Spinner";
 import { UNIT_LABELS } from "../../lib/format";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 import { alphanumericField, optionalAlphanumericField, numberField, intField } from "../../lib/validators";
+import { LoadError } from "../../components/ui/LoadError";
 
 const UNITS = Object.keys(UNIT_LABELS);
 
@@ -40,6 +41,7 @@ export default function ProductoForm() {
   const [imagesToRemove, setImagesToRemove] = useState([]);
   const [newFiles, setNewFiles] = useState([]);
   const [loading, setLoading] = useState(isEdit);
+  const [loadError, setLoadError] = useState(false);
   const [error, setError] = useState("");
 
   const {
@@ -66,7 +68,10 @@ export default function ProductoForm() {
   });
 
   useEffect(() => {
-    api.get("/categories", { params: { all: "true" } }).then(({ data }) => setCategories(data));
+    api
+      .get("/categories", { params: { all: "true" } })
+      .then(({ data }) => setCategories(data))
+      .catch(() => toastError("No pudimos cargar las categorías. Recargá la página."));
   }, []);
 
   useEffect(() => {
@@ -87,6 +92,9 @@ export default function ProductoForm() {
         active: data.active
       });
       setExistingImages(data.images || []);
+      setLoading(false);
+    }).catch(() => {
+      setLoadError(true);
       setLoading(false);
     });
   }, [id, isEdit, reset]);
@@ -131,6 +139,7 @@ export default function ProductoForm() {
     toastError("Completá los campos obligatorios antes de guardar");
   }
 
+  if (loadError) return <LoadError message="No pudimos cargar este producto. Puede que ya no exista." onRetry={() => window.location.reload()} />;
   if (loading) return <PageLoader />;
 
   return (

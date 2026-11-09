@@ -10,6 +10,7 @@ import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, alphanumericField, phoneField, urlField } from "../../lib/validators";
+import { LoadError } from "../../components/ui/LoadError";
 
 const branchSchema = z.object({
   _id: z.string().optional(),
@@ -188,6 +189,7 @@ export default function SucursalesAdmin() {
   const branchesValues = watch("branches");
   const [uploadingCount, setUploadingCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   // Sucursales con el formulario abierto (por su id de la lista).
   const [openIds, setOpenIds] = useState(() => new Set());
   const setOpen = (id, open) =>
@@ -203,9 +205,13 @@ export default function SucursalesAdmin() {
   }
 
   async function load() {
-    const { data } = await api.get("/site-config");
-    reset({ branches: data.branches?.length ? data.branches : [] });
-    setLoaded(true);
+    try {
+      const { data } = await api.get("/site-config");
+      reset({ branches: data.branches?.length ? data.branches : [] });
+      setLoaded(true);
+    } catch {
+      setLoadError(true);
+    }
   }
 
   useEffect(() => {
@@ -362,7 +368,8 @@ export default function SucursalesAdmin() {
           );
         })}
 
-        {!loaded && <PageLoader />}
+        {!loaded && !loadError && <PageLoader />}
+        {loadError && <LoadError message="No pudimos cargar las sucursales." onRetry={() => window.location.reload()} />}
         {loaded && fields.length === 0 && (
           <p className="rounded-2xl border border-ink-100 bg-white px-5 py-8 text-center text-sm text-ink-500">
             Todavía no hay sucursales. Tocá "Agregar sucursal" para cargar la primera.
