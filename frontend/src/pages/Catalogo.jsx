@@ -46,8 +46,8 @@ export default function Catalogo() {
   }, [promoId]);
 
   useEffect(() => {
-    api.get("/categories").then(({ data }) => setCategories(data));
-    api.get("/products/brands").then(({ data }) => setBrands(data));
+    api.get("/categories").then(({ data }) => setCategories(data)).catch(() => {});
+    api.get("/products/brands").then(({ data }) => setBrands(data)).catch(() => {});
   }, []);
 
   const fetchProducts = useCallback(

@@ -4,11 +4,12 @@
 
 const UPLOAD_SEGMENT = "/image/upload/";
 
-export function cldUrl(url, { width, height, crop = "limit" } = {}) {
+// trim: recorta el margen vacío alrededor de la imagen (útil para logos).
+export function cldUrl(url, { width, height, crop = "limit", trim = false } = {}) {
   if (!url || !url.includes("res.cloudinary.com") || !url.includes(UPLOAD_SEGMENT)) return url;
   const parts = ["f_auto", "q_auto", width && `w_${Math.round(width)}`, height && `h_${Math.round(height)}`, (width || height) && `c_${crop}`];
   const transform = parts.filter(Boolean).join(",");
-  return url.replace(UPLOAD_SEGMENT, `${UPLOAD_SEGMENT}${transform}/`);
+  return url.replace(UPLOAD_SEGMENT, `${UPLOAD_SEGMENT}${trim ? "e_trim/" : ""}${transform}/`);
 }
 
 /** srcSet para <img>: el navegador elige el ancho según la pantalla. */

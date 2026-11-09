@@ -2,9 +2,17 @@ import mongoose from "mongoose";
 
 const homeHeroImageSchema = new mongoose.Schema(
   {
+    // "image" = foto; "video" = video (en ese caso "image" es su miniatura).
+    mediaType: { type: String, enum: ["image", "video"], default: "image" },
     image: {
       url: { type: String, required: true },
       publicId: { type: String, required: true }
+    },
+    video: {
+      url: { type: String, default: "" },
+      publicId: { type: String, default: "" },
+      duration: { type: Number, default: 0 }, // segundos
+      bytes: { type: Number, default: 0 }
     },
     // Texto opcional sobre la foto y adónde lleva el botón "Comprar":
     // al catálogo completo, a un producto o a una categoría.

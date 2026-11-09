@@ -10,7 +10,7 @@ const STEPS = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
 // Valores por defecto (los mismos de index.css), para los selectores del admin.
 export const DEFAULT_THEME = {
-  primary: "#b81830", // brand-600
+  primary: "#c80219", // brand-600
   secondary: "#6b615d", // ink-500
   background: "#f6f5f5", // ink-50
   text: "#201c1b" // ink-900

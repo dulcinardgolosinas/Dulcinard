@@ -1,6 +1,11 @@
 import { body } from "express-validator";
 import { validate } from "../middleware/validate.js";
 
+export const videoValidator = [
+  body("publicId").isString().withMessage("Falta el video").trim().notEmpty().withMessage("Falta el video"),
+  validate
+];
+
 export const updateHomeHeroImageValidator = [
   body("title").optional().isString().trim().isLength({ max: 80 }).withMessage("El título puede tener hasta 80 caracteres"),
   body("buttonText").optional().isString().trim().isLength({ max: 24 }).withMessage("El texto del botón puede tener hasta 24 caracteres"),

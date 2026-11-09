@@ -10,6 +10,7 @@ import { Badge } from "../../components/ui/Badge";
 import { formatCurrency } from "../../lib/format";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, numberField } from "../../lib/validators";
+import { LoadError } from "../../components/ui/LoadError";
 
 const schema = z.object({
   name: nameField("El nombre de la zona", { min: 2, max: 80 }),
@@ -99,13 +100,20 @@ function ZoneForm({ editing, onSaved, onCancel }) {
 export default function ZonasEnvioAdmin() {
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState(null);
 
   async function load() {
     setLoading(true);
-    const { data } = await api.get("/shipping-zones", { params: { all: "true" } });
-    setZones(data);
-    setLoading(false);
+    try {
+      const { data } = await api.get("/shipping-zones", { params: { all: "true" } });
+      setZones(data);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -130,7 +138,9 @@ export default function ZonasEnvioAdmin() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
         <div className="min-w-0">
-          {loading ? (
+          {loadError ? (
+            <LoadError message="No pudimos cargar las zonas de envío." onRetry={load} />
+          ) : loading ? (
             <PageLoader />
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-ink-100 bg-white">

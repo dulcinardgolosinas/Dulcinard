@@ -41,6 +41,19 @@ export async function deleteImage(publicId) {
   }
 }
 
+/**
+ * Borra un video de Cloudinary por su publicId. No lanza si ya no existe.
+ * @param {string} publicId
+ */
+export async function deleteVideo(publicId) {
+  if (!publicId) return;
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: "video" });
+  } catch (err) {
+    console.error(`[cloudinary] No se pudo borrar el video ${publicId}:`, err.message);
+  }
+}
+
 export function deleteMany(publicIds = []) {
   return Promise.all(publicIds.map((id) => deleteImage(id)));
 }

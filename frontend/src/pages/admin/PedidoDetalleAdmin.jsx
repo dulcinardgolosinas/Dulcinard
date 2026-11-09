@@ -26,7 +26,11 @@ export default function PedidoDetalleAdmin() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    api.get(`/orders/${id}`).then(({ data }) => setOrder(data)).finally(() => setLoading(false));
+    api
+      .get(`/orders/${id}`)
+      .then(({ data }) => setOrder(data))
+      .catch(() => setOrder(null))
+      .finally(() => setLoading(false));
   }, [id]);
 
   async function updateStatus(status) {

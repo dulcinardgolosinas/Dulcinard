@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Search, ShoppingCart, UserRound } from "lucide-react";
+import { ChevronDown, LayoutGrid, Search, ShoppingCart, Tag, UserRound, X } from "lucide-react";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { useCartStore } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
 import { getCategories } from "../../lib/categories";
 import { scrollToProducts } from "../../lib/navigation";
+import { cldUrl } from "../../lib/cloudinary";
 
-const navLinks = [
+const infoLinks = [
   { to: "/quienes-somos", label: "Quiénes somos" },
   { to: "/envios", label: "Envíos y zonas" },
   { to: "/contacto", label: "Contacto" }
@@ -31,7 +32,39 @@ function useCategories() {
   return categories;
 }
 
-function SearchForm({ transparent, autoFocus = false, onDone, className = "" }) {
+// Al bajar, la franja blanca se achica (el logo queda visible) y al subir vuelve a su tamaño.
+function useStripHidden() {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let frame = 0;
+    function onScroll() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        if (y < 80) setHidden(false);
+        else if (y - lastY > 8) setHidden(true);
+        else if (lastY - y > 8) setHidden(false);
+        lastY = y;
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+  return hidden;
+}
+
+/** Logo de la franja blanca (o el principal, si no hay uno cargado). */
+function SecondaryLogo({ config, className }) {
+  const url = config?.secondaryLogo?.url || config?.logo?.url;
+  if (!url) return <span className="font-display text-2xl font-black text-brand-600">DULCINARD</span>;
+  return <img src={cldUrl(url, { height: 160, trim: true })} alt={config?.brandName || "Dulcinard"} className={`w-auto object-contain ${className}`} />;
+}
+
+function SearchForm({ autoFocus = false, onDone, className = "" }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [q, setQ] = useState(() => new URLSearchParams(location.search).get("q") || "");
@@ -45,10 +78,6 @@ function SearchForm({ transparent, autoFocus = false, onDone, className = "" }) 
 
   return (
     <form onSubmit={submit} role="search" className={`relative ${className}`}>
-      <Search
-        className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${transparent ? "text-white/80" : "text-ink-400"}`}
-        strokeWidth={2}
-      />
       <input
         type="search"
         value={q}
@@ -56,31 +85,35 @@ function SearchForm({ transparent, autoFocus = false, onDone, className = "" }) 
         autoFocus={autoFocus}
         placeholder="Buscar productos..."
         aria-label="Buscar productos"
-        className={`h-10 w-full rounded-full border pl-9 pr-3 text-sm outline-none transition-colors ${
-          transparent
-            ? "border-white/30 bg-white/15 text-white placeholder:text-white/70 backdrop-blur-sm focus:bg-white focus:text-ink-900 focus:placeholder:text-ink-400"
-            : "border-ink-200 bg-ink-50 text-ink-900 placeholder:text-ink-400 focus:border-brand-400 focus:bg-white"
-        }`}
+        className="h-11 w-full rounded-full border border-ink-200 bg-ink-50 pl-4 pr-12 text-sm text-ink-900 outline-none transition-colors placeholder:text-ink-400 focus:border-brand-400 focus:bg-white"
       />
+      <button
+        type="submit"
+        aria-label="Buscar"
+        className="absolute right-1 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700"
+      >
+        <Search className="h-4 w-4" strokeWidth={2.2} />
+      </button>
     </form>
   );
 }
 
-function CartButton({ transparent }) {
+function CartButton({ onOpen }) {
   const count = useCartStore((s) => s.count());
   const openCart = useCartStore((s) => s.openCart);
   return (
     <button
       type="button"
-      onClick={openCart}
-      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
-        transparent ? "bg-white/15 text-white backdrop-blur-sm hover:bg-white/25" : "bg-brand-600 text-white hover:bg-brand-700"
-      }`}
+      onClick={() => {
+        onOpen?.();
+        openCart();
+      }}
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-600 text-white transition-colors hover:bg-brand-700"
       aria-label={count ? `Ver carrito (${count} productos)` : "Ver carrito"}
     >
       <ShoppingCart className="h-5 w-5" strokeWidth={1.8} />
       {count > 0 && (
-        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1 text-[11px] font-bold text-white">
+        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-[11px] font-bold text-brand-600 shadow">
           {count}
         </span>
       )}
@@ -88,178 +121,109 @@ function CartButton({ transparent }) {
   );
 }
 
-// "Productos": en la página principal baja hasta los productos; en otra página
-// lleva al catálogo. Al pasar el mouse muestra las categorías.
-function ProductsMenu({ transparent, categories, onProducts }) {
-  const [open, setOpen] = useState(false);
-  const closeTimer = useRef(null);
+// Menú que se despliega desde la solapa: arriba el logo de la franja blanca,
+// después el buscador, los productos por categoría y el resto de las páginas.
+function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
+  const { isAuthenticated } = useAuthStore();
+  const ref = useRef(null);
+  const [maxHeight, setMaxHeight] = useState(undefined);
 
-  const show = () => {
-    clearTimeout(closeTimer.current);
-    setOpen(true);
-  };
-  const hide = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 150);
-  };
+  // Alto máximo = lo que queda de pantalla debajo del header (en el celular,
+  // también descuenta la barra de abajo). Si no entra todo, se scrollea adentro.
+  useLayoutEffect(() => {
+    function measure() {
+      if (!ref.current) return;
+      const top = ref.current.getBoundingClientRect().top;
+      const bottomBar = window.innerWidth < 768 ? 76 : 16;
+      setMaxHeight(Math.max(240, window.innerHeight - top - bottomBar));
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   return (
-    <div className="relative" onMouseEnter={show} onMouseLeave={hide}>
-      <div className="flex items-center">
+    <motion.div
+      ref={ref}
+      style={{ maxHeight }}
+      initial={{ clipPath: "inset(0 100% 100% 0 round 0 0 20px 20px)" }}
+      animate={{ clipPath: "inset(0 0% 0% 0 round 0 0 20px 20px)" }}
+      exit={{ clipPath: "inset(0 100% 100% 0 round 0 0 20px 20px)" }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className="pointer-events-auto w-full overflow-y-auto overscroll-contain rounded-b-[20px] bg-white px-4 pb-4 pt-9 shadow-2xl sm:w-[26rem]"
+    >
+      {/* X para cerrar: queda fija arriba aunque se scrollee dentro del menú. */}
+      <div className="sticky top-0 z-10 -mb-9 flex justify-end">
         <button
           type="button"
-          onClick={() => {
-            setOpen(false);
-            onProducts();
-          }}
-          className={`rounded-full px-4 py-2 text-sm font-bold transition-colors ${
-            transparent ? "bg-white text-brand-600 hover:bg-white/90" : "bg-brand-600 text-white hover:bg-brand-700"
-          }`}
+          onClick={onClose}
+          aria-label="Cerrar menú"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-ink-100 text-ink-700 shadow-sm transition-colors hover:bg-brand-50 hover:text-brand-600"
         >
-          Productos
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label="Ver categorías"
-          className={`ml-0.5 rounded-full p-1.5 ${transparent ? "text-white hover:bg-white/15" : "text-ink-600 hover:bg-ink-100"}`}
-        >
-          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+          <X className="h-5 w-5" strokeWidth={2.2} />
         </button>
       </div>
 
-      <AnimatePresence>
-        {open && categories.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-            className="absolute left-0 top-12 z-50 w-[28rem] rounded-2xl border border-ink-100 bg-white p-3 shadow-card"
-          >
-            <p className="px-2 pb-2 text-xs font-bold uppercase tracking-widest text-ink-400">Categorías</p>
-            <div className="grid grid-cols-2 gap-1">
-              {categories.map((c) => (
-                <Link
-                  key={c._id}
-                  to={`/catalogo?category=${c._id}`}
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-brand-50 hover:text-brand-700"
-                >
-                  {c.name}
-                </Link>
-              ))}
-            </div>
-            <Link
-              to="/catalogo"
-              onClick={() => setOpen(false)}
-              className="mt-2 block rounded-xl bg-brand-50 px-3 py-2 text-center text-sm font-semibold text-brand-600 hover:bg-brand-100"
-            >
-              Ver todos los productos
-            </Link>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+      <Link to="/" onClick={onClose} className="flex justify-center">
+        <SecondaryLogo config={config} className="h-12" />
+      </Link>
 
-function MobileMenu({ categories, onProducts, onClose, onPromotions }) {
-  const { isAuthenticated } = useAuthStore();
-  return (
-    <>
-      <motion.button
+      <SearchForm onDone={onClose} className="mt-3" />
+
+      <button
         type="button"
-        aria-label="Cerrar menú"
-        onClick={onClose}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 top-0 z-40 bg-ink-950/40 lg:hidden"
-      />
-      {/* El menú se despliega desde el marcador (arriba a la izquierda). */}
-      <motion.div
-        initial={{ clipPath: "inset(0 100% 100% 0 round 20px)" }}
-        animate={{ clipPath: "inset(0 0% 0% 0 round 20px)" }}
-        exit={{ clipPath: "inset(0 100% 100% 0 round 20px)" }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="fixed inset-x-3 top-3 z-50 max-h-[calc(100vh-1.5rem)] overflow-y-auto rounded-[20px] bg-white p-4 pt-28 shadow-2xl lg:hidden"
+        onClick={onProducts}
+        className="mt-3 flex w-full items-center gap-2 rounded-2xl bg-brand-600 px-4 py-2.5 text-left text-base font-bold text-white"
       >
-        <SearchForm onDone={onClose} />
-
-        <button
-          type="button"
-          onClick={onProducts}
-          className="mt-4 w-full rounded-2xl bg-brand-600 px-4 py-3 text-left text-base font-bold text-white"
-        >
-          Productos
-        </button>
-        {categories.length > 0 && (
-          <div className="mt-2 grid grid-cols-2 gap-1">
-            {categories.map((c) => (
-              <Link
-                key={c._id}
-                to={`/catalogo?category=${c._id}`}
-                onClick={onClose}
-                className="rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-brand-50"
-              >
-                {c.name}
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="mt-3 border-t border-ink-100 pt-3">
-          <Link to="/" onClick={onClose} className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-800 hover:bg-ink-50">
-            Inicio
-          </Link>
-          <button
-            type="button"
-            onClick={onPromotions}
-            className="block w-full rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-ink-800 hover:bg-ink-50"
-          >
-            Promociones
-          </button>
-          {navLinks.map((l) => (
-            <Link key={l.to} to={l.to} onClick={onClose} className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-800 hover:bg-ink-50">
-              {l.label}
+        <LayoutGrid className="h-5 w-5" /> Productos
+      </button>
+      {categories.length > 0 && (
+        <div className="mt-2 grid grid-cols-2 gap-1">
+          {categories.map((c) => (
+            <Link key={c._id} to={`/catalogo?category=${c._id}`} onClick={onClose} className="rounded-xl px-3 py-2 text-sm font-medium text-ink-700 hover:bg-brand-50">
+              {c.name}
             </Link>
           ))}
-          <Link
-            to={isAuthenticated ? "/perfil" : "/login"}
-            onClick={onClose}
-            className="block rounded-xl px-3 py-2.5 text-sm font-semibold text-ink-800 hover:bg-ink-50"
-          >
-            {isAuthenticated ? "Mi cuenta" : "Ingresar"}
-          </Link>
         </div>
-      </motion.div>
-    </>
+      )}
+
+      <div className="mt-3 border-t border-ink-100 pt-3">
+        <button
+          type="button"
+          onClick={onPromotions}
+          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm font-bold text-brand-600 hover:bg-brand-50"
+        >
+          <Tag className="h-4 w-4" /> Ofertas y promociones
+        </button>
+        <Link to="/" onClick={onClose} className="block rounded-xl px-3 py-2 text-sm font-semibold text-ink-800 hover:bg-ink-50">
+          Inicio
+        </Link>
+        {infoLinks.map((l) => (
+          <Link key={l.to} to={l.to} onClick={onClose} className="block rounded-xl px-3 py-2 text-sm font-semibold text-ink-800 hover:bg-ink-50">
+            {l.label}
+          </Link>
+        ))}
+        <Link to={isAuthenticated ? "/perfil" : "/login"} onClick={onClose} className="block rounded-xl px-3 py-2 text-sm font-semibold text-ink-800 hover:bg-ink-50">
+          {isAuthenticated ? "Mi cuenta" : "Ingresar"}
+        </Link>
+      </div>
+    </motion.div>
   );
 }
 
 export function Header() {
-  const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const config = useSiteConfigStore((s) => s.config);
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
   const categories = useCategories();
+  const stripHidden = useStripHidden();
 
   const isHome = location.pathname === "/";
+  const compact = stripHidden && !menuOpen;
 
-  useEffect(() => {
-    if (!isHome) return;
-    function onScroll() {
-      setScrolled(window.scrollY > 60);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [isHome]);
-
-  // El menú se cierra al cambiar de página o con Escape.
+  // El menú se cierra al cambiar de página, con Escape o al tocar afuera.
   useEffect(() => setMenuOpen(false), [location.pathname, location.search]);
   useEffect(() => {
     if (!menuOpen) return;
@@ -267,10 +231,6 @@ export function Header() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
-
-  // Header transparente sobre el carrusel, solo en la página principal sin scrollear.
-  const transparent = isHome && !scrolled && !menuOpen;
-  const expanded = isHome && !scrolled;
 
   function goToSection(id, fallback) {
     setMenuOpen(false);
@@ -284,101 +244,147 @@ export function Header() {
   const goToProducts = () => goToSection("productos", "/catalogo");
   const goToPromotions = () => goToSection("promociones", "/#promociones");
 
-  // En la compu el marcador lleva al inicio; en el celular abre el menú.
-  function onBookmarkClick() {
-    if (window.matchMedia("(min-width: 1024px)").matches) navigate("/");
-    else setMenuOpen((v) => !v);
-  }
-
   return (
     <>
-      <header
-        className={`inset-x-0 top-0 z-50 transition-colors duration-300 ${
-          isHome ? "fixed" : "sticky border-b border-ink-100 bg-white/95 backdrop-blur"
-        } ${transparent ? "bg-transparent" : isHome ? "border-b border-ink-100 bg-white/95 backdrop-blur" : ""}`}
-      >
-        <div className="relative mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:px-6 lg:h-[76px]">
-          {/* Marcador: cuelga desde arriba y sobresale por debajo de la barra. */}
-          <button
-            type="button"
-            onClick={onBookmarkClick}
-            aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-            aria-expanded={menuOpen}
-            style={{ clipPath: BOOKMARK_CLIP }}
-            className={`absolute left-4 top-0 z-[60] flex flex-col items-center justify-start bg-brand-600 px-2 pb-5 pt-2 shadow-lg transition-[height,width] duration-300 ease-out md:left-6 ${
-              expanded ? "h-[124px] w-[100px] lg:h-[168px] lg:w-[136px]" : "h-[96px] w-[92px] lg:h-[108px] lg:w-[112px]"
-            }`}
-          >
-            {config?.logo?.url ? (
-              // El logo es rojo: sobre el marcador rojo se muestra en blanco.
-              <img src={config.logo.url} alt={config.brandName || "Dulcinard"} className="h-full w-full object-contain brightness-0 invert" />
-            ) : (
-              <span className="mt-4 font-display text-lg font-black leading-none text-white">DULCINARD</span>
-            )}
-            <ChevronDown
-              className={`absolute bottom-3 h-4 w-4 text-white/90 transition-transform lg:hidden ${menuOpen ? "rotate-180" : ""}`}
-              strokeWidth={2.5}
-            />
-          </button>
-
-          <div className="flex min-w-0 flex-1 items-center gap-3 pl-[104px] md:pl-[108px] lg:pl-[156px]">
-            <nav className="hidden items-center gap-5 lg:flex">
-              <ProductsMenu transparent={transparent} categories={categories} onProducts={goToProducts} />
-              <button
-                type="button"
-                onClick={goToPromotions}
-                className={`text-sm font-semibold transition-colors ${transparent ? "text-white/85 hover:text-white" : "text-ink-600 hover:text-brand-600"}`}
-              >
-                Promociones
-              </button>
-              {navLinks.map((link) => (
-                <NavLink
-                  key={link.to}
-                  to={link.to}
-                  className={({ isActive }) =>
-                    `whitespace-nowrap text-sm font-semibold transition-colors ${
-                      transparent
-                        ? isActive
-                          ? "text-white"
-                          : "text-white/75 hover:text-white"
-                        : isActive
-                          ? "text-brand-600"
-                          : "text-ink-600 hover:text-brand-600"
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              ))}
-            </nav>
-
-            <SearchForm transparent={transparent} className="min-w-0 flex-1 lg:ml-auto lg:max-w-xs" />
-
-            <Link
-              to={isAuthenticated ? "/perfil" : "/login"}
-              className={`hidden shrink-0 items-center gap-1.5 text-sm font-semibold transition-colors lg:flex ${
-                transparent ? "text-white/85 hover:text-white" : "text-ink-600 hover:text-brand-600"
-              }`}
-            >
-              <UserRound className="h-5 w-5" strokeWidth={1.8} />
-              {isAuthenticated ? user?.name?.split(" ")[0] : "Ingresar"}
-            </Link>
-
-            <CartButton transparent={transparent} />
-          </div>
-        </div>
-      </header>
-
       <AnimatePresence>
         {menuOpen && (
-          <MobileMenu
-            categories={categories}
-            onProducts={goToProducts}
-            onPromotions={goToPromotions}
-            onClose={() => setMenuOpen(false)}
+          <motion.button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={() => setMenuOpen(false)}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[52] bg-ink-950/40"
           />
         )}
       </AnimatePresence>
+
+      {/* Con el menú abierto, el header queda por encima del botón de WhatsApp. */}
+      <header className={`sticky top-0 bg-white shadow-[0_2px_12px_-6px_rgba(32,28,27,0.25)] ${menuOpen ? "z-[55]" : "z-50"}`}>
+        <div className="relative">
+          {/* Solapa con el logo principal: cuelga desde arriba y sobresale por debajo.
+              Al tocarla se despliega el menú. */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[60] mx-auto max-w-7xl px-4 md:px-6">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={menuOpen}
+              style={{ clipPath: BOOKMARK_CLIP }}
+              className={`pointer-events-auto relative flex flex-col items-center justify-center bg-brand-600 px-1.5 pb-7 pt-2 shadow-lg transition-[height,width] duration-300 ease-out ${
+                compact
+                  ? "h-[112px] w-[88px] md:h-[160px] md:w-[96px] lg:h-[176px] lg:w-[124px]"
+                  : "h-[124px] w-[88px] md:h-[172px] md:w-[96px] lg:h-[196px] lg:w-[124px]"
+              }`}
+            >
+              {config?.logo?.url ? (
+                // El logo es rojo: sobre la solapa roja se muestra en blanco.
+                // Se recorta el margen vacío de la imagen para que el logo ocupe toda la solapa.
+                <img
+                  src={cldUrl(config.logo.url, { width: 320, trim: true })}
+                  alt={config.brandName || "Dulcinard"}
+                  className="h-full w-full object-contain brightness-0 invert"
+                />
+              ) : (
+                <span className="mt-3 font-display text-base font-black leading-none text-white">DULCINARD</span>
+              )}
+              <ChevronDown className={`absolute bottom-3 h-4 w-4 text-white/90 transition-transform ${menuOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {/* a) Franja blanca con el logo de la franja, centrado. Siempre visible: al bajar se achica. */}
+          <div>
+            {/* Tres columnas: a la izquierda el lugar de la solapa, el logo al medio y los links a la derecha. */}
+            <div
+              className={`mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 transition-[height] duration-300 md:px-6 ${
+                compact ? "h-12 lg:h-14" : "h-14 lg:h-[72px]"
+              }`}
+            >
+              <div aria-hidden="true" />
+              <Link to="/" aria-label="Ir al inicio">
+                <SecondaryLogo config={config} className={`transition-[height] duration-300 ${compact ? "h-8 lg:h-10" : "h-10 lg:h-14"}`} />
+              </Link>
+              <nav className="hidden items-center justify-self-end gap-5 lg:flex">
+                {infoLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    className={({ isActive }) => `text-sm font-semibold transition-colors ${isActive ? "text-brand-600" : "text-ink-600 hover:text-brand-600"}`}
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* b) Categorías, buscador grande y carrito. */}
+          <div className="border-t border-ink-100">
+            <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 md:px-6 lg:h-[60px] lg:gap-3">
+              <div className={`w-[92px] shrink-0 md:w-[104px] lg:w-[132px]`} aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="hidden h-11 shrink-0 items-center gap-2 rounded-full border border-ink-200 px-4 text-sm font-bold text-ink-800 transition-colors hover:border-brand-300 hover:text-brand-600 lg:flex"
+              >
+                <LayoutGrid className="h-4 w-4" /> Categorías
+              </button>
+              <SearchForm className="min-w-0 flex-1" />
+              <Link
+                to={isAuthenticated ? "/perfil" : "/login"}
+                className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-ink-600 transition-colors hover:text-brand-600 lg:flex"
+              >
+                <UserRound className="h-5 w-5" strokeWidth={1.8} />
+                {isAuthenticated ? user?.name?.split(" ")[0] : "Ingresar"}
+              </Link>
+              <CartButton onOpen={() => setMenuOpen(false)} />
+            </div>
+          </div>
+
+          {/* c) Barra del color de la marca con las categorías y las ofertas (desde tablet). */}
+          <div className="hidden bg-brand-600 md:block">
+            <div className="mx-auto flex h-11 max-w-7xl items-center px-4 md:px-6">
+              <div className={`w-[92px] shrink-0 md:w-[104px] lg:w-[132px]`} aria-hidden="true" />
+              <nav aria-label="Categorías" className="scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={goToPromotions}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1 text-sm font-bold text-brand-600 hover:bg-brand-50"
+                >
+                  <Tag className="h-3.5 w-3.5" /> Ofertas
+                </button>
+                {categories.map((c) => (
+                  <Link
+                    key={c._id}
+                    to={`/catalogo?category=${c._id}`}
+                    className="shrink-0 rounded-full px-3 py-1 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 hover:text-white"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* El menú se abre justo debajo de la solapa (alineado con el contenido, no con el borde de la pantalla). */}
+          <div className="pointer-events-none absolute inset-x-0 top-full z-40">
+            <div className="mx-auto max-w-7xl px-4 md:px-6">
+          <AnimatePresence>
+            {menuOpen && (
+              <SolapaMenu
+                config={config}
+                categories={categories}
+                onProducts={goToProducts}
+                onPromotions={goToPromotions}
+                onClose={() => setMenuOpen(false)}
+              />
+            )}
+          </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </header>
     </>
   );
 }

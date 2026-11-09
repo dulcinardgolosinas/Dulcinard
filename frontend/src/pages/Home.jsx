@@ -14,6 +14,7 @@ import { HomePromotions } from "../components/home/HomePromotions";
 import { PromoPopup } from "../components/home/PromoPopup";
 import { FeaturedProducts } from "../components/home/FeaturedProducts";
 import { Seo } from "../components/Seo";
+import { branchMapUrl } from "../lib/branches";
 
 const valueIcons = {
   truck: (
@@ -36,7 +37,7 @@ function ValueProps() {
     { icon: "chat", title: "Pedidos por WhatsApp", desc: "Sin vueltas: mandás tu pedido y coordinás el pago." }
   ];
   return (
-    <section className="relative -mt-14 z-10 mx-auto max-w-7xl px-4 md:px-6">
+    <section className="relative z-10 mx-auto mt-6 max-w-7xl px-4 md:px-6">
       <div className="grid gap-4 rounded-3xl bg-white p-4 shadow-[0_20px_60px_-20px_rgba(32,28,27,0.25)] sm:grid-cols-2 sm:p-5 lg:grid-cols-3">
         {items.map((item, i) => (
           <motion.div
@@ -46,7 +47,7 @@ function ValueProps() {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.5, delay: i * 0.08 }}
             whileHover={{ y: -4 }}
-            className="group flex cursor-default items-start gap-3 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-brand-100 hover:bg-brand-50/60 hover:shadow-[0_12px_30px_-12px_rgba(184,24,48,0.35)]"
+            className="group flex cursor-default items-start gap-3 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-brand-100 hover:bg-brand-50/60 hover:shadow-[0_12px_30px_-12px_rgba(200,2,25,0.35)]"
           >
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-600 text-white shadow-md shadow-brand-600/20 transition-transform duration-300 group-hover:-rotate-6 group-hover:scale-110">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -349,7 +350,7 @@ function businessJsonLd(config) {
         image: b.image?.url || config?.logo?.url || undefined,
         telephone: b.phone || undefined,
         address: { "@type": "PostalAddress", streetAddress: b.address, addressRegion: "Tucumán", addressCountry: "AR" },
-        hasMap: b.mapUrl || undefined
+        hasMap: branchMapUrl(b) || undefined
       }))
   };
 }
@@ -424,6 +425,8 @@ export default function Home() {
     <div>
       <Seo jsonLd={businessJsonLd(config)} />
       <PromoPopup />
+      {/* Título principal para Google y lectores de pantalla (el carrusel no tiene texto). */}
+      <h1 className="sr-only">Dulcinard Tucumán: distribuidora mayorista de golosinas y productos alimenticios</h1>
       <HeroCarousel />
       <ValueProps />
       <QuickCategoryPills categories={categories} activeCategory={activeCategory} onSelect={setActiveCategory} />

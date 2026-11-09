@@ -18,22 +18,33 @@ export default function ProductoDetalle() {
   const addItem = useCartStore((s) => s.addItem);
 
   useEffect(() => {
+    // "active" evita que una respuesta vieja (de un producto anterior) pise a la nueva.
+    let active = true;
     setLoading(true);
     api
       .get(`/products/${slug}`)
       .then(({ data }) => {
+        if (!active) return;
         setProduct(data);
         setQty(data.minOrderQty || 1);
         setActiveImage(0);
       })
-      .finally(() => setLoading(false));
+      // Producto inexistente o dado de baja: se muestra "No encontramos este producto"
+      // (y no el producto que se estaba viendo antes).
+      .catch(() => active && setProduct(null))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
   }, [slug]);
 
   if (loading) return <PageLoader />;
   if (!product) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20 text-center">
-        <p className="text-ink-500">No encontramos este producto.</p>
+        <Seo title="Producto no encontrado" noIndex />
+        <h1 className="font-display text-2xl font-bold text-ink-900">No encontramos este producto</h1>
+        <p className="mt-2 text-ink-500">Puede que ya no esté disponible.</p>
         <Link to="/catalogo" className="mt-3 inline-block text-sm font-semibold text-brand-600">
           Volver al catálogo
         </Link>
