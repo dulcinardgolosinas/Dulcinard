@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { LogoWatermark } from "../ui/LogoWatermark";
+import { PageLoader } from "../ui/Spinner";
 
 const FALLBACK_LOGO = "https://res.cloudinary.com/nu4m5rh8/image/upload/v1793559589/dulcinard/branding/rfwcpj2aorrjjlbtyzvz.png";
 
@@ -68,7 +70,9 @@ export function AuthLayout() {
           </div>
 
           <div className="mt-6">
-            <Outlet />
+            <Suspense fallback={<PageLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
         </div>
       </motion.div>

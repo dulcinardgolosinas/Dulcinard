@@ -1,45 +1,50 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { PageLoader } from "./components/ui/Spinner";
 import { Layout } from "./components/layout/Layout";
 import { AuthLayout } from "./components/layout/AuthLayout";
 import { ProtectedRoute, AdminRoute } from "./routes/ProtectedRoute";
 import { ScrollToTop } from "./routes/ScrollToTop";
-
 import Home from "./pages/Home";
-import QuienesSomos from "./pages/QuienesSomos";
-import Contacto from "./pages/Contacto";
-import ZonasEnvio from "./pages/ZonasEnvio";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
-import Login from "./pages/Login";
-import Registro from "./pages/Registro";
-import Checkout from "./pages/Checkout";
-import Perfil from "./pages/Perfil";
-import Pedidos from "./pages/Pedidos";
-import PedidoDetalle from "./pages/PedidoDetalle";
 import NotFound from "./pages/NotFound";
 
-import AdminLayout from "./pages/admin/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
-import ProductosAdmin from "./pages/admin/ProductosAdmin";
-import ProductoForm from "./pages/admin/ProductoForm";
-import ProductosImportar from "./pages/admin/ProductosImportar";
-import ProductosFotos from "./pages/admin/ProductosFotos";
-import StockExcel from "./pages/admin/StockExcel";
-import CategoriasAdmin from "./pages/admin/CategoriasAdmin";
-import PromocionesAdmin from "./pages/admin/PromocionesAdmin";
-import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
-import PedidosAdmin from "./pages/admin/PedidosAdmin";
-import PedidoDetalleAdmin from "./pages/admin/PedidoDetalleAdmin";
-import SucursalesAdmin from "./pages/admin/SucursalesAdmin";
-import ZonasEnvioAdmin from "./pages/admin/ZonasEnvioAdmin";
-import ProveedoresAdmin from "./pages/admin/ProveedoresAdmin";
-import ImagenesHeroAdmin from "./pages/admin/ImagenesHeroAdmin";
-import ConfiguracionAdmin from "./pages/admin/ConfiguracionAdmin";
+// Se bajan recién al abrirlas (el inicio, el catálogo y los productos van siempre).
+const QuienesSomos = lazy(() => import("./pages/QuienesSomos"));
+const Contacto = lazy(() => import("./pages/Contacto"));
+const ZonasEnvio = lazy(() => import("./pages/ZonasEnvio"));
+const Login = lazy(() => import("./pages/Login"));
+const Registro = lazy(() => import("./pages/Registro"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Perfil = lazy(() => import("./pages/Perfil"));
+const Pedidos = lazy(() => import("./pages/Pedidos"));
+const PedidoDetalle = lazy(() => import("./pages/PedidoDetalle"));
+const AdminLayout = lazy(() => import("./pages/admin/AdminLayout"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const ProductosAdmin = lazy(() => import("./pages/admin/ProductosAdmin"));
+const ProductoForm = lazy(() => import("./pages/admin/ProductoForm"));
+const ProductosImportar = lazy(() => import("./pages/admin/ProductosImportar"));
+const ProductosFotos = lazy(() => import("./pages/admin/ProductosFotos"));
+const StockExcel = lazy(() => import("./pages/admin/StockExcel"));
+const CategoriasAdmin = lazy(() => import("./pages/admin/CategoriasAdmin"));
+const PromocionesAdmin = lazy(() => import("./pages/admin/PromocionesAdmin"));
+const UsuariosAdmin = lazy(() => import("./pages/admin/UsuariosAdmin"));
+const PedidosAdmin = lazy(() => import("./pages/admin/PedidosAdmin"));
+const PedidoDetalleAdmin = lazy(() => import("./pages/admin/PedidoDetalleAdmin"));
+const SucursalesAdmin = lazy(() => import("./pages/admin/SucursalesAdmin"));
+const ZonasEnvioAdmin = lazy(() => import("./pages/admin/ZonasEnvioAdmin"));
+const ProveedoresAdmin = lazy(() => import("./pages/admin/ProveedoresAdmin"));
+const ImagenesHeroAdmin = lazy(() => import("./pages/admin/ImagenesHeroAdmin"));
+const ConfiguracionAdmin = lazy(() => import("./pages/admin/ConfiguracionAdmin"));
 
 function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      {/* Las páginas que no son el inicio ni el catálogo se bajan recién al abrirlas:
+          así la tienda carga más rápido en el celular (sobre todo, sin el panel). */}
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
@@ -86,6 +91,7 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
