@@ -7,7 +7,7 @@ import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../li
 import { usePageHeroStore } from "../../store/pageHeroStore";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { Film } from "lucide-react";
-import { HERO_HEIGHT, HERO_WIDTH, MAX_PHOTO_BYTES, checkHeroFile, fitsHero, formatMB, isVideoFile, uploadHeroMedia } from "../../lib/heroMedia";
+import { HERO_HEIGHT, HERO_WIDTH, MAX_PHOTO_BYTES, checkHeroFile, formatMB, isVideoFile, uploadHeroMedia } from "../../lib/heroMedia";
 import { LoadError } from "../../components/ui/LoadError";
 
 const PAGE_LABELS = {
@@ -115,8 +115,8 @@ function HeroCard({ hero, onChanged }) {
 const LINK_LABELS = { catalog: "Todos los productos", product: "Un producto", category: "Una categoría" };
 
 /**
- * Vista previa de un slide (recortada igual que en la tienda). Avisa con
- * onSize el ancho y alto real del archivo, para mostrar si tiene la medida.
+ * Vista previa de un slide: entera y con su propia forma, como en la tienda.
+ * Avisa con onSize el ancho y alto real del archivo.
  */
 function SlidePreview({ slide, onSize }) {
   if (slide.mediaType === "video" && slide.video?.url) {
@@ -139,25 +139,14 @@ function SlidePreview({ slide, onSize }) {
     );
   }
   return (
-    <img
-      src={slide.image.url}
-      alt=""
-      onLoad={(e) => onSize?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
-      className="h-full w-full object-cover"
-    />
-  );
-}
-
-/** Aviso si la foto o video no tiene la medida del carrusel. */
-function SizeHint({ size }) {
-  if (!size?.width) return null;
-  const ok = fitsHero(size.width, size.height);
-  return (
-    <p className={`text-xs ${ok ? "text-ink-500" : "font-semibold text-brand-600"}`}>
-      {ok
-        ? `Medida correcta (${size.width} × ${size.height} px)`
-        : `Mide ${size.width} × ${size.height} px: no tiene la forma del carrusel (${HERO_WIDTH} × ${HERO_HEIGHT}), se va a recortar en los bordes.`}
-    </p>
+    <>
+      <img
+        src={slide.image.url}
+        alt=""
+        onLoad={(e) => onSize?.(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+        className="h-full w-full object-cover"
+      />
+    </>
   );
 }
 
@@ -282,8 +271,8 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
 
   return (
     <div className={`flex flex-col gap-3 rounded-2xl border bg-white p-3 ${slide.active ? "border-ink-100" : "border-dashed border-ink-300 opacity-75"}`}>
-      {/* Misma forma que el carrusel de la tienda: así se ve qué parte queda visible. */}
-      <div className="relative aspect-[12/5] overflow-hidden rounded-xl bg-ink-950">
+      {/* Con la forma de la foto, como se ve en la tienda. */}
+      <div className="relative overflow-hidden rounded-xl bg-ink-950" style={{ aspectRatio: size?.width ? size.width / size.height : HERO_WIDTH / HERO_HEIGHT }}>
         <SlidePreview slide={slide} onSize={(width, height) => width && setSize({ width, height })} />
         <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-xs font-bold text-ink-800">
           {position} de {total}
@@ -293,7 +282,6 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
         )}
       </div>
 
-      <SizeHint size={size} />
 
       {progress != null ? (
         <UploadProgress value={progress} />
@@ -526,17 +514,7 @@ function HomeHeroGallery() {
         Las fotos y videos que van pasando arriba de todo en la página principal, sin texto encima. En cada uno podés elegir
         adónde lleva al tocarlo. Si no cargás ninguno, se muestra el video de siempre.
       </p>
-      <div className="mt-3 flex items-start gap-3 rounded-xl border-2 border-brand-200 bg-brand-50 p-3">
-        <div className="flex h-12 w-[115px] shrink-0 items-center justify-center rounded-md border-2 border-dashed border-brand-400 bg-white text-[11px] font-bold text-brand-600">
-          {HERO_WIDTH} × {HERO_HEIGHT}
-        </div>
-        <p className="text-sm text-ink-800">
-          <b>Medida de las fotos y videos del carrusel: {HERO_WIDTH} × {HERO_HEIGHT} px</b> (horizontal, 2,4 veces más ancho que
-          alto). Todos los slides se ven de ese tamaño en la tienda; si una foto tiene otra forma, se recorta en los bordes. Dejá
-          los textos y logos lejos de los bordes.
-        </p>
-      </div>
-      <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs text-ink-500">
+      <ul className="mt-3 list-disc space-y-0.5 pl-5 text-xs text-ink-500">
         <li>Fotos: JPG, PNG o WEBP, hasta {formatMB(MAX_PHOTO_BYTES)}.</li>
         <li>Videos: MP4, WEBM o MOV, horizontales y cortos. Hasta 40 MB. Se ven sin sonido.</li>
       </ul>
