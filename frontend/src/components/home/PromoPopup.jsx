@@ -95,7 +95,9 @@ export function PromoPopup() {
             exit={{ opacity: 0, y: 30, scale: 0.96 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white shadow-2xl"
+            // Nunca más alto que la pantalla visible (en el iPhone, sin las barras de Safari):
+            // la X y los botones quedan fijos y solo se desplaza el contenido del medio.
+            className="relative flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-white shadow-2xl supports-[height:100dvh]:max-h-[calc(100dvh-1.5rem)]"
           >
             <button
               type="button"
@@ -106,9 +108,10 @@ export function PromoPopup() {
               <X className="h-5 w-5" />
             </button>
 
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <AnimatePresence mode="wait" initial={false}>
               <motion.div key={promo._id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-                <div className="relative aspect-[4/3] bg-gradient-to-br from-brand-600 to-brand-950">
+                <div className="relative aspect-[4/3] max-h-[40vh] w-full bg-gradient-to-br from-brand-600 to-brand-950 supports-[height:100dvh]:max-h-[40dvh]">
                   {promo.banner?.url && (
                     <img src={cldUrl(promo.banner.url, { width: 900 })} alt={promo.title} className="h-full w-full object-cover" />
                   )}
@@ -118,8 +121,8 @@ export function PromoPopup() {
                   <DiscountBadge percent={promo.discountPercent} className="absolute bottom-3 left-3 text-base" />
                 </div>
 
-                <div className="p-5 sm:p-6">
-                  <h2 id="promo-popup-title" className="font-display text-2xl font-bold leading-tight text-ink-900">
+                <div className="p-5 pb-3 sm:p-6 sm:pb-4">
+                  <h2 id="promo-popup-title" className="font-display text-xl sm:text-2xl font-bold leading-tight text-ink-900">
                     {promo.title}
                   </h2>
                   {promo.description && <p className="mt-2 whitespace-pre-line text-sm text-ink-600">{promo.description}</p>}
@@ -131,7 +134,7 @@ export function PromoPopup() {
             </AnimatePresence>
 
             {many && (
-              <div className="flex items-center justify-between px-5 sm:px-6">
+              <div className="flex items-center justify-between px-5 pb-4 sm:px-6">
                 <button
                   type="button"
                   onClick={() => setIndex((i) => (i - 1 + promos.length) % promos.length)}
@@ -161,8 +164,9 @@ export function PromoPopup() {
                 </button>
               </div>
             )}
+            </div>
 
-            <div className="flex flex-col gap-2 p-5 sm:flex-row sm:p-6">
+            <div className="flex shrink-0 flex-col gap-1 border-t border-ink-100 p-4 sm:flex-row sm:gap-2 sm:p-5">
               <button
                 type="button"
                 onClick={goToPromotions}
