@@ -35,23 +35,16 @@ function saveSlides(slides) {
 
 const isVideo = (slide) => slide?.mediaType === "video" && slide.video?.url;
 
-/**
- * Foto o video de un slide, entero (sin recortar). Detrás va la misma imagen
- * borrosa para que, si sobra lugar a los costados, no queden franjas vacías.
- */
-function SlideMedia({ slide, eager, loop, onVideoEnd }) {
-  const backdrop = (
-    <img
-      src={cldUrl(slide.image?.url, { width: 64 })}
-      alt=""
-      aria-hidden="true"
-      className="absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl"
-    />
-  );
+// Cada foto o video ocupa todo el ancho y se ve entero: el alto del carrusel
+// se ajusta a su forma (con la medida recomendada, 1920 x 800, todos quedan iguales).
+const mediaUrl = (slide) => (isVideo(slide) ? slide.video.url : slide.image?.url);
+
+/** Foto o video de un slide. Avisa su medida para que el carrusel tome esa forma. */
+function SlideMedia({ slide, eager, loop, onVideoEnd, onMeasure }) {
+  const measure = (width, height) => width && height && onMeasure(mediaUrl(slide), width / height);
   if (isVideo(slide)) {
     return (
       <>
-        {backdrop}
         <video
           key={slide.video.url}
           src={slide.video.url}
@@ -62,14 +55,14 @@ function SlideMedia({ slide, eager, loop, onVideoEnd }) {
           playsInline
           preload="auto"
           onEnded={onVideoEnd}
-          className="relative h-full w-full object-cover"
+          onLoadedMetadata={(e) => measure(e.currentTarget.videoWidth, e.currentTarget.videoHeight)}
+          className="h-full w-full object-cover"
         />
       </>
     );
   }
   return (
     <>
-      {backdrop}
       <img
         src={cldUrl(slide.image.url, { width: 1600 })}
         srcSet={cldSrcSet(slide.image.url, SLIDE_WIDTHS)}
@@ -79,7 +72,8 @@ function SlideMedia({ slide, eager, loop, onVideoEnd }) {
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
         decoding="async"
-        className="relative h-full w-full select-none object-cover"
+        onLoad={(e) => measure(e.currentTarget.naturalWidth, e.currentTarget.naturalHeight)}
+        className="h-full w-full select-none object-cover"
       />
     </>
   );
@@ -95,6 +89,9 @@ export function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const draggedRef = useRef(false);
+  // Forma (ancho / alto) de cada foto o video, a medida que se van cargando.
+  const [ratios, setRatios] = useState({});
+  const onMeasure = useCallback((url, ratio) => setRatios((r) => (r[url] === ratio ? r : { ...r, [url]: ratio })), []);
 
   useEffect(() => {
     let active = true;
@@ -138,8 +135,8 @@ export function HeroCarousel() {
   return (
     <section
       className="relative w-full overflow-hidden bg-brand-950"
-      // Todos los slides del mismo tamaño: la medida del carrusel (1920 x 800).
-      style={{ aspectRatio: HERO_RATIO }}
+      // Toma la forma de la foto o video que se está viendo (mientras carga, 1920 x 800).
+      style={{ aspectRatio: (slide && ratios[mediaUrl(slide)]) || HERO_RATIO }}
       aria-roledescription="carrusel"
       aria-label="Carrusel de la página principal"
       onMouseEnter={() => setPaused(true)}
@@ -173,7 +170,7 @@ export function HeroCarousel() {
               className="absolute inset-0"
             >
               <Link to={slideHref(slide)} aria-label={slide.title || `Ver slide ${index + 1}`} className="block h-full w-full" draggable={false}>
-                <SlideMedia slide={slide} eager={index === 0} loop={count === 1} onVideoEnd={handleVideoEnd} />
+                <SlideMedia slide={slide} eager={index === 0} loop={count === 1} onVideoEnd={handleVideoEnd} onMeasure={onMeasure} />
               </Link>
             </motion.div>
           </AnimatePresence>

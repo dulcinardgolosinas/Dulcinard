@@ -15,7 +15,8 @@ export const HERO_HEIGHT = 800;
 export const HERO_RATIO = HERO_WIDTH / HERO_HEIGHT;
 
 /** true si una foto o video de ancho x alto tiene (casi) la medida del carrusel. */
-export const fitsHero = (width, height) => Math.abs(width / height - HERO_RATIO) / HERO_RATIO < 0.05;
+// ¿Tiene la forma de la medida recomendada (1920 x 800)?
+export const fitsHero = (width, height) => !!width && !!height && Math.abs(width / height - HERO_RATIO) / HERO_RATIO < 0.05;
 const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
