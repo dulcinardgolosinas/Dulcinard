@@ -1,4 +1,7 @@
-// Textos fijos de la tienda (inicio, Quiénes somos, Contacto y pie de página).
+import { useSiteConfigStore } from "../store/siteConfigStore";
+
+// Textos de la tienda. Los de Quiénes somos, Envíos y Contacto se pueden cambiar
+// desde el panel (Textos de la tienda); si un campo queda vacío se usa este por defecto.
 export const DEFAULT_CONTENT = {
   homeTagline: "Distribuidora mayorista · Tucumán",
   homeSubtitle: "Cientos de productos para kioscos y comercios de Tucumán. Pedí online y lo recibís en tu local en 24 a 48 horas.",
@@ -18,14 +21,28 @@ export const DEFAULT_CONTENT = {
   value2Text: "Sucursales en San Miguel de Tucumán, Yerba Buena y Concepción, para que siempre tengas una a mano.",
   value3Title: "Rapidez",
   value3Text: "Pedís hoy, lo tenés en tu local en 24 a 48 hs. Sin vueltas.",
+  shippingIntro: "Zonas de cobertura, tiempos y costos de envío — para que sepas exactamente cuándo y cómo llega tu pedido.",
+  shippingInfo: "",
   contactTitle: "Hablemos",
   contactText: "Hacé tu pedido por WhatsApp o acercate a cualquiera de nuestras sucursales en San Miguel de Tucumán, Yerba Buena y Concepción.",
+  contactPhone: "",
+  contactEmail: "",
+  contactHours: "",
   footerText: "Distribuidora mayorista de golosinas y productos alimenticios. Pedidos por WhatsApp con entrega en 24 a 48 hs."
 };
 
-/** Textos de la tienda. */
+/** Textos de la tienda: los guardados en el panel y, si falta alguno, el de por defecto. */
+export function mergeContent(saved) {
+  const merged = { ...DEFAULT_CONTENT };
+  for (const [key, value] of Object.entries(saved || {})) {
+    if (typeof value === "string" && value.trim()) merged[key] = value;
+  }
+  return merged;
+}
+
 export function useSiteContent() {
-  return DEFAULT_CONTENT;
+  const saved = useSiteConfigStore((s) => s.config?.content);
+  return mergeContent(saved);
 }
 
 /** Separa un texto largo en párrafos (una línea en blanco entre párrafo y párrafo). */

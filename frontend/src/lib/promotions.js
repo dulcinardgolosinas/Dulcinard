@@ -60,11 +60,9 @@ export function promoDateRange(promo) {
  */
 export function promoBuyLink(promo) {
   const products = promo.products || [];
-  if (products.length === 1 && products[0].slug) return `/producto/${products[0].slug}`;
-  if (products.length > 1) return `/catalogo?promo=${promo._id}`;
-  const category = promo.categories?.[0];
-  if (category) return `/catalogo?category=${category._id}`;
-  return "/catalogo";
+  if (promo.scope === "products" && products.length === 1 && products[0].slug) return `/producto/${products[0].slug}`;
+  // El catálogo filtra por la promo según su alcance (productos, categorías o toda la tienda).
+  return `/catalogo?promo=${promo._id}`;
 }
 
 /** Link de WhatsApp para consultar por una promo. */
