@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { cldUrl } from "../../lib/cloudinary";
 import { fetchHomePromotions } from "../../lib/promotions";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
-import { PromoInfo, DiscountBadge } from "./PromoInfo";
+import { PromoInfo, PromoBadges } from "./PromoInfo";
 
 const SEEN_KEY = "promo-popup-visto";
 const OPEN_DELAY_MS = 900;
@@ -115,7 +115,7 @@ export function PromoPopup() {
                   <span className="absolute left-3 top-3 rounded-full bg-white px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-600 shadow">
                     Promoción
                   </span>
-                  <DiscountBadge percent={promo.discountPercent} className="absolute bottom-3 left-3 text-base" />
+                  <PromoBadges promo={promo} className="absolute bottom-3 left-3" />
                 </div>
 
                 <div className="p-5 sm:p-6">

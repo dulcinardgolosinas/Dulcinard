@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useCartStore } from "../store/cartStore";
 import { formatCurrency, finalPriceOf, UNIT_LABELS } from "../lib/format";
+import { useImageFit } from "../lib/useImageFit";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { PageLoader } from "../components/ui/Spinner";
@@ -16,6 +17,8 @@ export default function ProductoDetalle() {
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(true);
   const addItem = useCartStore((s) => s.addItem);
+  // Foto con fondo blanco: entera; con otro fondo: ocupa todo el recuadro.
+  const mainFit = useImageFit(product?.images?.[activeImage]?.url);
 
   useEffect(() => {
     // "active" evita que una respuesta vieja (de un producto anterior) pise a la nueva.
@@ -101,7 +104,11 @@ export default function ProductoDetalle() {
         <div>
           <div className="aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-white">
             {images[activeImage] ? (
-              <img src={images[activeImage].url} alt={product.name} className="h-full w-full object-contain p-4" />
+              <img
+                src={images[activeImage].url}
+                alt={product.name}
+                className={`h-full w-full ${mainFit === "cover" ? "object-cover" : "object-contain p-4"}`}
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-ink-200">
                 <svg className="h-16 w-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
@@ -134,15 +141,17 @@ export default function ProductoDetalle() {
 
           <div className="mt-4 flex items-center gap-3">
             <p className="text-3xl font-bold text-brand-600">{formatCurrency(finalPriceOf(product))}</p>
-            {product.discountPercent > 0 && (
-              <>
-                <p className="text-lg text-ink-400 line-through">{formatCurrency(product.price)}</p>
-                <Badge tone="success">{product.discountPercent}% OFF</Badge>
-              </>
-            )}
+            {product.discountPercent > 0 && <p className="text-lg text-ink-400 line-through">{formatCurrency(product.price)}</p>}
+            {product.promo && <Badge tone="success">{product.promo.label}</Badge>}
+            {product.promo?.occasion && <Badge tone="accent">{product.promo.occasion}</Badge>}
             <Badge tone="neutral">x {UNIT_LABELS[product.unit] || product.unit}</Badge>
           </div>
 
+          {product.promo && (
+            <p className="mt-2 text-sm font-semibold text-brand-600">
+              Promo: {product.promo.title}
+            </p>
+          )}
           <p className="mt-2 text-sm text-ink-500">
             {outOfStock ? (
               <span className="font-semibold text-danger-600">Sin stock disponible</span>

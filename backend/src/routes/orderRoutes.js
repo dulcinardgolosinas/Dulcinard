@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createOrder,
+  quoteCart,
   createPaymentPreference,
   mercadoPagoWebhook,
   syncOrderPayment,
@@ -12,17 +13,19 @@ import {
   confirmOrderPayment,
   exportDeliveredOrders
 } from "../controllers/orderController.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
-import { orderLimiter } from "../middleware/security.js";
+import { requireAuth, requireAdmin, optionalAuth } from "../middleware/auth.js";
+import { orderLimiter, quoteLimiter } from "../middleware/security.js";
 import { uploadSpreadsheet } from "../middleware/upload.js";
 import { exportPendingDelivery, importDeliveredOrders } from "../controllers/deliveredImportController.js";
-import { createOrderValidator, updateOrderStatusValidator, exportDeliveredValidator } from "../validators/orderValidators.js";
+import { createOrderValidator, updateOrderStatusValidator, exportDeliveredValidator, quoteValidator } from "../validators/orderValidators.js";
 
 const router = Router();
 
 // Webhook público (lo llama Mercado Pago, no un usuario autenticado)
 router.post("/mercadopago/webhook", mercadoPagoWebhook);
 
+// Cotización del carrito (promos, primera compra y envío). Con o sin sesión.
+router.post("/quote", optionalAuth, quoteLimiter, quoteValidator, quoteCart);
 router.post("/", requireAuth, orderLimiter, createOrderValidator, createOrder);
 router.get("/mine", requireAuth, listMyOrders);
 router.get("/mine/:id", requireAuth, getMyOrder);

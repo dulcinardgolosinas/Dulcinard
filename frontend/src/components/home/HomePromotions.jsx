@@ -6,7 +6,8 @@ import { toWhatsappNumber } from "../../lib/whatsapp";
 import { MessageCircle, ShoppingBag } from "lucide-react";
 import { fetchHomePromotions, promoBuyLink, promoWhatsappHref, readCachedPromotions } from "../../lib/promotions";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
-import { PromoInfo, DiscountBadge } from "./PromoInfo";
+import { PromoInfo, PromoBadges } from "./PromoInfo";
+import { PROMO_KINDS, promoKind } from "../../lib/promotionTypes";
 
 function PromoSkeleton() {
   return (
@@ -37,7 +38,7 @@ function PromoCard({ promo, waNumber }) {
             className="h-full w-full object-cover"
           />
         )}
-        <DiscountBadge percent={promo.discountPercent} className="absolute left-3 top-3" />
+        <PromoBadges promo={promo} className="absolute left-3 top-3" />
       </div>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="font-display text-lg font-bold leading-snug text-ink-900">{promo.title}</h3>
@@ -77,6 +78,7 @@ function PromoCard({ promo, waNumber }) {
 export function HomePromotions() {
   const config = useSiteConfigStore((s) => s.config);
   const [promotions, setPromotions] = useState(() => readCachedPromotions());
+  const [kind, setKind] = useState(""); // "special" = fechas especiales, "general" = comunes, "" = todas
 
   useEffect(() => {
     let active = true;
@@ -90,6 +92,13 @@ export function HomePromotions() {
 
   if (promotions && promotions.length === 0) return null;
   const waNumber = toWhatsappNumber(config?.whatsappNumber) || "5493814091213";
+  // El filtro solo aparece si hay promos de fechas especiales y comunes a la vez.
+  const kinds = promotions ? PROMO_KINDS.filter((k) => promotions.some((p) => promoKind(p) === k.value)) : [];
+  const shown = promotions && kind ? promotions.filter((p) => promoKind(p) === kind) : promotions;
+  const chip = (active) =>
+    `shrink-0 rounded-full border px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+      active ? "border-brand-600 bg-brand-600 text-white" : "border-ink-200 bg-white text-ink-700 hover:border-brand-300"
+    }`;
 
   return (
     <section id="promociones" className="scroll-mt-28 py-10">
@@ -99,6 +108,18 @@ export function HomePromotions() {
           No te lo pierdas
         </span>
         <h2 className="font-display text-2xl font-bold text-ink-900 md:text-3xl">Promociones</h2>
+        {kinds.length > 1 && (
+          <div role="group" aria-label="Filtrar promociones" className="scrollbar-none -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+            <button type="button" onClick={() => setKind("")} aria-pressed={!kind} className={chip(!kind)}>
+              Todas
+            </button>
+            {kinds.map((k) => (
+              <button key={k.value} type="button" onClick={() => setKind(k.value)} aria-pressed={kind === k.value} className={chip(kind === k.value)}>
+                {k.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Celular: tarjetas que se deslizan de costado. Desde tablet: grilla. */}
         <motion.div
@@ -107,8 +128,8 @@ export function HomePromotions() {
           viewport={{ once: true, margin: "-40px" }}
           className="scrollbar-thin -mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3 xl:grid-cols-4"
         >
-          {promotions
-            ? promotions.map((p) => <PromoCard key={p._id} promo={p} waNumber={waNumber} />)
+          {shown
+            ? shown.map((p) => <PromoCard key={p._id} promo={p} waNumber={waNumber} />)
             : Array.from({ length: 4 }, (_, i) => <PromoSkeleton key={i} />)}
         </motion.div>
       </div>

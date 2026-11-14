@@ -1,67 +1,101 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, Plus, X } from "lucide-react";
 import { api, apiErrorMessage } from "../../lib/api";
-import { Input, Textarea } from "../../components/ui/Input";
+import { Input, Select, Textarea } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 import { FileInput } from "../../components/ui/FileInput";
 import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { Badge } from "../../components/ui/Badge";
+import { LoadError } from "../../components/ui/LoadError";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
-import { futureDateField, numberField } from "../../lib/validators";
-import { formatCurrency } from "../../lib/format";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
+import { OCCASIONS, PROMO_KINDS, SCOPES, occasionLabel, promoKind, promoLabel } from "../../lib/promotionTypes";
+import { Pagination } from "../../components/ui/Pagination";
+import { usePagedList } from "../../lib/usePagedList";
 
-// Día en hora de Argentina (aaaa-mm-dd), para los campos de fecha.
-function toInputDate(d) {
-  return d ? new Date(d).toLocaleDateString("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }) : "";
+// Fecha y hora en hora de Argentina ("aaaa-mm-ddThh:mm"), para los campos de vigencia.
+function toInputDateTime(d) {
+  if (!d) return "";
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    })
+      .formatToParts(new Date(d))
+      .map((p) => [p.type, p.value])
+  );
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
 }
-const showDay = (d) => new Date(d).toLocaleDateString("es-AR", { timeZone: "America/Argentina/Buenos_Aires" });
+// "aaaa-mm-ddThh:mm" (hora AR) -> Date
+const fromInputDateTime = (value) => new Date(`${value}:00-03:00`);
+const showDateTime = (d) =>
+  new Date(d).toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires", day: "numeric", month: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// Estado según la fecha y la pausa manual.
+function promoStatus(p) {
+  const now = new Date();
+  if (!p.active) return { text: "Pausada", tone: "neutral" };
+  if (new Date(p.startDate) > now) return { text: "Programada", tone: "accent" };
+  if (new Date(p.endDate) < now) return { text: "Terminada", tone: "neutral" };
+  return { text: "Vigente", tone: "success" };
+}
 
 const optionalPrice = (label) =>
   z
     .union([z.literal(""), z.coerce.number({ message: `${label} tiene que ser un número` }).positive(`${label} tiene que ser mayor a 0`).max(100000000)])
     .optional();
 
-const makeSchema = (editing) =>
-  z
+const schema = z
   .object({
-    title: z
-      .string()
-      .trim()
-      .min(1, "El título es obligatorio")
-      .min(2, "El título debe tener al menos 2 caracteres")
-      .max(120, "El título no puede superar los 120 caracteres"),
+    title: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres").max(120, "El nombre no puede superar los 120 caracteres"),
     description: z.string().trim().max(500, "La descripción no puede superar los 500 caracteres").optional(),
-    discountPercent: numberField("El descuento", { min: 0, max: 100 }),
+    discountPercent: z.coerce
+      .number({ message: "Poné el porcentaje" })
+      .min(1, "Poné un porcentaje entre 1 y 100")
+      .max(100, "Poné un porcentaje entre 1 y 100"),
+    occasion: z.string(),
+    occasionName: z.string().trim().max(40, "Hasta 40 caracteres").optional(),
+    scope: z.enum(["all", "categories", "products"], { message: "Elegí a qué productos se aplica" }),
     categories: z.array(z.string()).optional(),
     products: z.array(z.string()).optional(),
-    startDate: editing ? z.string().min(1, "Elegí la fecha de inicio") : futureDateField("La fecha de inicio"),
-    endDate: futureDateField("La fecha de fin"),
+    startDate: z.string().min(1, "Elegí cuándo empieza"),
+    endDate: z.string().min(1, "Elegí cuándo termina"),
     active: z.boolean().optional(),
-    price: optionalPrice("El precio de la promo"),
+    price: optionalPrice("El precio para mostrar"),
     regularPrice: optionalPrice("El precio normal"),
     showInPopup: z.boolean().optional()
   })
-  .refine((data) => new Date(data.endDate) >= new Date(data.startDate), {
-    message: "La fecha de fin debe ser posterior o igual a la fecha de inicio",
-    path: ["endDate"]
-  })
-  .refine((data) => !data.price || !data.regularPrice || Number(data.regularPrice) > Number(data.price), {
-    message: "El precio normal tiene que ser mayor al precio de la promo",
-    path: ["regularPrice"]
+  .superRefine((d, ctx) => {
+    const issue = (path, message) => ctx.addIssue({ code: "custom", path: [path], message });
+    if (d.scope === "categories" && !d.categories?.length) issue("categories", "Elegí al menos una categoría");
+    if (d.scope === "products" && !d.products?.length) issue("products", "Elegí al menos un producto");
+    if (d.occasion === "otra" && !d.occasionName?.trim()) issue("occasionName", "Escribí el nombre de la fecha");
+    if (d.endDate && fromInputDateTime(d.endDate) <= new Date()) issue("endDate", "No puede terminar en el pasado");
+    if (d.startDate && d.endDate && fromInputDateTime(d.endDate) <= fromInputDateTime(d.startDate)) issue("endDate", "Tiene que terminar después de que empieza");
+    if (d.price && d.regularPrice && Number(d.regularPrice) <= Number(d.price)) issue("regularPrice", "Tiene que ser mayor al precio de la promo");
   });
 
+const scopeOfPromo = (p) => p?.scope || (p?.products?.length ? "products" : p?.categories?.length ? "categories" : "all");
 const formValues = (editing) => ({
   title: editing?.title || "",
   description: editing?.description || "",
-  discountPercent: editing?.discountPercent || 0,
+  discountPercent: editing?.discountPercent || "",
+  occasion: editing?.occasion || "general",
+  occasionName: editing?.occasionName || "",
+  scope: scopeOfPromo(editing),
   categories: editing?.categories?.map((c) => c._id || c) || [],
   products: editing?.products?.map((p) => p._id || p) || [],
-  startDate: toInputDate(editing?.startDate) || toInputDate(new Date()),
-  endDate: toInputDate(editing?.endDate),
+  startDate: toInputDateTime(editing?.startDate || new Date()),
+  endDate: toInputDateTime(editing?.endDate),
   active: editing?.active ?? true,
   price: editing?.price ?? "",
   regularPrice: editing?.regularPrice ?? "",
@@ -81,10 +115,7 @@ function ProductPicker({ options, value, onChange }) {
 
   return (
     <div>
-      <p className="mb-1.5 text-sm font-medium text-ink-700">Productos de la promoción</p>
-      <p className="mb-2 text-xs text-ink-500">
-        El botón "Comprar" lleva a estos productos. Si la promo tiene descuento (%), se aplica a estos productos en el carrito.
-      </p>
+      <p className="mb-2 text-xs text-ink-500">Escribí el nombre y elegilo de la lista. Podés sumar varios.</p>
       <input
         list="promo-product-options"
         value={text}
@@ -127,55 +158,70 @@ function ProductPicker({ options, value, onChange }) {
   );
 }
 
-function PromotionForm({ editing, categories, productOptions, onSaved, onCancel }) {
+// Formulario en una ventana: dos columnas, y lo opcional (cartel y foto) plegado.
+function PromotionDialog({ open, editing, categories, productOptions, onSaved, onClose }) {
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
+  const [moreOpen, setMoreOpen] = useState(false);
   const {
     register,
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { errors, isSubmitting }
-  } = useForm({
-    resolver: zodResolver(makeSchema(Boolean(editing))),
-    defaultValues: formValues(editing)
-  });
+  } = useForm({ resolver: zodResolver(schema), defaultValues: formValues(editing) });
 
   useEffect(() => {
+    if (!open) return;
     reset(formValues(editing));
     setFile(null);
-  }, [editing, reset]);
+    setError("");
+    setMoreOpen(Boolean(editing?.price || editing?.regularPrice || editing?.banner?.url));
+  }, [open, editing, reset]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const scope = watch("scope");
+  const occasion = watch("occasion");
 
   async function onSubmit(values) {
     const confirmed = await confirmAction({
-      title: editing ? "¿Guardar cambios?" : "¿Crear esta promoción?",
-      text: editing ? "Vas a actualizar esta promoción." : "Se publica en la tienda en las fechas que elegiste.",
+      title: editing ? "¿Guardar los cambios?" : "¿Crear esta promoción?",
+      text: editing ? "Vas a actualizar esta promoción en la tienda." : "Se publica sola en la fecha y hora que elegiste.",
       confirmText: editing ? "Sí, guardar" : "Sí, crear",
       icon: "question"
     });
     if (!confirmed) return;
 
     setError("");
-    const formData = new FormData();
-    formData.append("title", values.title);
-    formData.append("description", values.description);
-    formData.append("discountPercent", values.discountPercent);
-    formData.append("startDate", values.startDate);
-    formData.append("endDate", values.endDate);
-    formData.append("active", values.active);
-    formData.append("price", values.price ?? "");
-    formData.append("regularPrice", values.regularPrice ?? "");
-    formData.append("showInPopup", values.showInPopup);
-    formData.append("categories", JSON.stringify(values.categories || []));
-    formData.append("products", JSON.stringify(values.products || []));
-    if (file) formData.append("banner", file);
+    const fd = new FormData();
+    const put = (k, v) => fd.append(k, v ?? "");
+    put("title", values.title);
+    put("description", values.description);
+    put("discountPercent", values.discountPercent);
+    put("occasion", values.occasion);
+    put("occasionName", values.occasion === "otra" ? values.occasionName : "");
+    put("scope", values.scope);
+    put("categories", JSON.stringify(values.scope === "categories" ? values.categories : []));
+    put("products", JSON.stringify(values.scope === "products" ? values.products : []));
+    put("startDate", values.startDate);
+    put("endDate", values.endDate);
+    put("active", values.active);
+    put("price", values.price);
+    put("regularPrice", values.regularPrice);
+    put("showInPopup", values.showInPopup);
+    if (file) fd.append("banner", file);
 
     try {
-      if (editing) {
-        await api.put(`/promotions/${editing._id}`, formData, { headers: { "Content-Type": "multipart/form-data" } });
-      } else {
-        await api.post("/promotions", formData, { headers: { "Content-Type": "multipart/form-data" } });
-      }
+      const config = { headers: { "Content-Type": "multipart/form-data" } };
+      if (editing) await api.put(`/promotions/${editing._id}`, fd, config);
+      else await api.post("/promotions", fd, config);
       toastSuccess(editing ? "Promoción actualizada" : "Promoción creada");
       onSaved();
     } catch (err) {
@@ -185,106 +231,170 @@ function PromotionForm({ editing, categories, productOptions, onSaved, onCancel 
     }
   }
 
-  function onInvalid() {
-    toastError("Completá los campos obligatorios antes de guardar");
-  }
-
   return (
-    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 rounded-2xl border border-ink-100 bg-white p-5">
-      <p className="font-semibold text-ink-900">{editing ? `Editando: ${editing.title}` : "Nueva promoción"}</p>
-      <Input label="Título" {...register("title")} error={errors.title?.message} />
-      <Textarea label="Descripción" rows={3} placeholder="Qué incluye, condiciones, etc." {...register("description")} error={errors.description?.message} />
-      <div className="grid grid-cols-2 gap-3">
-        <Input label="Precio de la promo ($)" type="number" min="0" placeholder="Opcional" {...register("price")} error={errors.price?.message} />
-        <Input label="Precio normal ($)" type="number" min="0" placeholder="Se muestra tachado" {...register("regularPrice")} error={errors.regularPrice?.message} />
-      </div>
-      <Input label="Descuento (%)" type="number" min="0" max="100" {...register("discountPercent")} error={errors.discountPercent?.message} />
-
-      <div className="grid grid-cols-2 gap-3">
-        <Input
-          label="Desde"
-          type="date"
-          min={editing ? undefined : toInputDate(new Date())}
-          {...register("startDate")}
-          error={errors.startDate?.message}
-        />
-        <Input
-          label="Hasta"
-          type="date"
-          min={toInputDate(new Date())}
-          {...register("endDate")}
-          error={errors.endDate?.message}
-        />
-      </div>
-
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-ink-700">Categorías incluidas</p>
-        <p className="mb-2 text-xs text-ink-500">
-          El descuento se aplica al precio de todos los productos de estas categorías. Sin categorías, la promo es solo
-          un aviso con imagen y no descuenta.
-        </p>
-        <Controller
-          control={control}
-          name="categories"
-          render={({ field }) => (
-            <div className="flex max-h-32 flex-wrap gap-2 overflow-y-auto">
-              {categories.map((c) => {
-                const checked = field.value?.includes(c._id);
-                return (
-                  <button
-                    type="button"
-                    key={c._id}
-                    onClick={() =>
-                      field.onChange(checked ? field.value.filter((id) => id !== c._id) : [...(field.value || []), c._id])
-                    }
-                    className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                      checked ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"
-                    }`}
-                  >
-                    {c.name}
-                  </button>
-                );
-              })}
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-ink-950/50 p-0 sm:items-center sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+        >
+          <motion.form
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="promo-dialog-title"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 30, opacity: 0 }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={handleSubmit(onSubmit, () => toastError("Revisá los campos marcados en rojo"))}
+            className="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
+          >
+            <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+              <p id="promo-dialog-title" className="font-semibold text-ink-900">
+                {editing ? `Editar: ${editing.title}` : "Nueva promoción"}
+              </p>
+              <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-full p-1.5 text-ink-500 hover:bg-ink-100">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-          )}
-        />
-      </div>
 
-      <Controller
-        control={control}
-        name="products"
-        render={({ field }) => <ProductPicker options={productOptions} value={field.value || []} onChange={field.onChange} />}
-      />
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+                <Input label="Nombre" placeholder="Ej: 20% en chocolates" {...register("title")} error={errors.title?.message} />
+                <Input label="Descuento (%)" type="number" min="1" max="100" {...register("discountPercent")} error={errors.discountPercent?.message} />
+              </div>
 
-      <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
-        <input type="checkbox" {...register("active")} className="h-4 w-4 rounded border-ink-300 text-brand-600" />
-        Publicada
-      </label>
-      <label className="flex items-start gap-2 text-sm font-medium text-ink-700">
-        <input type="checkbox" {...register("showInPopup")} className="mt-0.5 h-4 w-4 rounded border-ink-300 accent-brand-600" />
-        <span>
-          Mostrar en el cartel al entrar a la tienda
-          <span className="block text-xs font-normal text-ink-500">Igual se ve en la sección Promociones de la página principal.</span>
-        </span>
-      </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Select label="Ocasión" {...register("occasion")}>
+                  {Object.entries(OCCASIONS).map(([k, label]) => (
+                    <option key={k} value={k}>
+                      {k === "general" ? "Promoción común (sin fecha especial)" : k === "otra" ? "Otra fecha (escribís el nombre)" : label}
+                    </option>
+                  ))}
+                </Select>
+                {occasion === "otra" ? (
+                  <Input label="Nombre de la fecha" placeholder="Ej: Aniversario" {...register("occasionName")} error={errors.occasionName?.message} />
+                ) : (
+                  <Select label="Se aplica a" {...register("scope")} error={errors.scope?.message}>
+                    {Object.entries(SCOPES).map(([k, label]) => (
+                      <option key={k} value={k}>
+                        {label}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </div>
+              {occasion === "otra" && (
+                <Select label="Se aplica a" {...register("scope")} error={errors.scope?.message}>
+                  {Object.entries(SCOPES).map(([k, label]) => (
+                    <option key={k} value={k}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              )}
 
-      <div>
-        {editing?.banner?.url && !file && <img src={editing.banner.url} alt="" className="mb-2 h-20 w-full rounded-lg object-cover" />}
-        <FileInput label="Foto de la promoción" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      </div>
+              {scope === "categories" && (
+                <Controller
+                  control={control}
+                  name="categories"
+                  render={({ field }) => (
+                    <div>
+                      <div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto">
+                        {categories.map((c) => {
+                          const checked = field.value?.includes(c._id);
+                          return (
+                            <button
+                              type="button"
+                              key={c._id}
+                              aria-pressed={checked}
+                              onClick={() => field.onChange(checked ? field.value.filter((id) => id !== c._id) : [...(field.value || []), c._id])}
+                              className={`rounded-full border px-3 py-1 text-xs font-medium ${checked ? "border-brand-600 bg-brand-50 text-brand-600" : "border-ink-200 text-ink-600"}`}
+                            >
+                              {c.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {errors.categories && <p className="mt-1 text-xs text-danger-600">{errors.categories.message}</p>}
+                    </div>
+                  )}
+                />
+              )}
+              {scope === "products" && (
+                <Controller
+                  control={control}
+                  name="products"
+                  render={({ field }) => (
+                    <div>
+                      <ProductPicker options={productOptions} value={field.value || []} onChange={field.onChange} />
+                      {errors.products && <p className="mt-1 text-xs text-danger-600">{errors.products.message}</p>}
+                    </div>
+                  )}
+                />
+              )}
 
-      {error && <p className="text-sm text-danger-600">{error}</p>}
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" disabled={isSubmitting}>
-          {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear promoción"}
-        </Button>
-        {editing && (
-          <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
-            Cancelar
-          </Button>
-        )}
-      </div>
-    </form>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Input label="Empieza" type="datetime-local" {...register("startDate")} error={errors.startDate?.message} />
+                <Input label="Termina" type="datetime-local" {...register("endDate")} error={errors.endDate?.message} />
+              </div>
+              <p className="-mt-2 text-xs text-ink-500">Se activa y se termina sola en esas fechas (hora de Argentina).</p>
+
+              <Textarea label="Descripción (opcional)" rows={2} placeholder="Qué incluye, condiciones, etc." {...register("description")} error={errors.description?.message} />
+
+              <div className="rounded-2xl border border-ink-100">
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((v) => !v)}
+                  aria-expanded={moreOpen}
+                  className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink-800"
+                >
+                  Cartel y foto (opcional)
+                  <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                </button>
+                {moreOpen && (
+                  <div className="space-y-3 border-t border-ink-100 px-4 py-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input label="Precio para mostrar ($)" type="number" min="0" placeholder="Opcional" {...register("price")} error={errors.price?.message} />
+                      <Input label="Precio normal ($)" type="number" min="0" placeholder="Se ve tachado" {...register("regularPrice")} error={errors.regularPrice?.message} />
+                    </div>
+                    <p className="-mt-1 text-xs text-ink-500">Solo se muestran en el cartel. Lo que se cobra es el descuento (%).</p>
+                    <label className="flex items-center gap-2 text-sm text-ink-700">
+                      <input type="checkbox" {...register("showInPopup")} className="h-4 w-4 accent-brand-600" />
+                      Mostrar en el cartel al entrar a la tienda
+                    </label>
+                    <div>
+                      {editing?.banner?.url && !file && <img src={editing.banner.url} alt="" className="mb-2 h-16 w-full rounded-lg object-cover" />}
+                      <FileInput label="Foto de la promoción" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                    </div>
+                  </div>
+                )}
+              </div>
+              {error && <p className="text-sm text-danger-600">{error}</p>}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ink-100 px-5 py-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-ink-700">
+                <input type="checkbox" {...register("active")} className="h-4 w-4 accent-brand-600" />
+                Publicada <span className="text-xs font-normal text-ink-500">(destildala para pausarla)</span>
+              </label>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={onClose}>
+                  Cancelar
+                </Button>
+                <Button type="submit" size="sm" disabled={isSubmitting}>
+                  {isSubmitting ? <Spinner className="h-4 w-4" /> : editing ? "Guardar cambios" : "Crear promoción"}
+                </Button>
+              </div>
+            </div>
+          </motion.form>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -357,19 +467,27 @@ export default function PromocionesAdmin() {
   const [categories, setCategories] = useState([]);
   const [productOptions, setProductOptions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const [dialog, setDialog] = useState({ open: false, editing: null });
+  const [kindFilter, setKindFilter] = useState("");
 
   async function load() {
     setLoading(true);
-    const [promosRes, catsRes, productsRes] = await Promise.all([
-      api.get("/promotions"),
-      api.get("/categories", { params: { all: "true" } }),
-      api.get("/products/images/options")
-    ]);
-    setPromotions(promosRes.data);
-    setCategories(catsRes.data);
-    setProductOptions(productsRes.data);
-    setLoading(false);
+    try {
+      const [promosRes, catsRes, productsRes] = await Promise.all([
+        api.get("/promotions"),
+        api.get("/categories", { params: { all: "true" } }),
+        api.get("/products/images/options")
+      ]);
+      setPromotions(promosRes.data);
+      setCategories(catsRes.data);
+      setProductOptions(productsRes.data);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
@@ -388,61 +506,112 @@ export default function PromocionesAdmin() {
     }
   }
 
+  const shown = useMemo(() => (kindFilter ? promotions.filter((p) => promoKind(p) === kindFilter) : promotions), [promotions, kindFilter]);
+  const paged = usePagedList(shown);
+  const closeDialog = () => setDialog({ open: false, editing: null });
+
+  if (loadError) return <LoadError message="No pudimos cargar las promociones." onRetry={load} />;
+
   return (
     <div>
-      <h1 className="text-2xl font-bold text-ink-900">Promociones</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-ink-900">Promociones</h1>
+        <Button onClick={() => setDialog({ open: true, editing: null })}>
+          <Plus className="h-4 w-4" /> Nueva promoción
+        </Button>
+      </div>
       <PopupSwitch />
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_380px]">
-        <div className="min-w-0">
-          {loading ? (
-            <PageLoader />
-          ) : (
-            <div className="space-y-3">
-              {promotions.map((p) => (
-                <div key={p._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-ink-50">
-                      {p.banner?.url && <img src={p.banner.url} alt="" className="h-full w-full object-cover" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-ink-900">{p.title}</p>
-                      <p className="text-xs text-ink-500">
-                        {showDay(p.startDate)} al {showDay(p.endDate)}
-                        {p.price > 0 && <span className="ml-2 font-semibold text-brand-600">{formatCurrency(p.price)}</span>}
-                        {p.discountPercent > 0 && <span className="ml-2 font-semibold text-brand-600">{p.discountPercent}% OFF</span>}
-                      </p>
-                      {p.showInPopup !== false && <p className="text-xs text-ink-400">Sale en el cartel al entrar</p>}
-                    </div>
+      <div className="mt-6 mb-3 flex flex-wrap items-center gap-2">
+        <label htmlFor="promo-kind-filter" className="text-sm font-medium text-ink-600">
+          Mostrar:
+        </label>
+        <select
+          id="promo-kind-filter"
+          value={kindFilter}
+          onChange={(e) => {
+            setKindFilter(e.target.value);
+            paged.setPage(1);
+          }}
+          className="rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="">Todas</option>
+          {PROMO_KINDS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {loading ? (
+        <PageLoader />
+      ) : (
+        <div className="grid gap-3 xl:grid-cols-2">
+          {paged.items.map((p) => {
+            const status = promoStatus(p);
+            const occasion = occasionLabel(p);
+            const label = promoLabel(p);
+            return (
+              <div key={p._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-ink-50">
+                    {p.banner?.url && <img src={p.banner.url} alt="" className="h-full w-full object-cover" />}
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
-                    <Badge tone={p.isCurrentlyActive ? "success" : "neutral"}>{p.isCurrentlyActive ? "Vigente" : "No vigente"}</Badge>
-                    <button onClick={() => setEditing(p)} className="text-sm font-semibold text-brand-600 hover:underline">
-                      Editar
-                    </button>
-                    <button onClick={() => handleDelete(p)} className="text-sm font-semibold text-danger-600 hover:underline">
-                      Eliminar
-                    </button>
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink-900">{p.title}</p>
+                    <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs">
+                      {label ? (
+                        <span className="rounded-full bg-brand-600 px-2 py-0.5 font-bold text-white">{label}</span>
+                      ) : (
+                        <span className="rounded-full bg-ink-100 px-2 py-0.5 font-semibold text-ink-600">Sin descuento: editala</span>
+                      )}
+                      {occasion && <span className="rounded-full bg-brand-50 px-2 py-0.5 font-semibold text-brand-600">{occasion}</span>}
+                      <span className="text-ink-500">
+                        {p.scope === "all" ? "Toda la tienda" : p.scope === "categories" ? `${p.categories?.length || 0} categoría(s)` : `${p.products?.length || 0} producto(s)`}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-xs text-ink-500">
+                      {showDateTime(p.startDate)} al {showDateTime(p.endDate)}
+                      {p.showInPopup !== false && " · sale en el cartel"}
+                    </p>
                   </div>
                 </div>
-              ))}
-              {promotions.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-ink-200 p-10 text-center text-ink-400">
-                  Todavía no cargaste promociones.
+                <div className="flex shrink-0 items-center gap-3">
+                  <Badge tone={status.tone}>{status.text}</Badge>
+                  <button onClick={() => setDialog({ open: true, editing: p })} className="text-sm font-semibold text-brand-600 hover:underline">
+                    Editar
+                  </button>
+                  <button onClick={() => handleDelete(p)} className="text-sm font-semibold text-danger-600 hover:underline">
+                    Eliminar
+                  </button>
                 </div>
-              )}
+              </div>
+            );
+          })}
+          {shown.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-ink-200 p-10 text-center text-ink-400 xl:col-span-2">
+              {promotions.length ? "No hay promociones de este tipo." : "Todavía no cargaste promociones."}
             </div>
           )}
         </div>
+      )}
 
-        <PromotionForm
-          editing={editing}
-          categories={categories}
-          productOptions={productOptions}
-          onSaved={() => { setEditing(null); load(); }}
-          onCancel={() => setEditing(null)}
-        />
-      </div>
+      {!loading && (
+        <Pagination page={paged.page} pages={paged.pages} total={paged.total} limit={paged.limit} itemLabel="promociones" onPageChange={paged.setPage} />
+      )}
+
+      <PromotionDialog
+        open={dialog.open}
+        editing={dialog.editing}
+        categories={categories}
+        productOptions={productOptions}
+        onSaved={() => {
+          closeDialog();
+          load();
+        }}
+        onClose={closeDialog}
+      />
     </div>
   );
 }

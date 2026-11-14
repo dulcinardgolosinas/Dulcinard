@@ -1,5 +1,6 @@
 import Order, { STOCK_HOLDING_STATUSES } from "../models/Order.js";
 import Product from "../models/Product.js";
+import User from "../models/User.js";
 
 // Descuento / devolución de stock de un pedido, a prueba de compras simultáneas
 // sin depender de transacciones (que requieren replica set):
@@ -104,5 +105,7 @@ export async function approveOrderPayment(order, { strictStock = false, confirme
   order.paymentStatus = "aprobado";
   order.paymentConfirmedAt = new Date();
   order.paymentConfirmedBy = confirmedBy;
+  // Con su primer pedido pagado, el cliente ya usó el beneficio de primera compra.
+  await User.updateOne({ _id: order.user?._id || order.user }, { $set: { firstPurchaseDiscountUsed: true } });
   return true;
 }

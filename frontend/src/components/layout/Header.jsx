@@ -1,13 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, LayoutGrid, Search, ShoppingCart, Tag, UserRound, X } from "lucide-react";
+import { ChevronDown, Home, LayoutGrid, Search, ShoppingCart, Tag, UserRound, X } from "lucide-react";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { useCartStore } from "../../store/cartStore";
 import { useAuthStore } from "../../store/authStore";
 import { getCategories } from "../../lib/categories";
 import { scrollToProducts } from "../../lib/navigation";
 import { cldUrl } from "../../lib/cloudinary";
+import { CategoriesModal } from "./CategoriesModal";
 
 const infoLinks = [
   { to: "/quienes-somos", label: "Quiénes somos" },
@@ -17,6 +18,19 @@ const infoLinks = [
 
 // Forma de cinta de marcador de libro: rectángulo con un corte en V abajo.
 const BOOKMARK_CLIP = "polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%)";
+
+// Compu (lg en adelante): la solapa lleva al inicio. Celular y tablet: abre el menú.
+const DESKTOP_QUERY = "(min-width: 1024px)";
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(() => typeof window !== "undefined" && window.matchMedia(DESKTOP_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(DESKTOP_QUERY);
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return isDesktop;
+}
 
 function useCategories() {
   const [categories, setCategories] = useState([]);
@@ -123,7 +137,7 @@ function CartButton({ onOpen }) {
 
 // Menú que se despliega desde la solapa: arriba el logo de la franja blanca,
 // después el buscador, los productos por categoría y el resto de las páginas.
-function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
+function SolapaMenu({ config, categories, onHome, onProducts, onPromotions, onClose }) {
   const { isAuthenticated } = useAuthStore();
   const ref = useRef(null);
   const [maxHeight, setMaxHeight] = useState(undefined);
@@ -164,11 +178,19 @@ function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
         </button>
       </div>
 
-      <Link to="/" onClick={onClose} className="flex justify-center">
+      <Link to="/" onClick={onHome} className="flex justify-center">
         <SecondaryLogo config={config} className="h-12" />
       </Link>
 
       <SearchForm onDone={onClose} className="mt-3" />
+
+      <Link
+        to="/"
+        onClick={onHome}
+        className="mt-3 flex w-full items-center gap-2 rounded-2xl border border-ink-200 px-4 py-2.5 text-base font-bold text-ink-800 hover:border-brand-300 hover:text-brand-600"
+      >
+        <Home className="h-5 w-5" /> Inicio
+      </Link>
 
       <button
         type="button"
@@ -195,9 +217,6 @@ function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
         >
           <Tag className="h-4 w-4" /> Ofertas y promociones
         </button>
-        <Link to="/" onClick={onClose} className="block rounded-xl px-3 py-2 text-sm font-semibold text-ink-800 hover:bg-ink-50">
-          Inicio
-        </Link>
         {infoLinks.map((l) => (
           <Link key={l.to} to={l.to} onClick={onClose} className="block rounded-xl px-3 py-2 text-sm font-semibold text-ink-800 hover:bg-ink-50">
             {l.label}
@@ -211,8 +230,16 @@ function SolapaMenu({ config, categories, onProducts, onPromotions, onClose }) {
   );
 }
 
+// Link de la barra roja: la categoría activa queda en blanco con texto rojo.
+const barLinkClass = (active) =>
+  `shrink-0 rounded-full px-2.5 py-1 text-[13px] font-semibold transition-colors ${
+    active ? "bg-white text-brand-600 shadow-sm" : "text-white/90 hover:bg-white/15 hover:text-white"
+  }`;
+
 export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const isDesktop = useIsDesktop();
   const config = useSiteConfigStore((s) => s.config);
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
@@ -223,8 +250,19 @@ export function Header() {
   const isHome = location.pathname === "/";
   const compact = stripHidden && !menuOpen;
 
+  // Categoría marcada en la barra roja: sale de la URL, así se mantiene al recargar.
+  const params = new URLSearchParams(location.search);
+  const onCatalog = location.pathname === "/catalogo";
+  const activeCategory = onCatalog ? params.get("category") : null;
+  const promoActive = onCatalog && !!params.get("promo");
+  const allActive = onCatalog && !activeCategory && !promoActive;
+  const closeCategories = useCallback(() => setCategoriesOpen(false), []);
+
   // El menú se cierra al cambiar de página, con Escape o al tocar afuera.
-  useEffect(() => setMenuOpen(false), [location.pathname, location.search]);
+  useEffect(() => {
+    setMenuOpen(false);
+    setCategoriesOpen(false);
+  }, [location.pathname, location.search]);
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e) => e.key === "Escape" && setMenuOpen(false);
@@ -242,6 +280,18 @@ export function Header() {
     }
   }
   const goToProducts = () => goToSection("productos", "/catalogo");
+
+  // Logo -> inicio. Si ya se está en el inicio, sube suave hasta arriba.
+  // Con evento (un Link) el Link navega solo; sin evento (la solapa) se navega acá.
+  function goHome(e) {
+    setMenuOpen(false);
+    if (isHome) {
+      e?.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (!e) {
+      navigate("/");
+    }
+  }
   const goToPromotions = () => goToSection("promociones", "/#promociones");
 
   return (
@@ -268,9 +318,9 @@ export function Header() {
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[60] mx-auto max-w-7xl px-4 md:px-6">
             <button
               type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-              aria-expanded={menuOpen}
+              onClick={() => (isDesktop ? goHome() : setMenuOpen((v) => !v))}
+              aria-label={isDesktop ? "Ir al inicio" : menuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={isDesktop ? undefined : menuOpen}
               style={{ clipPath: BOOKMARK_CLIP }}
               className={`pointer-events-auto relative flex flex-col items-center justify-center bg-brand-600 px-1.5 pb-7 pt-2 shadow-lg transition-[height,width] duration-300 ease-out ${
                 compact
@@ -289,7 +339,7 @@ export function Header() {
               ) : (
                 <span className="mt-3 font-display text-base font-black leading-none text-white">DULCINARD</span>
               )}
-              <ChevronDown className={`absolute bottom-3 h-4 w-4 text-white/90 transition-transform ${menuOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
+              <ChevronDown className={`absolute bottom-3 h-4 w-4 text-white/90 transition-transform lg:hidden ${menuOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
             </button>
           </div>
 
@@ -302,7 +352,7 @@ export function Header() {
               }`}
             >
               <div aria-hidden="true" />
-              <Link to="/" aria-label="Ir al inicio">
+              <Link to="/" onClick={goHome} aria-label="Ir al inicio">
                 <SecondaryLogo config={config} className={`transition-[height] duration-300 ${compact ? "h-8 lg:h-10" : "h-10 lg:h-14"}`} />
               </Link>
               <nav className="hidden items-center justify-self-end gap-5 lg:flex">
@@ -325,8 +375,12 @@ export function Header() {
               <div className={`w-[92px] shrink-0 md:w-[104px] lg:w-[132px]`} aria-hidden="true" />
               <button
                 type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                className="hidden h-11 shrink-0 items-center gap-2 rounded-full border border-ink-200 px-4 text-sm font-bold text-ink-800 transition-colors hover:border-brand-300 hover:text-brand-600 lg:flex"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setCategoriesOpen(true);
+                }}
+                aria-haspopup="dialog"
+                className="hidden h-11 shrink-0 items-center gap-2 rounded-full border border-ink-200 px-4 text-sm font-bold text-ink-800 transition-colors hover:border-brand-300 hover:text-brand-600 md:flex"
               >
                 <LayoutGrid className="h-4 w-4" /> Categorías
               </button>
@@ -346,19 +400,25 @@ export function Header() {
           <div className="hidden bg-brand-600 md:block">
             <div className="mx-auto flex h-11 max-w-7xl items-center px-4 md:px-6">
               <div className={`w-[92px] shrink-0 md:w-[104px] lg:w-[132px]`} aria-hidden="true" />
-              <nav aria-label="Categorías" className="scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+              <nav aria-label="Categorías" className="scrollbar-none flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto">
                 <button
                   type="button"
                   onClick={goToPromotions}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3 py-1 text-sm font-bold text-brand-600 hover:bg-brand-50"
+                  className={`flex shrink-0 items-center gap-1.5 rounded-full border border-white/70 px-3 py-0.5 text-[13px] font-bold transition-colors ${
+                    promoActive ? "bg-white text-brand-600" : "text-white hover:bg-white/15"
+                  }`}
                 >
                   <Tag className="h-3.5 w-3.5" /> Ofertas
                 </button>
+                <Link to="/catalogo" aria-current={allActive ? "page" : undefined} className={barLinkClass(allActive)}>
+                  Todas
+                </Link>
                 {categories.map((c) => (
                   <Link
                     key={c._id}
                     to={`/catalogo?category=${c._id}`}
-                    className="shrink-0 rounded-full px-3 py-1 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 hover:text-white"
+                    aria-current={activeCategory === c._id ? "page" : undefined}
+                    className={barLinkClass(activeCategory === c._id)}
                   >
                     {c.name}
                   </Link>
@@ -375,6 +435,7 @@ export function Header() {
               <SolapaMenu
                 config={config}
                 categories={categories}
+                onHome={goHome}
                 onProducts={goToProducts}
                 onPromotions={goToPromotions}
                 onClose={() => setMenuOpen(false)}
@@ -385,6 +446,8 @@ export function Header() {
           </div>
         </div>
       </header>
+
+      <CategoriesModal open={categoriesOpen} categories={categories} onClose={closeCategories} />
     </>
   );
 }

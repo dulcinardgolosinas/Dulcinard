@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Camera, Clock, Globe, Mail, MessageCircle, Phone } from "lucide-react";
+import { RichText } from "../components/ui/RichText";
 import { useSiteConfigStore } from "../store/siteConfigStore";
 import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
@@ -29,9 +30,9 @@ function Hero({ waHref }) {
             {content.contactTitle}
           </motion.h1>
 
-          <motion.p custom={2} variants={fadeUp} className="mt-5 max-w-md text-base text-white/80 md:text-lg">
-            {content.contactText}
-          </motion.p>
+          <motion.div custom={2} variants={fadeUp} className="mt-5 max-w-md text-base text-white/80 md:text-lg">
+            <RichText text={content.contactText} className="space-y-3" />
+          </motion.div>
 
           <motion.div custom={3} variants={fadeUp} className="mt-8">
             <a href={waHref} target="_blank" rel="noopener noreferrer" className="group inline-flex items-center gap-3">
@@ -126,6 +127,56 @@ function Branches({ branches }) {
   );
 }
 
+// Teléfono, WhatsApp, email, redes y horarios (se editan en el panel: Textos de la tienda).
+function ContactInfo({ config, waHref }) {
+  const content = useSiteContent();
+  const items = [
+    content.contactPhone && { icon: Phone, label: "Teléfono", value: content.contactPhone, href: `tel:${content.contactPhone.replace(/[^\d+]/g, "")}` },
+    config?.whatsappNumber && { icon: MessageCircle, label: "WhatsApp", value: config.whatsappNumber, href: waHref, external: true },
+    content.contactEmail && { icon: Mail, label: "Email", value: content.contactEmail, href: `mailto:${content.contactEmail}` },
+    config?.instagram && { icon: Camera, label: "Instagram", value: "Seguinos en Instagram", href: config.instagram, external: true },
+    config?.facebook && { icon: Globe, label: "Facebook", value: "Seguinos en Facebook", href: config.facebook, external: true }
+  ].filter(Boolean);
+  if (!items.length && !content.contactHours?.trim()) return null;
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 pt-14 md:px-6">
+      <div className="grid gap-6 rounded-3xl border border-ink-100 bg-white p-6 md:grid-cols-[1fr_1fr] md:p-8">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-ink-900">Datos de contacto</h2>
+          <ul className="mt-4 space-y-3">
+            {items.map(({ icon: Icon, label, value, href, external }) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className="group flex items-center gap-3"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block text-xs text-ink-500">{label}</span>
+                    <span className="font-semibold text-ink-900 group-hover:text-brand-600">{value}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {content.contactHours?.trim() && (
+          <div>
+            <h2 className="flex items-center gap-2 font-display text-2xl font-bold text-ink-900">
+              <Clock className="h-6 w-6 text-brand-600" /> Horarios
+            </h2>
+            <RichText text={content.contactHours} className="mt-4 space-y-3 text-ink-600 leading-relaxed" />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function Contacto() {
   const config = useSiteConfigStore((s) => s.config);
   const branches = config?.branches || [];
@@ -139,6 +190,7 @@ export default function Contacto() {
         description="Hacé tu pedido por WhatsApp o visitá nuestras sucursales de Dulcinard en San Miguel de Tucumán, Yerba Buena y Concepción. Direcciones y horarios."
       />
       <Hero waHref={waHref} />
+      <ContactInfo config={config} waHref={waHref} />
       <Branches branches={branches} />
     </div>
   );

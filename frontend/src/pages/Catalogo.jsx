@@ -52,17 +52,11 @@ export default function Catalogo() {
 
   const fetchProducts = useCallback(
     async (targetPage, replace) => {
-      if (promoId && !promo) return; // esperando los datos de la promoción
       replace ? setLoading(true) : setLoadingMore(true);
       try {
-        if (promo && !promo.products?.length) {
-          setProducts([]);
-          setPages(1);
-          return;
-        }
-        const ids = promo ? promo.products.map((p) => p._id || p).join(",") : undefined;
+        // ?promo=: el servidor devuelve los productos a los que se aplica (según su alcance).
         const { data } = await api.get("/products", {
-          params: { q, category, brand, unit, featured, minPrice, maxPrice, ids, page: targetPage, limit: 24 }
+          params: { q, category, brand, unit, featured, minPrice, maxPrice, promo: promoId || undefined, page: targetPage, limit: 24 }
         });
         setProducts((prev) => (replace ? data.items : [...prev, ...data.items]));
         setPages(data.pages);
@@ -72,7 +66,7 @@ export default function Catalogo() {
         setLoadingMore(false);
       }
     },
-    [q, category, brand, unit, featured, minPrice, maxPrice, promoId, promo]
+    [q, category, brand, unit, featured, minPrice, maxPrice, promoId]
   );
 
   useEffect(() => {

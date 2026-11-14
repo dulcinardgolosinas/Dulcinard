@@ -33,6 +33,14 @@ export const createOrderValidator = [
   validate
 ];
 
+export const quoteValidator = [
+  body("items").isArray({ max: 200 }).withMessage("Carrito inválido"),
+  body("items.*.productId").isMongoId().withMessage("Producto inválido en el carrito"),
+  body("items.*.quantity").isInt({ min: 1, max: 100000 }).withMessage("Cantidad inválida"),
+  body("zone").optional({ checkFalsy: true }).isMongoId().withMessage("Zona de envío inválida"),
+  validate
+];
+
 const DATE_PARAM = /^\d{4}-\d{2}-\d{2}$/;
 export const exportDeliveredValidator = [
   query("from").optional({ checkFalsy: true }).matches(DATE_PARAM).withMessage("La fecha \"desde\" no es válida"),

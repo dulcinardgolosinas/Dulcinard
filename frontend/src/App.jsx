@@ -22,9 +22,9 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import ProductosAdmin from "./pages/admin/ProductosAdmin";
 import ProductoForm from "./pages/admin/ProductoForm";
-import ProductosImportar from "./pages/admin/ProductosImportar";
 import ProductosFotos from "./pages/admin/ProductosFotos";
-import StockExcel from "./pages/admin/StockExcel";
+import ProductosPlanilla from "./pages/admin/ProductosPlanilla";
+import TextosAdmin from "./pages/admin/TextosAdmin";
 import CategoriasAdmin from "./pages/admin/CategoriasAdmin";
 import PromocionesAdmin from "./pages/admin/PromocionesAdmin";
 import UsuariosAdmin from "./pages/admin/UsuariosAdmin";
@@ -69,9 +69,11 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="productos" element={<ProductosAdmin />} />
             <Route path="productos/nuevo" element={<ProductoForm />} />
-            <Route path="productos/importar" element={<ProductosImportar />} />
+            <Route path="productos/importar" element={<Navigate to="/admin/productos/planilla" replace />} />
             <Route path="productos/fotos" element={<ProductosFotos />} />
-            <Route path="productos/stock" element={<StockExcel />} />
+            <Route path="productos/planilla" element={<ProductosPlanilla />} />
+            {/* La pantalla vieja de stock ahora es parte de la planilla única. */}
+            <Route path="productos/stock" element={<Navigate to="/admin/productos/planilla" replace />} />
             <Route path="productos/:id/editar" element={<ProductoForm />} />
             <Route path="categorias" element={<CategoriasAdmin />} />
             <Route path="promociones" element={<PromocionesAdmin />} />
@@ -83,6 +85,7 @@ function App() {
             <Route path="proveedores" element={<ProveedoresAdmin />} />
             <Route path="imagenes-hero" element={<ImagenesHeroAdmin />} />
             <Route path="configuracion" element={<ConfiguracionAdmin />} />
+            <Route path="textos" element={<TextosAdmin />} />
           </Route>
         </Route>
       </Routes>

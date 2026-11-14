@@ -64,7 +64,11 @@ function buildEmailHtml(order, user, { isNew = false, brandColor = DEFAULT_BRAND
     .map(
       (i) => `
         <tr>
-          <td style="padding:10px;border-bottom:1px solid #eee">${escapeHtml(i.name)}</td>
+          <td style="padding:10px;border-bottom:1px solid #eee">${escapeHtml(i.name)}${
+            i.promotion?.label
+              ? `<div style="font-size:12px;color:${brandColor};margin-top:2px">Promo ${escapeHtml(i.promotion.label)}: ${escapeHtml(i.promotion.title || "")}${i.promoDiscount > 0 ? ` (−${formatCurrency(i.promoDiscount)})` : ""}</div>`
+              : ""
+          }</td>
           <td style="padding:10px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td>
           <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${formatCurrency(i.unitPrice)}</td>
           <td style="padding:10px;border-bottom:1px solid #eee;text-align:right;white-space:nowrap">${formatCurrency(i.subtotal)}</td>
@@ -116,6 +120,11 @@ function buildEmailHtml(order, user, { isNew = false, brandColor = DEFAULT_BRAND
           </table>
           <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:10px">
             ${infoRow("Productos", formatCurrency(order.itemsTotal))}
+            ${
+              order.firstPurchaseDiscount?.amount > 0
+                ? infoRow(`Descuento primera compra (${order.firstPurchaseDiscount.percent}%)`, `−${formatCurrency(order.firstPurchaseDiscount.amount)}`)
+                : ""
+            }
             ${infoRow("Envío", order.shippingCost ? formatCurrency(order.shippingCost) : "Gratis")}
             <tr><td style="padding:8px 0 0;font-size:18px;font-weight:bold">Total</td><td style="padding:8px 0 0;font-size:18px;font-weight:bold;color:${brandColor}">${formatCurrency(order.total)}</td></tr>
           </table>`

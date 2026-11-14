@@ -6,6 +6,8 @@ import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
 import { parsePagination, paginatedResponse, searchRegex, queryString } from "../utils/query.js";
 import { isAdmin } from "../middleware/auth.js";
 import { getActivePromotions, withPricing } from "../utils/pricing.js";
+import Promotion from "../models/Promotion.js";
+import { scopeOf } from "../utils/promotionTypes.js";
 
 const MISC_CATEGORY_NAME = "Artículos Varios";
 
@@ -54,6 +56,15 @@ export const listProducts = asyncHandler(async (req, res) => {
     // productos ahí a mano, muestra una mezcla del resto de las categorías.
     const categoryDoc = await Category.findById(category).select("name");
     filter.category = categoryDoc?.name === MISC_CATEGORY_NAME ? { $ne: category } : category;
+  }
+  // ?promo=<id>: los productos a los que se aplica esa promoción (según su alcance).
+  const promoId = queryString(req.query.promo);
+  if (promoId) {
+    const promo = OBJECT_ID_REGEX.test(promoId) ? await Promotion.findById(promoId).select("scope products categories").lean() : null;
+    const scope = promo ? scopeOf(promo) : "none";
+    if (scope === "products") filter._id = { $in: promo.products };
+    else if (scope === "categories") filter.category = { $in: promo.categories };
+    else if (scope !== "all") return res.json(paginatedResponse([], 0, parsePagination(req.query, 24)));
   }
   if (brand) filter.brand = brand;
   if (unit) filter.unit = unit;

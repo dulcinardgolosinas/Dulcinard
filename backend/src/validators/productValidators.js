@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import { validate } from "../middleware/validate.js";
 import { ALPHANUMERIC_TEXT_REGEX, SKU_REGEX } from "../utils/validationPatterns.js";
 import { SALE_UNITS } from "../models/Product.js";
@@ -32,3 +32,16 @@ const baseRules = [
 
 export const createProductValidator = [...baseRules, validate];
 export const updateProductValidator = [...baseRules, validate];
+
+// Opciones al subir la planilla única de productos.
+const SHEET_FIELD_VALUES = ["name", "price", "category", "stock"];
+export const importProductSheetValidator = [
+  query("fields")
+    .optional({ checkFalsy: true })
+    .isString()
+    .custom((value) => value.split(",").every((f) => SHEET_FIELD_VALUES.includes(f)))
+    .withMessage("Columnas a actualizar inválidas"),
+  query("createMissing").optional().isIn(["true", "false"]).withMessage("Opción de productos nuevos inválida"),
+  query("dryRun").optional().isIn(["true", "false"]).withMessage("Opción de vista previa inválida"),
+  validate
+];

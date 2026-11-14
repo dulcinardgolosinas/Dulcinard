@@ -11,6 +11,8 @@ import { PageLoader, Spinner } from "../../components/ui/Spinner";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, alphanumericField, phoneField, urlField } from "../../lib/validators";
 import { LoadError } from "../../components/ui/LoadError";
+import { Pagination } from "../../components/ui/Pagination";
+import { usePagedList } from "../../lib/usePagedList";
 
 const branchSchema = z.object({
   _id: z.string().optional(),
@@ -170,6 +172,8 @@ function BranchSummary({ branch, hasErrors, onEdit, onDelete }) {
   );
 }
 
+const PAGE_SIZE = 10;
+
 export default function SucursalesAdmin() {
   const {
     control,
@@ -186,6 +190,7 @@ export default function SucursalesAdmin() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "branches" });
+  const paged = usePagedList(fields, PAGE_SIZE);
   const branchesValues = watch("branches");
   const [uploadingCount, setUploadingCount] = useState(0);
   const [loaded, setLoaded] = useState(false);
@@ -237,6 +242,7 @@ export default function SucursalesAdmin() {
     if (!addingRef.current || !fields.length) return;
     addingRef.current = false;
     setOpen(fields[fields.length - 1].id, true);
+    paged.setPage(Math.ceil(fields.length / PAGE_SIZE)); // la nueva queda en la última página
   }, [fields]);
 
   function setPrimary(index) {
@@ -264,6 +270,9 @@ export default function SucursalesAdmin() {
   // Si hay errores, se abren las sucursales que los tienen para verlos.
   function onInvalid(formErrors) {
     (formErrors.branches || []).forEach((err, i) => err && fields[i] && setOpen(fields[i].id, true));
+    // Se va a la página de la primera sucursal con errores.
+    const first = (formErrors.branches || []).findIndex(Boolean);
+    if (first >= 0) paged.setPage(Math.floor(first / PAGE_SIZE) + 1);
     toastError("Revisá los campos marcados en rojo antes de guardar");
   }
 
@@ -284,7 +293,8 @@ export default function SucursalesAdmin() {
       </div>
 
       <div className="mt-6 space-y-5">
-        {fields.map((field, i) => {
+        {paged.items.map((field, j) => {
+          const i = paged.start + j; // posición real en la lista (no en la página)
           const branchErrors = errors.branches?.[i];
           const current = branchesValues?.[i];
           const isOpen = openIds.has(field.id);
@@ -368,6 +378,9 @@ export default function SucursalesAdmin() {
           );
         })}
 
+        {loaded && fields.length > 0 && (
+          <Pagination page={paged.page} pages={paged.pages} total={paged.total} limit={paged.limit} itemLabel="sucursales" onPageChange={paged.setPage} />
+        )}
         {!loaded && !loadError && <PageLoader />}
         {loadError && <LoadError message="No pudimos cargar las sucursales." onRetry={() => window.location.reload()} />}
         {loaded && fields.length === 0 && (

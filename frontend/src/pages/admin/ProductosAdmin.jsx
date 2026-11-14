@@ -95,16 +95,10 @@ export default function ProductosAdmin() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-ink-900">Productos</h1>
         <div className="flex flex-wrap gap-2">
-          <Link to="/admin/productos/importar">
-            <Button variant="outline">
-              <Upload className="h-4 w-4" strokeWidth={2} />
-              Cargar / actualizar precios
-            </Button>
-          </Link>
-          <Link to="/admin/productos/stock">
+          <Link to="/admin/productos/planilla">
             <Button variant="outline">
               <FileSpreadsheet className="h-4 w-4" strokeWidth={2} />
-              Stock en Excel
+              Planilla de productos (Excel)
             </Button>
           </Link>
           <Link to="/admin/productos/fotos">

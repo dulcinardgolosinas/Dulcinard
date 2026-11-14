@@ -24,8 +24,15 @@ const orderItemSchema = new mongoose.Schema(
     name: { type: String, required: true }, // snapshot al momento de compra
     unit: { type: String, required: true },
     listPrice: { type: Number }, // precio de lista sin promo (snapshot)
-    discountPercent: { type: Number, default: 0 }, // % de promo aplicado
-    unitPrice: { type: Number, required: true }, // precio cobrado por unidad
+    discountPercent: { type: Number, default: 0 }, // % de promo aplicado (promos de porcentaje)
+    unitPrice: { type: Number, required: true }, // precio por unidad con la promo
+    // Promo aplicada a la línea y cuánto descontó en total.
+    promotion: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: "Promotion" },
+      title: String,
+      label: String
+    },
+    promoDiscount: { type: Number, default: 0 },
     quantity: { type: Number, required: true, min: 1 },
     subtotal: { type: Number, required: true }
   },
@@ -37,7 +44,12 @@ const orderSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     items: { type: [orderItemSchema], required: true, validate: (v) => v.length > 0 },
 
-    itemsTotal: { type: Number, required: true },
+    itemsTotal: { type: Number, required: true }, // productos con sus promos
+    // Descuento de primera compra (sobre itemsTotal). amount = 0 si no corresponde.
+    firstPurchaseDiscount: {
+      percent: { type: Number, default: 0 },
+      amount: { type: Number, default: 0 }
+    },
     shippingCost: { type: Number, required: true, default: 0 },
     total: { type: Number, required: true },
 

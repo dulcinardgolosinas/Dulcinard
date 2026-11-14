@@ -18,9 +18,13 @@ const homeHeroImageSchema = new mongoose.Schema(
     // al catálogo completo, a un producto o a una categoría.
     title: { type: String, default: "", trim: true },
     buttonText: { type: String, default: "Comprar", trim: true },
-    linkType: { type: String, enum: ["catalog", "product", "category"], default: "catalog" },
+    // "promotion": lleva al listado de productos de esa promoción.
+    linkType: { type: String, enum: ["catalog", "product", "category", "promotion"], default: "catalog" },
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", default: null },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", default: null },
+    promotion: { type: mongoose.Schema.Types.ObjectId, ref: "Promotion", default: null },
+    // Si está vinculado a una promoción: se oculta solo cuando la promo termina o se pausa.
+    hideWhenPromoEnds: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
     active: { type: Boolean, default: true }
   },
