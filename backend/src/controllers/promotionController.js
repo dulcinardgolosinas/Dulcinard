@@ -2,20 +2,21 @@ import Promotion from "../models/Promotion.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
+import { promoLabel, occasionLabel, scopeOf } from "../utils/promotionTypes.js";
 
-// Las fechas llegan como día ("2026-11-30"): la promo arranca a las 00:00 y
-// termina a las 23:59 de ese día en hora de Argentina (no en UTC, que
-// cortaría la promo a las 21 hs del día anterior).
+// Fechas: llegan con hora ("2026-11-30T09:00", hora de Argentina) o solo el día
+// ("2026-11-30": arranca a las 00:00 y termina a las 23:59 de ese día). Siempre
+// en hora de Argentina, no en UTC (que cortaría la promo 3 horas antes).
 const AR_OFFSET = "-03:00";
-function dayStart(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00.000${AR_OFFSET}`) : value;
-}
-function dayEnd(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T23:59:59.999${AR_OFFSET}`) : value;
+export function parseArDate(value, { endOfDay = false } = {}) {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return new Date(`${value}T${endOfDay ? "23:59:59.999" : "00:00:00.000"}${AR_OFFSET}`);
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return new Date(`${value}:00${endOfDay ? ".999" : ".000"}${AR_OFFSET}`);
+  return new Date(value);
 }
 
 // Precio que llega del formulario: vacío = sin precio propio (null).
 const toPrice = (value) => (value === undefined ? undefined : value === "" || value === null ? null : Number(value));
+const toNumber = (value) => (value === undefined || value === "" ? undefined : Number(value));
 
 // Lista de IDs enviada como JSON desde el form. Lanza 400 (no 500) si viene malformada.
 function parseIdList(raw) {
@@ -31,6 +32,40 @@ function parseIdList(raw) {
   return [...new Set(list)];
 }
 
+// Lo que se puede cargar desde el formulario (create y update comparten la lógica).
+function applyFields(promotion, body) {
+  const set = (key, value) => value !== undefined && (promotion[key] = value);
+  set("title", body.title);
+  set("description", body.description);
+  promotion.type = "percent";
+  set("discountPercent", toNumber(body.discountPercent));
+  set("occasion", body.occasion);
+  set("occasionName", body.occasion === "otra" ? body.occasionName : body.occasion !== undefined ? "" : undefined);
+  set("scope", body.scope);
+  if (body.products !== undefined) promotion.products = parseIdList(body.products);
+  if (body.categories !== undefined) promotion.categories = parseIdList(body.categories);
+  if (body.price !== undefined) promotion.price = toPrice(body.price);
+  if (body.regularPrice !== undefined) promotion.regularPrice = toPrice(body.regularPrice);
+  set("showInPopup", body.showInPopup);
+  if (body.startDate !== undefined) promotion.startDate = parseArDate(body.startDate);
+  if (body.endDate !== undefined) promotion.endDate = parseArDate(body.endDate, { endOfDay: true });
+  set("active", body.active);
+
+  // Lo que no corresponde al alcance elegido no queda guardado (evita descuentos "fantasma").
+  const scope = promotion.scope;
+  if (scope === "all") {
+    promotion.products = [];
+    promotion.categories = [];
+  } else if (scope === "categories") promotion.products = [];
+  else if (scope === "products") promotion.categories = [];
+}
+
+// Datos para mostrar: etiqueta del badge ("-20%") y nombre de la ocasión.
+const present = (p) => {
+  const json = typeof p.toJSON === "function" ? p.toJSON() : p;
+  return { ...json, scope: scopeOf(json), label: promoLabel(json), occasionLabel: occasionLabel(json) };
+};
+
 export const listPromotions = asyncHandler(async (req, res) => {
   const { activeOnly } = req.query;
   const filter = {};
@@ -44,80 +79,52 @@ export const listPromotions = asyncHandler(async (req, res) => {
     .populate("products", "name price images slug")
     .populate("categories", "name slug")
     .sort({ createdAt: -1 });
-  res.json(promotions);
+  res.json(promotions.map(present));
 });
 
 // Público y liviano, para la sección de promociones del home: solo las
-// vigentes y solo los campos que se muestran (sin la lista de productos).
+// vigentes y solo los campos que se muestran.
 export const listHomePromotions = asyncHandler(async (req, res) => {
   const now = new Date();
   const promotions = await Promotion.find({ active: true, startDate: { $lte: now }, endDate: { $gte: now } })
-    .select("title description discountPercent price regularPrice showInPopup banner.url startDate endDate categories products")
+    .select(
+      "title description type discountPercent occasion occasionName scope price regularPrice showInPopup banner.url startDate endDate categories products"
+    )
     .populate("categories", "name slug")
     .populate({ path: "products", select: "name slug", match: { active: true } })
     .sort({ discountPercent: -1, endDate: 1 })
-    .limit(8)
+    .limit(12)
     .lean();
   // El navegador puede reusar la respuesta un minuto: las promos no cambian tan seguido.
   res.set("Cache-Control", "public, max-age=60");
-  res.json(promotions);
+  res.json(promotions.map(present));
 });
 
 export const getPromotion = asyncHandler(async (req, res) => {
-  const promotion = await Promotion.findById(req.params.id);
+  const promotion = await Promotion.findById(req.params.id).populate("products", "name slug").populate("categories", "name slug");
   if (!promotion) return res.status(404).json({ message: "Promoción no encontrada" });
-  res.json(promotion);
+  res.json(present(promotion));
 });
 
 export const createPromotion = asyncHandler(async (req, res) => {
-  const { title, description, discountPercent, products, categories, startDate, endDate, active, price, regularPrice, showInPopup } = req.body;
-
-  const promotion = new Promotion({
-    title,
-    description,
-    discountPercent,
-    price: toPrice(price) ?? null,
-    regularPrice: toPrice(regularPrice) ?? null,
-    showInPopup: showInPopup ?? true,
-    products: products ? parseIdList(products) : [],
-    categories: categories ? parseIdList(categories) : [],
-    startDate: dayStart(startDate),
-    endDate: dayEnd(endDate),
-    active
-  });
-
-  if (req.file) {
-    promotion.banner = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.promotions);
-  }
-
+  const promotion = new Promotion({ showInPopup: true });
+  applyFields(promotion, req.body);
+  if (req.file) promotion.banner = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.promotions);
   await promotion.save();
-  res.status(201).json(promotion);
+  res.status(201).json(present(promotion));
 });
 
 export const updatePromotion = asyncHandler(async (req, res) => {
   const promotion = await Promotion.findById(req.params.id);
   if (!promotion) return res.status(404).json({ message: "Promoción no encontrada" });
 
-  const { title, description, discountPercent, products, categories, startDate, endDate, active, price, regularPrice, showInPopup } = req.body;
-  if (title !== undefined) promotion.title = title;
-  if (price !== undefined) promotion.price = toPrice(price);
-  if (regularPrice !== undefined) promotion.regularPrice = toPrice(regularPrice);
-  if (showInPopup !== undefined) promotion.showInPopup = showInPopup;
-  if (description !== undefined) promotion.description = description;
-  if (discountPercent !== undefined) promotion.discountPercent = discountPercent;
-  if (products !== undefined) promotion.products = parseIdList(products);
-  if (categories !== undefined) promotion.categories = parseIdList(categories);
-  if (startDate !== undefined) promotion.startDate = dayStart(startDate);
-  if (endDate !== undefined) promotion.endDate = dayEnd(endDate);
-  if (active !== undefined) promotion.active = active;
-
+  applyFields(promotion, req.body);
   if (req.file) {
     if (promotion.banner?.publicId) await deleteImage(promotion.banner.publicId);
     promotion.banner = await uploadBuffer(req.file.buffer, CLOUDINARY_FOLDERS.promotions);
   }
-
   await promotion.save();
-  res.json(promotion);
+  res.json(present(promotion));
 });
 
 export const deletePromotion = asyncHandler(async (req, res) => {

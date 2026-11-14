@@ -2,7 +2,7 @@ import SiteConfig from "../models/SiteConfig.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage } from "../utils/cloudinaryUpload.js";
 import { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
-import { THEME_KEYS } from "../validators/siteConfigValidators.js";
+import { THEME_KEYS, CONTENT_LIMITS } from "../validators/siteConfigValidators.js";
 
 // SiteConfig es un singleton: si no existe documento, se crea uno con los defaults del schema.
 async function getOrCreateConfig() {
@@ -40,6 +40,16 @@ export const updateSiteConfig = asyncHandler(async (req, res) => {
     for (const key of THEME_KEYS) {
       if (req.body.theme[key] !== undefined) config.theme[key] = String(req.body.theme[key]).toLowerCase();
     }
+  }
+  if (req.body.content && typeof req.body.content === "object") {
+    for (const key of Object.keys(CONTENT_LIMITS)) {
+      if (req.body.content[key] !== undefined) config.content[key] = String(req.body.content[key]).trim();
+    }
+  }
+  if (req.body.firstPurchaseDiscount && typeof req.body.firstPurchaseDiscount === "object") {
+    const { enabled, percent } = req.body.firstPurchaseDiscount;
+    if (enabled !== undefined) config.firstPurchaseDiscount.enabled = Boolean(enabled);
+    if (percent !== undefined) config.firstPurchaseDiscount.percent = Number(percent);
   }
   if (req.body.bankTransfer && typeof req.body.bankTransfer === "object") {
     for (const key of ["alias", "cbu", "holder", "bankName"]) {
