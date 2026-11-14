@@ -9,6 +9,8 @@ import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { Film } from "lucide-react";
 import { HERO_HEIGHT, HERO_WIDTH, MAX_PHOTO_BYTES, checkHeroFile, formatMB, isVideoFile, uploadHeroMedia } from "../../lib/heroMedia";
 import { LoadError } from "../../components/ui/LoadError";
+import { Link } from "react-router-dom";
+import { PROMO_KINDS, promoKind, promoLabel, occasionLabel } from "../../lib/promotionTypes";
 
 const PAGE_LABELS = {
   "quienes-somos": "Quiénes somos",
@@ -112,7 +114,8 @@ function HeroCard({ hero, onChanged }) {
   );
 }
 
-const LINK_LABELS = { catalog: "Todos los productos", product: "Un producto", category: "Una categoría" };
+const LINK_LABELS = { catalog: "Todos los productos", product: "Un producto", category: "Una categoría", promotion: "Una promoción" };
+const promoIsCurrent = (p) => p && p.active && new Date(p.startDate) <= new Date() && new Date(p.endDate) >= new Date();
 
 /**
  * Vista previa de un slide: entera y con su propia forma, como en la tienda.
@@ -165,7 +168,7 @@ function UploadProgress({ value }) {
 
 // Cada slide del carrusel: su foto o video, adónde lleva al tocarlo, y las
 // opciones de reemplazar, mover, ocultar y eliminar.
-function HomeHeroSlideCard({ slide, position, total, products, categories, onChanged, onDeleted, onMove }) {
+function HomeHeroSlideCard({ slide, position, total, products, categories, promotions, onChanged, onDeleted, onMove }) {
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState(null);
@@ -174,8 +177,12 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
   const [form, setForm] = useState(() => ({
     linkType: slide.linkType || "catalog",
     productName: slide.product?.name || "",
-    category: slide.category?._id || ""
+    category: slide.category?._id || "",
+    promotion: slide.promotion?._id || "",
+    hideWhenPromoEnds: slide.hideWhenPromoEnds !== false
   }));
+  // Las promos agrupadas: primero las de fechas especiales y después las comunes.
+  const promoGroups = PROMO_KINDS.map((k) => ({ ...k, items: promotions.filter((p) => promoKind(p) === k.value) }));
   const set = (key) => (e) => setForm((prev) => ({ ...prev, [key]: e.target.value }));
   const listId = `productos-${slide._id}`;
   const what = slide.mediaType === "video" ? "este video" : "esta foto";
@@ -184,6 +191,7 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
     const product = products.find((p) => p.name.toLowerCase() === form.productName.trim().toLowerCase());
     if (form.linkType === "product" && !product) return toastError("Elegí un producto de la lista");
     if (form.linkType === "category" && !form.category) return toastError("Elegí una categoría");
+    if (form.linkType === "promotion" && !form.promotion) return toastError("Elegí una promoción");
 
     const confirmed = await confirmAction({
       title: "¿Guardar a dónde lleva?",
@@ -198,7 +206,9 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
       const { data } = await api.put(`/home-hero-images/${slide._id}`, {
         linkType: form.linkType,
         product: form.linkType === "product" ? product._id : undefined,
-        category: form.linkType === "category" ? form.category : undefined
+        category: form.linkType === "category" ? form.category : undefined,
+        promotion: form.linkType === "promotion" ? form.promotion : undefined,
+        hideWhenPromoEnds: form.hideWhenPromoEnds
       });
       onChanged(data);
       toastSuccess("Cambios guardados");
@@ -324,6 +334,66 @@ function HomeHeroSlideCard({ slide, position, total, products, categories, onCha
         </label>
       )}
 
+      {form.linkType === "promotion" && (
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-ink-600">
+            Promoción
+            <select value={form.promotion} onChange={set("promotion")} className={`mt-1 ${fieldClass}`}>
+              <option value="">Elegí una promoción</option>
+              {promoGroups.map((g) => (
+                <optgroup key={g.value} label={g.label}>
+                  {g.items.length === 0 ? (
+                    <option disabled value={`vacio-${g.value}`}>
+                      {g.value === "special" ? "No hay promos de fechas especiales cargadas" : "No hay promociones comunes cargadas"}
+                    </option>
+                  ) : (
+                    g.items.map((p) => (
+                      <option key={p._id} value={p._id}>
+                        {p.title}
+                        {promoLabel(p) ? ` (${promoLabel(p)})` : ""}
+                        {occasionLabel(p) ? ` · ${occasionLabel(p)}` : ""}
+                        {promoIsCurrent(p) ? "" : " · no vigente"}
+                      </option>
+                    ))
+                  )}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          {promotions.length === 0 ? (
+            <p className="rounded-lg bg-ink-50 px-2 py-1.5 text-xs text-ink-600">
+              Todavía no hay promociones.{" "}
+              <Link to="/admin/promociones" className="font-semibold text-brand-600 hover:underline">
+                Creá una en Promociones
+              </Link>
+              .
+            </p>
+          ) : (
+            promoGroups.some((g) => !g.items.length) && (
+              <p className="text-xs text-ink-500">
+                Para sumar una de fecha especial (Navidad, Día del Niño...), creala en{" "}
+                <Link to="/admin/promociones" className="font-semibold text-brand-600 hover:underline">
+                  Promociones
+                </Link>{" "}
+                eligiendo la ocasión.
+              </p>
+            )
+          )}
+          <label className="flex items-start gap-2 text-xs text-ink-600">
+            <input
+              type="checkbox"
+              checked={form.hideWhenPromoEnds}
+              onChange={(e) => setForm((prev) => ({ ...prev, hideWhenPromoEnds: e.target.checked }))}
+              className="mt-0.5 h-4 w-4 accent-brand-600"
+            />
+            Ocultarlo solo cuando la promoción termine
+          </label>
+          {slide.linkType === "promotion" && slide.promotion && !promoIsCurrent(slide.promotion) && slide.hideWhenPromoEnds !== false && (
+            <p className="rounded-lg bg-ink-50 px-2 py-1.5 text-xs text-ink-600">La promoción no está vigente: en la tienda este slide no se ve.</p>
+          )}
+        </div>
+      )}
+
       <Button type="button" size="sm" onClick={handleSaveLink} disabled={saving}>
         {saving ? <Spinner className="h-4 w-4" /> : "Guardar a dónde lleva"}
       </Button>
@@ -415,17 +485,20 @@ function HomeHeroGallery() {
   const [fileKey, setFileKey] = useState(0);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [promotions, setPromotions] = useState([]);
 
   useEffect(() => {
     Promise.all([
       api.get("/home-hero-images", { params: { all: "true" } }),
       api.get("/products/images/options"),
-      api.get("/categories", { params: { all: "true" } })
+      api.get("/categories", { params: { all: "true" } }),
+      api.get("/promotions")
     ])
-      .then(([slidesRes, productsRes, categoriesRes]) => {
+      .then(([slidesRes, productsRes, categoriesRes, promotionsRes]) => {
         setSlides(slidesRes.data);
         setProducts(productsRes.data);
         setCategories(categoriesRes.data);
+        setPromotions(promotionsRes.data);
       })
       .catch((err) => toastError(apiErrorMessage(err, "No pudimos cargar el carrusel")))
       .finally(() => setLoading(false));
@@ -533,6 +606,7 @@ function HomeHeroGallery() {
               total={slides.length}
               products={products}
               categories={categories}
+              promotions={promotions}
               onChanged={handleChanged}
               onDeleted={handleDeleted}
               onMove={(step) => handleMove(i, step)}

@@ -82,7 +82,7 @@ function DeliveredExport() {
     </details>
   );
 }
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const FILTER_DEFAULTS = { status: "", paymentMethod: "", from: "", to: "", page: "1" };
 
