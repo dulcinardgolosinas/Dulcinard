@@ -9,11 +9,43 @@ function optionalNumber(field, label, { min = 0, max = 100000000 } = {}) {
     .withMessage(`${label} debe ser un número mayor o igual a ${min}`);
 }
 
+// Textos editables de la tienda (SiteConfig.content) y su largo máximo. "" = texto por defecto.
+export const CONTENT_LIMITS = {
+  aboutIntro: 600,
+  aboutStoryTitle: 120,
+  aboutStory: 4000,
+  aboutQuote: 300,
+  aboutQuoteNote: 200,
+  value1Title: 40,
+  value1Text: 200,
+  value2Title: 40,
+  value2Text: 200,
+  value3Title: 40,
+  value3Text: 200,
+  shippingIntro: 300,
+  shippingInfo: 3000,
+  contactTitle: 80,
+  contactText: 600,
+  contactPhone: 40,
+  contactEmail: 120,
+  contactHours: 600
+};
+
 // Colores editables de la paleta (SiteConfig.theme). "" = color por defecto.
 export const THEME_KEYS = ["primary", "secondary", "accent", "background", "text"];
 const HEX_COLOR_OR_EMPTY_REGEX = /^(#[0-9a-fA-F]{6})?$/;
 
 export const updateSiteConfigValidator = [
+  ...Object.entries(CONTENT_LIMITS).map(([key, max]) =>
+    body(`content.${key}`).optional().isString().withMessage("Texto inválido").isLength({ max }).withMessage(`Este texto puede tener hasta ${max} caracteres`)
+  ),
+  body("content.contactEmail").optional({ checkFalsy: true }).trim().isEmail().withMessage("El email de contacto no es válido"),
+  body("firstPurchaseDiscount.enabled").optional().isBoolean().withMessage("Valor inválido para el descuento de primera compra").toBoolean(),
+  body("firstPurchaseDiscount.percent")
+    .optional()
+    .isInt({ min: 1, max: 90 })
+    .withMessage("El descuento de primera compra tiene que ser un número entero entre 1 y 90")
+    .toInt(),
   ...THEME_KEYS.map((key) =>
     body(`theme.${key}`)
       .optional()
