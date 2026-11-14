@@ -8,7 +8,9 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "seed": "node src/seed/seed.js",
-    "migrate:stock": "node src/seed/migrateStock.js"
+    "migrate:stock": "node src/seed/migrateStock.js",
+    "seed:alfajores": "node src/seed/addAlfajores.js",
+    "migrate:promos": "node src/seed/migratePromotions.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

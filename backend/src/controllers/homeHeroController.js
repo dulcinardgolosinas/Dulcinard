@@ -1,6 +1,7 @@
 import HomeHeroImage from "../models/HomeHeroImage.js";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
+import Promotion from "../models/Promotion.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadBuffer, deleteImage, deleteVideo } from "../utils/cloudinaryUpload.js";
 import cloudinary, { CLOUDINARY_FOLDERS } from "../config/cloudinary.js";
@@ -81,22 +82,28 @@ export const replaceHomeHeroMedia = asyncHandler(async (req, res) => {
   // El archivo anterior se borra recién cuando el nuevo ya quedó guardado.
   if (!(previous.mediaType === "video" && previous.video.publicId === doc.video?.publicId)) await deleteSlideMedia(previous);
 
-  await doc.populate([
-    { path: "product", select: "name slug active" },
-    { path: "category", select: "name slug active" }
-  ]);
+  await doc.populate(SLIDE_POPULATE);
   res.json(doc);
 });
+
+// Datos de la promo vinculada que necesita el panel y la tienda.
+const PROMOTION_FIELDS = "title type discountPercent occasion occasionName startDate endDate active";
+const SLIDE_POPULATE = [
+  { path: "product", select: "name slug active" },
+  { path: "category", select: "name slug active" },
+  { path: "promotion", select: PROMOTION_FIELDS }
+];
+const promoIsCurrent = (p, now = new Date()) => p && p.active && new Date(p.startDate) <= now && new Date(p.endDate) >= now;
 
 // Público: solo las fotos activas, para el slideshow del hero del home.
 // Admin (?all=true): todas, para gestionarlas desde el panel.
 export const listHomeHeroImages = asyncHandler(async (req, res) => {
   const filter = req.query.all === "true" ? {} : { active: true };
-  const images = await HomeHeroImage.find(filter)
-    .sort({ order: 1, createdAt: 1 })
-    .populate("product", "name slug active")
-    .populate("category", "name slug active")
-    .lean();
+  let images = await HomeHeroImage.find(filter).sort({ order: 1, createdAt: 1 }).populate(SLIDE_POPULATE).lean();
+  // Slides vinculados a una promo que ya terminó (o está pausada): no se muestran en la tienda.
+  if (req.query.all !== "true") {
+    images = images.filter((s) => !(s.linkType === "promotion" && s.hideWhenPromoEnds !== false && !promoIsCurrent(s.promotion)));
+  }
   // La lista pública la guarda la red de Vercel un minuto (y la sigue dando
   // mientras la actualiza): así casi ninguna visita espera a que el servidor
   // "despierte". La del panel (?all=true) siempre va al día.
@@ -117,7 +124,8 @@ export const updateHomeHeroImage = asyncHandler(async (req, res) => {
   const doc = await HomeHeroImage.findById(req.params.id);
   if (!doc) return res.status(404).json({ message: "Imagen no encontrada" });
 
-  const { order, active, title, buttonText, linkType, product, category } = req.body;
+  const { order, active, title, buttonText, linkType, product, category, promotion, hideWhenPromoEnds } = req.body;
+  if (hideWhenPromoEnds !== undefined) doc.hideWhenPromoEnds = hideWhenPromoEnds;
   if (order !== undefined) doc.order = order;
   if (active !== undefined) doc.active = active;
   if (title !== undefined) doc.title = title;
@@ -126,6 +134,11 @@ export const updateHomeHeroImage = asyncHandler(async (req, res) => {
     doc.linkType = linkType;
     doc.product = null;
     doc.category = null;
+    doc.promotion = null;
+    if (linkType === "promotion") {
+      if (!(await Promotion.exists({ _id: promotion }))) return res.status(400).json({ message: "Elegí una promoción de la lista" });
+      doc.promotion = promotion;
+    }
     if (linkType === "product") {
       if (!(await Product.exists({ _id: product }))) return res.status(400).json({ message: "Elegí un producto de la lista" });
       doc.product = product;
@@ -137,10 +150,7 @@ export const updateHomeHeroImage = asyncHandler(async (req, res) => {
   }
 
   await doc.save();
-  await doc.populate([
-    { path: "product", select: "name slug active" },
-    { path: "category", select: "name slug active" }
-  ]);
+  await doc.populate(SLIDE_POPULATE);
   res.json(doc);
 });
 
