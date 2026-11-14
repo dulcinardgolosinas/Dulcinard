@@ -3,12 +3,16 @@ import { useCartStore } from "../../store/cartStore";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { Button } from "../ui/Button";
 import { formatCurrency, UNIT_LABELS } from "../../lib/format";
+import { useCartQuote } from "../../lib/useCartQuote";
+import { FirstPurchaseNotice, QuoteSummary } from "./QuoteSummary";
 
 export function CartDrawer() {
   const { items, isOpen, closeCart, setQuantity, removeItem, total } = useCartStore();
   const config = useSiteConfigStore((s) => s.config);
   const minPurchase = config?.minPurchaseAmount ?? 100000;
-  const cartTotal = total();
+  // Precios con promos y primera compra según el servidor (solo con el carrito abierto).
+  const { quote } = useCartQuote(items, null, { enabled: isOpen });
+  const cartTotal = quote ? quote.itemsTotal : total();
   const missingForMin = Math.max(0, minPurchase - cartTotal);
 
   if (!isOpen) return null;
@@ -86,9 +90,11 @@ export function CartDrawer() {
                 ¡Superaste el monto mínimo de compra!
               </p>
             )}
-            <div className="mb-4 flex items-center justify-between text-base font-bold text-ink-900">
-              <span>Subtotal</span>
-              <span>{formatCurrency(cartTotal)}</span>
+            <div className="mb-3">
+              <FirstPurchaseNotice quote={quote} onNavigate={closeCart} />
+            </div>
+            <div className="mb-4">
+              <QuoteSummary quote={quote} fallbackItems={items} showItems={false} hideShipping />
             </div>
             <Link to="/checkout" onClick={closeCart}>
               <Button variant="primary" className="w-full" size="lg" disabled={missingForMin > 0}>
