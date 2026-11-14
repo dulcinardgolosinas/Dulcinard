@@ -7,6 +7,8 @@ export const listCategories = asyncHandler(async (req, res) => {
   const includeInactive = req.query.all === "true";
   const filter = includeInactive ? {} : { active: true };
   const categories = await Category.find(filter).sort({ order: 1, name: 1 });
+  // Lista pública: Vercel la guarda 1 minuto (el panel usa ?all=true, que no se guarda).
+  if (!includeInactive) res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=86400");
   res.json(categories);
 });
 

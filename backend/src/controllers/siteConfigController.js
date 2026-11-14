@@ -13,6 +13,9 @@ async function getOrCreateConfig() {
 
 export const getSiteConfig = asyncHandler(async (req, res) => {
   const config = await getOrCreateConfig();
+  // La tienda la pide en cada visita: Vercel la guarda 1 minuto para que no haya que
+  // despertar al servidor cada vez. El panel pide ?fresh=1 para ver siempre lo último.
+  if (req.query.fresh !== "1") res.set("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=86400");
   res.json(config);
 });
 

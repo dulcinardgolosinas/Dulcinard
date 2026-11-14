@@ -1,21 +1,13 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { PageLoader } from "./components/ui/Spinner";
 import { Layout } from "./components/layout/Layout";
 import { AuthLayout } from "./components/layout/AuthLayout";
 import { ProtectedRoute, AdminRoute } from "./routes/ProtectedRoute";
 import { ScrollToTop } from "./routes/ScrollToTop";
-
 import Home from "./pages/Home";
-import QuienesSomos from "./pages/QuienesSomos";
-import Contacto from "./pages/Contacto";
-import ZonasEnvio from "./pages/ZonasEnvio";
 import Catalogo from "./pages/Catalogo";
 import ProductoDetalle from "./pages/ProductoDetalle";
-import Login from "./pages/Login";
-import Registro from "./pages/Registro";
-import Checkout from "./pages/Checkout";
-import Perfil from "./pages/Perfil";
-import Pedidos from "./pages/Pedidos";
-import PedidoDetalle from "./pages/PedidoDetalle";
 import NotFound from "./pages/NotFound";
 
 import AdminLayout from "./pages/admin/AdminLayout";
@@ -40,6 +32,9 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      {/* Las páginas que no son el inicio ni el catálogo se bajan recién al abrirlas:
+          así la tienda carga más rápido en el celular (sobre todo, sin el panel). */}
+      <Suspense fallback={<PageLoader />}>
       <Routes>
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
@@ -89,6 +84,7 @@ function App() {
           </Route>
         </Route>
       </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
