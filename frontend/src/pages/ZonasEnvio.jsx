@@ -10,9 +10,12 @@ import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { fadeUp } from "../lib/motion";
 import { Seo } from "../components/Seo";
 import { LoadError } from "../components/ui/LoadError";
+import { RichText } from "../components/ui/RichText";
+import { useSiteContent } from "../lib/siteContent";
 
 function Hero() {
   const config = useSiteConfigStore((s) => s.config);
+  const content = useSiteContent();
   return (
     <section className="relative overflow-hidden text-white">
       <HeroBackdrop page="envios" />
@@ -35,7 +38,7 @@ function Hero() {
           </motion.h1>
 
           <motion.p custom={2} variants={fadeUp} className="mt-6 max-w-lg text-base text-white/80 md:text-lg">
-            Zonas de cobertura, tiempos y costos de envío — para que sepas exactamente cuándo y cómo llega tu pedido.
+            {content.shippingIntro}
           </motion.p>
 
           <motion.div custom={3} variants={fadeUp} className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
@@ -160,6 +163,20 @@ function ZonesGrid({ zones, loading }) {
   );
 }
 
+// Condiciones de envío escritas desde el panel (si hay).
+function ShippingInfo() {
+  const content = useSiteContent();
+  if (!content.shippingInfo?.trim()) return null;
+  return (
+    <section className="mx-auto max-w-3xl px-4 pb-16 md:px-6">
+      <div className="rounded-3xl border border-ink-100 bg-white p-6 md:p-8">
+        <h2 className="font-display text-2xl font-bold text-ink-900">Condiciones de envío</h2>
+        <RichText text={content.shippingInfo} className="mt-4 space-y-3 text-ink-600 leading-relaxed" />
+      </div>
+    </section>
+  );
+}
+
 export default function ZonasEnvio() {
   const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +203,7 @@ export default function ZonasEnvio() {
       ) : (
         <ZonesGrid zones={zones} loading={loading} />
       )}
+      <ShippingInfo />
     </div>
   );
 }
