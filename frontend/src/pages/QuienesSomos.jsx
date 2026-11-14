@@ -6,7 +6,8 @@ import { LogoWatermark } from "../components/ui/LogoWatermark";
 import { HeroBackdrop } from "../components/ui/HeroBackdrop";
 import { Button } from "../components/ui/Button";
 import { fadeUp } from "../lib/motion";
-import { useSiteContent, paragraphs } from "../lib/siteContent";
+import { useSiteContent } from "../lib/siteContent";
+import { RichText } from "../components/ui/RichText";
 import { Seo } from "../components/Seo";
 
 function Hero() {
@@ -110,11 +111,8 @@ function Story() {
             Nuestra historia
           </span>
           <h2 className="mt-2 font-display text-2xl font-bold text-ink-900 md:text-3xl">{content.aboutStoryTitle}</h2>
-          {paragraphs(content.aboutStory).map((text, i) => (
-            <p key={i} className={`${i === 0 ? "mt-5" : "mt-4"} text-ink-600 leading-relaxed`}>
-              {text}
-            </p>
-          ))}
+          {/* Texto editable desde el panel: admite negritas, listas y párrafos. */}
+          <RichText text={content.aboutStory} className="mt-5 space-y-4 text-ink-600 leading-relaxed" />
           <div className="mt-7 flex flex-wrap gap-3">
             <Link to="/catalogo">
               <Button size="lg">Ver catálogo completo</Button>
