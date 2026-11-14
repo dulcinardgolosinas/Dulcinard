@@ -23,7 +23,10 @@ const userSchema = new mongoose.Schema(
     addresses: { type: [addressSchema], default: [] },
     active: { type: Boolean, default: true },
     // Se incrementa al cambiar la contraseña: invalida todos los tokens emitidos antes.
-    tokenVersion: { type: Number, default: 0 }
+    tokenVersion: { type: Number, default: 0 },
+    // true cuando ya tuvo un pedido pagado o confirmado: el descuento de primera
+    // compra ya no le corresponde. Se marca al aprobarse el pago, no al crear el pedido.
+    firstPurchaseDiscountUsed: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
