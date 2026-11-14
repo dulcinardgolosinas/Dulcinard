@@ -84,7 +84,7 @@ export default function ProductoDetalle() {
           }
         }}
       />
-      <nav className="mb-6 text-xs text-ink-400">
+      <nav className="mb-6 break-words text-xs text-ink-400">
         <Link to="/catalogo" className="hover:text-brand-600">
           Catálogo
         </Link>
@@ -100,8 +100,9 @@ export default function ProductoDetalle() {
         <span className="text-ink-600">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 md:grid-cols-2">
-        <div>
+      {/* min-w-0: en el celular ninguna columna puede ser más ancha que la pantalla. */}
+      <div className="grid gap-8 md:grid-cols-2 md:gap-10">
+        <div className="min-w-0">
           <div className="aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-white">
             {images[activeImage] ? (
               <img
@@ -135,12 +136,13 @@ export default function ProductoDetalle() {
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           {product.brand && <p className="text-sm font-semibold uppercase tracking-wide text-ink-400">{product.brand}</p>}
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">{product.name}</h1>
+          <h1 className="mt-1 break-words font-display text-2xl font-bold text-ink-900 sm:text-3xl">{product.name}</h1>
 
-          <div className="mt-4 flex items-center gap-3">
-            <p className="text-3xl font-bold text-brand-600">{formatCurrency(finalPriceOf(product))}</p>
+          {/* Precio y etiquetas: en pantallas angostas bajan de renglón en vez de salirse. */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="text-2xl font-bold text-brand-600 sm:text-3xl">{formatCurrency(finalPriceOf(product))}</p>
             {product.discountPercent > 0 && <p className="text-lg text-ink-400 line-through">{formatCurrency(product.price)}</p>}
             {product.promo && <Badge tone="success">{product.promo.label}</Badge>}
             {product.promo?.occasion && <Badge tone="accent">{product.promo.occasion}</Badge>}
@@ -162,20 +164,20 @@ export default function ProductoDetalle() {
 
           {product.description && <p className="mt-5 leading-relaxed text-ink-600">{product.description}</p>}
 
-          <div className="mt-8 flex items-center gap-4">
-            <div className="flex items-center rounded-full border border-ink-200">
+          <div className="mt-8 flex items-center gap-3 sm:gap-4">
+            <div className="flex shrink-0 items-center rounded-full border border-ink-200">
               <button
-                className="px-4 py-2.5 text-lg text-ink-500"
+                className="px-3 py-2.5 text-lg text-ink-500 sm:px-4"
                 onClick={() => setQty((q) => Math.max(product.minOrderQty || 1, q - 1))}
               >
                 −
               </button>
               <span className="min-w-[3ch] text-center font-semibold">{qty}</span>
-              <button className="px-4 py-2.5 text-lg text-ink-500" onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>
+              <button className="px-3 py-2.5 text-lg text-ink-500 sm:px-4" onClick={() => setQty((q) => Math.min(product.stock, q + 1))}>
                 +
               </button>
             </div>
-            <Button size="lg" disabled={outOfStock} onClick={() => addItem(product, qty)} className="flex-1">
+            <Button size="lg" disabled={outOfStock} onClick={() => addItem(product, qty)} className="min-w-0 flex-1">
               Agregar al carrito
             </Button>
           </div>

@@ -553,8 +553,9 @@ export default function PromocionesAdmin() {
             const occasion = occasionLabel(p);
             const label = promoLabel(p);
             return (
-              <div key={p._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
-                <div className="flex min-w-0 items-center gap-3">
+              <div key={p._id} className="flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white p-4">
+                {/* basis-60: en el celular los datos ocupan el ancho y los botones bajan de renglón */}
+                <div className="flex min-w-0 flex-1 basis-60 items-center gap-3">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-ink-50">
                     {p.banner?.url && <img src={p.banner.url} alt="" className="h-full w-full object-cover" />}
                   </div>
