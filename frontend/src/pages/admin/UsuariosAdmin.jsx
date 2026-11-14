@@ -8,7 +8,7 @@ import { useSearchFilters } from "../../lib/useSearchFilters";
 import { useAuthStore } from "../../store/authStore";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 const FILTER_DEFAULTS = { q: "", role: "", page: "1" };
 
