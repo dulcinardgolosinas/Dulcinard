@@ -84,6 +84,7 @@ const shippingZones = [
 
 const categories = [
   { name: "Golosinas", description: "Caramelos, chicles y golosinas surtidas por mayor" },
+  { name: "Alfajores", description: "Alfajores simples, triples y en caja por mayor" },
   { name: "Galletas", description: "Galletitas dulces y saladas" },
   { name: "Chocolates", description: "Tabletas, bombones y chocolatines" },
   { name: "Turrones y Barritas", description: "Turrones, barritas de cereal y maní" },
