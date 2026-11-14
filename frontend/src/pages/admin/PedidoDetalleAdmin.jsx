@@ -205,8 +205,14 @@ export default function PedidoDetalleAdmin() {
               <p className="text-sm font-semibold text-ink-900">{item.name}</p>
               <p className="text-xs text-ink-400">
                 {item.quantity} x {UNIT_LABELS[item.unit] || item.unit} · {formatCurrency(item.unitPrice)}
-                {item.discountPercent > 0 && ` (${item.discountPercent}% OFF, antes ${formatCurrency(item.listPrice)})`}
+                {item.discountPercent > 0 && !item.promotion && ` (${item.discountPercent}% OFF, antes ${formatCurrency(item.listPrice)})`}
               </p>
+              {item.promotion?.label && (
+                <p className="text-xs font-semibold text-brand-600">
+                  Promo {item.promotion.label}: {item.promotion.title}
+                  {item.promoDiscount > 0 && ` (−${formatCurrency(item.promoDiscount)})`}
+                </p>
+              )}
             </div>
             <p className="font-semibold text-ink-900">{formatCurrency(item.subtotal)}</p>
           </div>
@@ -215,9 +221,15 @@ export default function PedidoDetalleAdmin() {
 
       <div className="mt-6 space-y-1.5 rounded-2xl bg-ink-50 p-5 text-sm">
         <div className="flex justify-between text-ink-600">
-          <span>Subtotal</span>
+          <span>Productos (con promos)</span>
           <span>{formatCurrency(order.itemsTotal)}</span>
         </div>
+        {order.firstPurchaseDiscount?.amount > 0 && (
+          <div className="flex justify-between font-semibold text-brand-600">
+            <span>Descuento primera compra ({order.firstPurchaseDiscount.percent}%)</span>
+            <span>−{formatCurrency(order.firstPurchaseDiscount.amount)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-ink-600">
           <span>Envío</span>
           <span>{formatCurrency(order.shippingCost)}</span>

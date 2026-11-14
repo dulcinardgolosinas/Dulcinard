@@ -7,7 +7,7 @@ import { Spinner } from "../../components/ui/Spinner";
 import { confirmAction, toastSuccess, toastError } from "../../lib/alerts";
 import { downloadFromApi } from "../../lib/download";
 import { formatCurrency } from "../../lib/format";
-import { SummaryCard, CollapsibleList } from "./ProductosImportar";
+import { SummaryCard, CollapsibleList } from "../../components/admin/ImportPreview";
 
 // Marcar pedidos como entregados con un Excel: se descarga la lista de los que
 // faltan entregar, se pone "SI" en los entregados y se vuelve a subir.

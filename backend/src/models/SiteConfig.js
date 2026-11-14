@@ -70,6 +70,35 @@ const siteConfigSchema = new mongoose.Schema(
     // (si el video es más corto, pasa cuando termina).
     heroVideoMaxSeconds: { type: Number, default: 20, min: 5, max: 120 },
 
+    // Textos editables de la tienda (Quiénes somos, Envíos y Contacto). "" = se usa
+    // el texto por defecto de frontend/src/lib/siteContent.js.
+    content: {
+      aboutIntro: { type: String, default: "" },
+      aboutStoryTitle: { type: String, default: "" },
+      aboutStory: { type: String, default: "" },
+      aboutQuote: { type: String, default: "" },
+      aboutQuoteNote: { type: String, default: "" },
+      value1Title: { type: String, default: "" },
+      value1Text: { type: String, default: "" },
+      value2Title: { type: String, default: "" },
+      value2Text: { type: String, default: "" },
+      value3Title: { type: String, default: "" },
+      value3Text: { type: String, default: "" },
+      shippingIntro: { type: String, default: "" },
+      shippingInfo: { type: String, default: "" },
+      contactTitle: { type: String, default: "" },
+      contactText: { type: String, default: "" },
+      contactPhone: { type: String, default: "" },
+      contactEmail: { type: String, default: "" },
+      contactHours: { type: String, default: "" }
+    },
+
+    // Descuento automático en la primera compra de cada cliente registrado.
+    firstPurchaseDiscount: {
+      enabled: { type: Boolean, default: true },
+      percent: { type: Number, default: 20, min: 1, max: 90 }
+    },
+
     // Datos que ve el cliente cuando elige pagar por transferencia. Sin alias
     // ni CBU, la transferencia no se ofrece en el checkout.
     bankTransfer: {

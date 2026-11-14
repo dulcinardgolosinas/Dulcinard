@@ -9,6 +9,7 @@ import { PageLoader } from "../../components/ui/Spinner";
 import { toastSuccess, toastError, confirmAction } from "../../lib/alerts";
 import { useSiteConfigStore } from "../../store/siteConfigStore";
 import { ThemeColorsSection } from "./ThemeColorsSection";
+import { FirstPurchaseSection } from "./FirstPurchaseSection";
 import { LogosSection } from "./LogosSection";
 import { nameField, urlField, numberField, intField, DIGITS_ONLY_REGEX } from "../../lib/validators";
 import { LoadError } from "../../components/ui/LoadError";
@@ -124,6 +125,9 @@ export default function ConfiguracionAdmin() {
           <LogosSection config={config} onSaved={setConfig} />
 
           <ThemeColorsSection config={config} onSaved={setConfig} />
+
+          <p className="mt-6 text-xs font-bold uppercase tracking-widest text-ink-400">Beneficios</p>
+          <FirstPurchaseSection config={config} onSaved={setConfig} />
         </div>
 
         <div>

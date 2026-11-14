@@ -11,6 +11,8 @@ import { Badge } from "../../components/ui/Badge";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField } from "../../lib/validators";
 import { LoadError } from "../../components/ui/LoadError";
+import { Pagination } from "../../components/ui/Pagination";
+import { usePagedList } from "../../lib/usePagedList";
 
 const schema = z.object({
   name: nameField("El nombre de la categoría", { min: 2, max: 60 }),
@@ -98,6 +100,7 @@ function CategoryForm({ editing, onSaved, onCancel }) {
 
 export default function CategoriasAdmin() {
   const [categories, setCategories] = useState([]);
+  const paged = usePagedList(categories);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -152,7 +155,7 @@ export default function CategoriasAdmin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {categories.map((c) => (
+                  {paged.items.map((c) => (
                     <tr key={c._id} className="border-t border-ink-50">
                       <td className="flex items-center gap-3 px-4 py-3">
                         <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ink-50">
@@ -183,6 +186,9 @@ export default function CategoriasAdmin() {
                 </tbody>
               </table>
             </div>
+          )}
+          {!loading && (
+            <Pagination page={paged.page} pages={paged.pages} total={paged.total} limit={paged.limit} itemLabel="categorías" onPageChange={paged.setPage} />
           )}
         </div>
 

@@ -7,12 +7,15 @@ import { mpPreference, mpPayment } from "../config/mercadoPago.js";
 import { sendOrderNotification } from "../utils/sendOrderNotification.js";
 import { approveOrderPayment, syncStockForStatus } from "../utils/orderStock.js";
 import { parsePagination, paginatedResponse } from "../utils/query.js";
-import { getActivePromotions, discountFor, discountedPrice } from "../utils/pricing.js";
+import { getActivePromotions, priceLine } from "../utils/pricing.js";
+import { firstPurchaseFor, firstPurchaseAmount } from "../utils/firstPurchase.js";
 import { buildWorkbook, formatArDate, sendWorkbook } from "../utils/excelExport.js";
 
 // Recalcula el pedido en el servidor a partir de precios reales de la DB:
-// nunca confiamos en el precio que venga del carrito del cliente.
-async function buildOrderItems(cartItems) {
+// nunca confiamos en el precio que venga del carrito del cliente. Lo usan la
+// cotización del checkout (POST /orders/quote) y la creación del pedido, así
+// lo que ve el cliente es exactamente lo que se cobra.
+async function quoteOrder({ cartItems, user, zoneId, strict = true }) {
   // Si el mismo producto viene repetido en varias líneas se suma en una sola:
   // si no, cada línea pasaría por separado el chequeo de stock y de mínimo.
   const quantities = new Map();
@@ -20,72 +23,102 @@ async function buildOrderItems(cartItems) {
     quantities.set(String(productId), (quantities.get(String(productId)) || 0) + Number(quantity));
   }
 
-  const [products, promotions] = await Promise.all([
+  const [products, promotions, config] = await Promise.all([
     Product.find({ _id: { $in: [...quantities.keys()] }, active: true }),
-    getActivePromotions()
+    getActivePromotions(),
+    SiteConfig.findOne()
   ]);
   const productMap = new Map(products.map((p) => [p._id.toString(), p]));
 
   const items = [];
+  const problems = [];
   for (const [productId, quantity] of quantities) {
     const product = productMap.get(productId);
-    if (!product) throw Object.assign(new Error("Un producto del carrito ya no está disponible"), { status: 400 });
-    if (quantity < product.minOrderQty) {
-      throw Object.assign(
-        new Error(`${product.name} requiere un mínimo de ${product.minOrderQty} ${product.unit}(s)`),
-        { status: 400 }
-      );
+    const fail = (message) => {
+      if (strict) throw Object.assign(new Error(message), { status: 400 });
+      problems.push(message);
+    };
+    if (!product) {
+      fail("Un producto del carrito ya no está disponible");
+      continue;
     }
+    if (quantity < product.minOrderQty) fail(`${product.name} requiere un mínimo de ${product.minOrderQty} ${product.unit}(s)`);
     // Chequeo preventivo: el descuento real (atómico) se hace al confirmar el
     // pago, en utils/orderStock.js.
-    if (product.stock < quantity) {
-      throw Object.assign(new Error(`Stock insuficiente para ${product.name}`), { status: 400 });
-    }
+    if (product.stock < quantity) fail(`Stock insuficiente para ${product.name}`);
 
-    // Precio con la promo vigente, calculado acá (nunca el que mande el carrito).
-    const discountPercent = discountFor(product, promotions);
-    const unitPrice = discountedPrice(product.price, discountPercent);
-    const subtotal = Math.round(unitPrice * quantity * 100) / 100;
+    // Precio con la mejor promo vigente.
+    const line = priceLine(product, quantity, promotions);
     items.push({
       product: product._id,
       name: product.name,
       unit: product.unit,
-      listPrice: product.price,
-      discountPercent,
-      unitPrice,
+      listPrice: line.listPrice,
+      discountPercent: line.discountPercent,
+      unitPrice: line.unitPrice,
+      promotion: line.promotion ? { _id: line.promotion._id, title: line.promotion.title, label: line.promotion.label } : undefined,
+      promoDiscount: line.promoDiscount,
       quantity,
-      subtotal
+      subtotal: line.subtotal
     });
   }
-  return items;
+  const itemsTotal = Math.round(items.reduce((sum, i) => sum + i.subtotal, 0) * 100) / 100;
+
+  let minPurchase = config?.minPurchaseAmount ?? 0;
+  let shippingCost = config?.defaultShippingCost ?? 0;
+  let freeShippingFrom = config?.freeShippingFrom ?? 0;
+  if (zoneId) {
+    // Una zona inexistente o desactivada (ej: una más barata que ya no se usa)
+    // no puede elegirse mandando su ID a mano.
+    const zone = await ShippingZone.findOne({ _id: zoneId, active: true });
+    if (!zone) throw Object.assign(new Error("La zona de envío elegida no está disponible"), { status: 400 });
+    minPurchase = zone.minPurchaseAmount;
+    shippingCost = zone.cost;
+    freeShippingFrom = zone.freeShippingFrom;
+  }
+  if (freeShippingFrom > 0 && itemsTotal >= freeShippingFrom) shippingCost = 0;
+
+  // Primera compra: % sobre los productos (ya con sus promos). Se suma a las promos.
+  const firstPurchase = await firstPurchaseFor(user, config);
+  const firstPurchaseDiscount = firstPurchase.eligible
+    ? { percent: firstPurchase.percent, amount: firstPurchaseAmount(itemsTotal, firstPurchase.percent) }
+    : { percent: 0, amount: 0 };
+
+  return {
+    items,
+    itemsTotal,
+    promoSavings: Math.round(items.reduce((sum, i) => sum + (i.promoDiscount || 0), 0) * 100) / 100,
+    firstPurchaseDiscount,
+    firstPurchase,
+    shippingCost,
+    minPurchase,
+    total: Math.round((itemsTotal - firstPurchaseDiscount.amount + shippingCost) * 100) / 100,
+    problems,
+    config
+  };
 }
+
+// POST /orders/quote -> cuánto sale el carrito (promos, primera compra y envío), sin crear nada.
+// Funciona también sin sesión: en ese caso avisa que registrándose tiene el descuento.
+export const quoteCart = asyncHandler(async (req, res) => {
+  const quote = await quoteOrder({ cartItems: req.body.items || [], user: req.user, zoneId: req.body.zone, strict: false });
+  const { config, ...rest } = quote;
+  res.json({
+    ...rest,
+    meetsMinimum: quote.itemsTotal >= quote.minPurchase
+  });
+});
 
 export const createOrder = asyncHandler(async (req, res) => {
   const { items: cartItems, shippingAddress } = req.body;
   if (!cartItems?.length) return res.status(400).json({ message: "El carrito está vacío" });
 
-  const items = await buildOrderItems(cartItems);
-  const itemsTotal = items.reduce((sum, i) => sum + i.subtotal, 0);
+  const quote = await quoteOrder({ cartItems, user: req.user, zoneId: shippingAddress?.zone });
+  const { config } = quote;
 
-  const config = await SiteConfig.findOne();
-  let minPurchase = config?.minPurchaseAmount ?? 0;
-  let shippingCost = config?.defaultShippingCost ?? 0;
-  let freeShippingFrom = config?.freeShippingFrom ?? 0;
-
-  if (shippingAddress?.zone) {
-    // Una zona inexistente o desactivada (ej: una más barata que ya no se usa)
-    // no puede elegirse mandando su ID a mano.
-    const zone = await ShippingZone.findOne({ _id: shippingAddress.zone, active: true });
-    if (!zone) return res.status(400).json({ message: "La zona de envío elegida no está disponible" });
-    minPurchase = zone.minPurchaseAmount;
-    shippingCost = zone.cost;
-    freeShippingFrom = zone.freeShippingFrom;
+  if (quote.itemsTotal < quote.minPurchase) {
+    return res.status(400).json({ message: `El monto mínimo de compra es $${quote.minPurchase}` });
   }
-
-  if (itemsTotal < minPurchase) {
-    return res.status(400).json({ message: `El monto mínimo de compra es $${minPurchase}` });
-  }
-  if (freeShippingFrom > 0 && itemsTotal >= freeShippingFrom) shippingCost = 0;
 
   if (req.body.paymentMethod === "transferencia" && !(config?.bankTransfer?.alias || config?.bankTransfer?.cbu)) {
     return res.status(400).json({ message: "El pago por transferencia no está disponible en este momento" });
@@ -93,10 +126,11 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   const order = await Order.create({
     user: req.user._id,
-    items,
-    itemsTotal,
-    shippingCost,
-    total: itemsTotal + shippingCost,
+    items: quote.items,
+    itemsTotal: quote.itemsTotal,
+    firstPurchaseDiscount: quote.firstPurchaseDiscount,
+    shippingCost: quote.shippingCost,
+    total: quote.total,
     // Solo los campos de entrega conocidos, nunca el objeto tal cual vino.
     shippingAddress: {
       street: shippingAddress.street,
@@ -109,9 +143,9 @@ export const createOrder = asyncHandler(async (req, res) => {
   });
 
   // El stock no se descuenta acá sino cuando se confirma el pago: el pedido
-  // queda "pendiente de pago". Con Mercado Pago no se avisa ahora: el mail llega
-  // recién cuando el pago se aprueba (muchos clientes abren el pago y no lo terminan).
-  // Si el mail falla, el pedido igual queda guardado (sendOrderNotification no lanza).
+  // queda "pendiente de pago". Con Mercado Pago no se avisa ahora: el mail
+  // llega recién cuando el pago se aprueba. Si el mail falla, el pedido igual
+  // queda guardado (sendOrderNotification no lanza).
   await order.populate("shippingAddress.zone");
   if (order.paymentMethod !== "mercado_pago") sendOrderNotification(order, req.user, { isNew: true });
 
@@ -142,15 +176,27 @@ export const createPaymentPreference = asyncHandler(async (req, res) => {
 
   // Si CLIENT_URL tiene varias direcciones, Mercado Pago vuelve a la principal (la primera).
   const clientUrl = (process.env.CLIENT_URL || "").split(",")[0].trim().replace(/\/$/, "");
+  // Si el precio por unidad explica el total de cada línea, se manda el detalle.
+  // Si hay descuentos que no son por unidad (el de primera compra),
+  // se manda el pedido como un solo ítem con el total exacto: Mercado Pago no
+  // acepta ítems negativos y así el cobro coincide siempre con el pedido.
+  const perUnitMatches = order.items.every((i) => Math.abs(i.unitPrice * i.quantity - i.subtotal) < 0.01);
+  const productsCharge = Math.round((order.itemsTotal - (order.firstPurchaseDiscount?.amount || 0)) * 100) / 100;
+  const productItems =
+    perUnitMatches && !(order.firstPurchaseDiscount?.amount > 0)
+      ? order.items.map((i) => ({ title: i.name, quantity: i.quantity, unit_price: i.unitPrice, currency_id: "ARS" }))
+      : [
+          {
+            title: `Pedido Dulcinard #${order._id.toString().slice(-6).toUpperCase()} (${order.items.length} producto/s, con descuentos)`,
+            quantity: 1,
+            unit_price: productsCharge,
+            currency_id: "ARS"
+          }
+        ];
   const preference = await mpPreference.create({
     body: {
       items: [
-        ...order.items.map((i) => ({
-          title: i.name,
-          quantity: i.quantity,
-          unit_price: i.unitPrice,
-          currency_id: "ARS"
-        })),
+        ...productItems,
         ...(order.shippingCost > 0
           ? [{ title: "Envío", quantity: 1, unit_price: order.shippingCost, currency_id: "ARS" }]
           : [])

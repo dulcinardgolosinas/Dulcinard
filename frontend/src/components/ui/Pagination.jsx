@@ -39,7 +39,8 @@ export function Pagination({ page, pages, total, limit, onPageChange, itemLabel 
         <span className="font-semibold text-ink-800">{total}</span> {itemLabel}
       </p>
 
-      {pages > 1 && (
+      {/* Los botones se ven siempre (aunque haya una sola página), así se sabe que la lista está paginada. */}
+      {pages >= 1 && (
         <div className="flex items-center gap-1">
           <button
             type="button"

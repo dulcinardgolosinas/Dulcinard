@@ -128,8 +128,8 @@ function similarity(aTokens, bTokens) {
 // GET /products/images/options — id y nombre de todos los productos (para
 // corregir a mano a qué producto va una foto).
 export const listProductOptions = asyncHandler(async (req, res) => {
-  const products = await Product.find().select("name images").sort({ name: 1 }).lean();
-  res.json(products.map((p) => ({ _id: p._id, name: p.name, hasImage: (p.images?.length || 0) > 0 })));
+  const products = await Product.find().select("name images price").sort({ name: 1 }).lean();
+  res.json(products.map((p) => ({ _id: p._id, name: p.name, price: p.price, hasImage: (p.images?.length || 0) > 0 })));
 });
 
 // POST /products/images/suggest  { photos: [{ texts: string[] }] }

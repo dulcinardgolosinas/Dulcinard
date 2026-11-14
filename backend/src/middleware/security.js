@@ -105,3 +105,6 @@ export const registerLimiter = createLimiter("register", { windowMs: 60 * 60 * 1
 
 // Creación de pedidos y pagos (evita spam de pedidos / preferencias de MP).
 export const orderLimiter = createLimiter("orders", { windowMs: 15 * 60 * 1000, limit: 30 });
+
+// Cotización del carrito: se pide cada vez que cambia el carrito o la zona en el checkout.
+export const quoteLimiter = createLimiter("quotes", { windowMs: 15 * 60 * 1000, limit: 300 });

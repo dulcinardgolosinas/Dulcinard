@@ -124,3 +124,8 @@ export async function promptText({ title, label, value = "", confirmText = "Guar
   });
   return result.isConfirmed ? result.value.trim() : null;
 }
+
+/** Aviso grande al terminar una acción (ej: "12 actualizados, 3 creados"). */
+export function resultAlert({ title, text, icon = "success" }) {
+  return Swal.fire({ title, text, icon, confirmButtonText: "Entendido", confirmButtonColor: BRAND_CONFIRM_COLOR });
+}

@@ -1,6 +1,7 @@
 import { CalendarDays } from "lucide-react";
 import { formatCurrency } from "../../lib/format";
 import { promoDateRange } from "../../lib/promotions";
+import { promoLabel, occasionLabel } from "../../lib/promotionTypes";
 
 /** Precio de la promo (con el normal tachado si está cargado) y las fechas. */
 export function PromoInfo({ promo, size = "md" }) {
@@ -23,8 +24,15 @@ export function PromoInfo({ promo, size = "md" }) {
   );
 }
 
-/** Etiqueta "20% OFF" sobre la foto. */
-export function DiscountBadge({ percent, className = "" }) {
-  if (!(percent > 0)) return null;
-  return <span className={`rounded-full bg-brand-600 px-3 py-1 text-sm font-extrabold text-white shadow ${className}`}>{percent}% OFF</span>;
+/** Etiquetas sobre la foto: el descuento ("-20%") y la fecha especial ("Navidad"). */
+export function PromoBadges({ promo, className = "" }) {
+  const label = promoLabel(promo);
+  const occasion = occasionLabel(promo);
+  if (!label && !occasion) return null;
+  return (
+    <span className={`flex flex-wrap items-center gap-1.5 ${className}`}>
+      {label && <span className="rounded-full bg-brand-600 px-3 py-1 text-sm font-extrabold text-white shadow">{label}</span>}
+      {occasion && <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-600 shadow">{occasion}</span>}
+    </span>
+  );
 }

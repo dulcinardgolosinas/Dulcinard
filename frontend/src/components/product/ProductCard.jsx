@@ -2,10 +2,13 @@ import { Link } from "react-router-dom";
 import { useCartStore } from "../../store/cartStore";
 import { formatCurrency, finalPriceOf, UNIT_LABELS } from "../../lib/format";
 import { Badge } from "../ui/Badge";
+import { useImageFit } from "../../lib/useImageFit";
 
 export function ProductCard({ product }) {
   const addItem = useCartStore((s) => s.addItem);
   const image = product.images?.[0]?.url;
+  // Foto con fondo blanco: entera; con otro fondo (ej: una foto de ambiente): ocupa toda la tarjeta.
+  const fit = useImageFit(image);
   const outOfStock = product.stock <= 0;
 
   return (
@@ -16,7 +19,7 @@ export function ProductCard({ product }) {
             src={image}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-105"
+            className={`h-full w-full transition-transform duration-500 group-hover:scale-105 ${fit === "cover" ? "object-cover" : "object-contain p-2"}`}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-ink-200">
@@ -26,7 +29,13 @@ export function ProductCard({ product }) {
             </svg>
           </div>
         )}
-        {product.discountPercent > 0 ? (
+        {/* Promo vigente: el descuento ("-20%") y la fecha especial ("Navidad"). */}
+        {product.promo ? (
+          <span className="absolute left-2 top-2 flex flex-col items-start gap-1">
+            <Badge tone="success">{product.promo.label}</Badge>
+            {product.promo.occasion && <Badge tone="accent">{product.promo.occasion}</Badge>}
+          </span>
+        ) : product.discountPercent > 0 ? (
           <Badge tone="success" className="absolute left-2 top-2">
             {product.discountPercent}% OFF
           </Badge>

@@ -11,6 +11,8 @@ import { formatCurrency } from "../../lib/format";
 import { confirmAction, confirmDelete, toastSuccess, toastError } from "../../lib/alerts";
 import { nameField, numberField } from "../../lib/validators";
 import { LoadError } from "../../components/ui/LoadError";
+import { Pagination } from "../../components/ui/Pagination";
+import { usePagedList } from "../../lib/usePagedList";
 
 const schema = z.object({
   name: nameField("El nombre de la zona", { min: 2, max: 80 }),
@@ -99,6 +101,7 @@ function ZoneForm({ editing, onSaved, onCancel }) {
 
 export default function ZonasEnvioAdmin() {
   const [zones, setZones] = useState([]);
+  const paged = usePagedList(zones);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -155,7 +158,7 @@ export default function ZonasEnvioAdmin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {zones.map((z) => (
+                  {paged.items.map((z) => (
                     <tr key={z._id} className="border-t border-ink-50">
                       <td className="px-4 py-3 font-medium text-ink-900">{z.name}</td>
                       <td className="px-4 py-3 text-ink-600">{formatCurrency(z.minPurchaseAmount)}</td>
@@ -183,6 +186,9 @@ export default function ZonasEnvioAdmin() {
                 </tbody>
               </table>
             </div>
+          )}
+          {!loading && (
+            <Pagination page={paged.page} pages={paged.pages} total={paged.total} limit={paged.limit} itemLabel="zonas" onPageChange={paged.setPage} />
           )}
         </div>
 
