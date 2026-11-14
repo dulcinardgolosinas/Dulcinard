@@ -16,6 +16,8 @@ import { alphanumericField, nameField, phoneField } from "../lib/validators";
 import { toastError, toastSuccess } from "../lib/alerts";
 import { BankTransferInfo } from "../components/ui/BankTransferInfo";
 import { Seo } from "../components/Seo";
+import { useCartQuote } from "../lib/useCartQuote";
+import { FirstPurchaseNotice, QuoteSummary } from "../components/cart/QuoteSummary";
 
 const hasBankTransfer = (config) => Boolean(config?.bankTransfer?.alias || config?.bankTransfer?.cbu);
 
@@ -96,6 +98,7 @@ export default function Checkout() {
   }, [syncWithProducts]);
 
   const selectedZoneId = watch("zone");
+  const { quote, loading: quoteLoading } = useCartQuote(items, selectedZoneId);
   const selectedZone = zones.find((z) => z._id === selectedZoneId);
   const shippingCost = selectedZone
     ? selectedZone.freeShippingFrom > 0 && total() >= selectedZone.freeShippingFrom
@@ -245,30 +248,12 @@ export default function Checkout() {
 
         <div className="h-fit rounded-2xl border border-ink-100 bg-white p-6">
           <h2 className="mb-4 font-semibold text-ink-900">Resumen del pedido</h2>
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li key={item.productId} className="flex justify-between text-sm">
-                <span className="text-ink-600">
-                  {item.quantity} x {item.name} <span className="text-ink-400">({UNIT_LABELS[item.unit]})</span>
-                </span>
-                <span className="font-medium text-ink-900">{formatCurrency(item.price * item.quantity)}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-4 space-y-1.5 border-t border-ink-100 pt-4 text-sm">
-            <div className="flex justify-between text-ink-600">
-              <span>Subtotal</span>
-              <span>{formatCurrency(total())}</span>
-            </div>
-            <div className="flex justify-between text-ink-600">
-              <span>Envío</span>
-              <span>{shippingCost > 0 ? formatCurrency(shippingCost) : "Gratis"}</span>
-            </div>
-            <div className="flex justify-between border-t border-ink-100 pt-2 text-base font-bold text-ink-900">
-              <span>Total</span>
-              <span>{formatCurrency(total() + shippingCost)}</span>
-            </div>
+          {/* Lo calcula el servidor (promos, primera compra y envío): es exactamente lo que se cobra. */}
+          <div className="mb-4">
+            <FirstPurchaseNotice quote={quote} />
           </div>
+          <QuoteSummary quote={quote} fallbackItems={items} fallbackShipping={shippingCost} />
+          {quoteLoading && <p className="mt-2 text-xs text-ink-400">Actualizando precios…</p>}
         </div>
       </div>
     </div>
